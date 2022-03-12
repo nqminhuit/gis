@@ -1,28 +1,32 @@
 package org.nqm;
 
+import java.io.File;
 import io.micronaut.configuration.picocli.PicocliRunner;
-import io.micronaut.context.ApplicationContext;
-
-import picocli.CommandLine;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
-import picocli.CommandLine.Parameters;
 
-@Command(name = "gis", description = "...",
-        mixinStandardHelpOptions = true)
+@Command(
+    name = "gis",
+    description = "Git extension which supports submodules",
+    mixinStandardHelpOptions = true,
+    version = "1.0.0")
 public class GisCommand implements Runnable {
 
-    @Option(names = {"-v", "--verbose"}, description = "...")
-    boolean verbose;
+    @Option(names = { "st", "status" })
+    boolean status;
 
     public static void main(String[] args) throws Exception {
         PicocliRunner.run(GisCommand.class, args);
     }
 
+    @Override
     public void run() {
-        // business logic here
-        if (verbose) {
-            System.out.println("Hi!");
+        if (!new File(".", ".gitmodules").exists()) {
+            System.out.println("There is no git submodules under this directory!");
+            return;
+        }
+        if (status) {
+            GitWrapper.status();
         }
     }
 }
