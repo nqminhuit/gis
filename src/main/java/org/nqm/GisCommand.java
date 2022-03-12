@@ -1,6 +1,5 @@
 package org.nqm;
 
-import java.io.File;
 import io.micronaut.configuration.picocli.PicocliRunner;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
@@ -21,10 +20,6 @@ public class GisCommand implements Runnable {
 
     @Override
     public void run() {
-        if (!new File(".", ".gitmodules").exists()) {
-            System.out.println("There is no git submodules under this directory!");
-            return;
-        }
         if (status) {
             GitWrapper.status();
         }
