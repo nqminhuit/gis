@@ -72,7 +72,7 @@ final class GitWrapper {
             var pr = Runtime.getRuntime().exec(GIT.formatted(command), null, path.toFile());
             var input = new BufferedReader(new InputStreamReader(pr.getInputStream()));
             var line = "";
-            while ((line = input.readLine()) != null) {
+            while (isNotBlank(line = input.readLine())) {
                 out.println(line);
             }
             return pr.waitFor();
@@ -92,6 +92,10 @@ final class GitWrapper {
         catch (IOException e) {
             return Stream.of();
         }
+    }
+
+    private static boolean isNotBlank(String s) {
+        return s != null && !s.isBlank();
     }
 
 }

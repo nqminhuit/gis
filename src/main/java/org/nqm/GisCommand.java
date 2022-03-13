@@ -1,8 +1,12 @@
 package org.nqm;
 
+import static java.lang.System.err;
+import static org.nqm.GitWrapper.*;
+import org.nqm.enums.GisOption;
+import java.util.Optional;
 import io.micronaut.configuration.picocli.PicocliRunner;
 import picocli.CommandLine.Command;
-import picocli.CommandLine.Option;
+import picocli.CommandLine.Parameters;
 
 @Command(
     name = "gis",
@@ -11,14 +15,11 @@ import picocli.CommandLine.Option;
     version = "1.0.0")
 public class GisCommand implements Runnable {
 
-    @Option(names = { "st", "status" })
-    boolean status;
+    @Parameters(index = "0", description = "Valid values: ${COMPLETION-CANDIDATES}")
+    GisOption option;
 
-    @Option(names = { "fe", "fetch" })
-    boolean fetch;
-
-    @Option(names = { "co", "checkout" })
-    String checkOutBranch;
+    @Parameters(index = "1", arity = "0..1")
+    String value;
 
     public static void main(String[] args) throws Exception {
         PicocliRunner.run(GisCommand.class, args);
@@ -26,21 +27,25 @@ public class GisCommand implements Runnable {
 
     @Override
     public void run() {
-        if (status) {
-            GitWrapper.status();
-            return;
-        }
-        if (fetch) {
-            GitWrapper.fetch();
-            return;
-        }
-        if (notBlank(checkOutBranch)) {
-            GitWrapper.checkOut(checkOutBranch);
-            return;
+        switch (option) {
+            case co:
+                Optional.ofNullable(value)
+                    .ifPresentOrElse(
+                        GitWrapper::checkOut,
+                        () -> err.println("Please specified branch name!"));
+                break;
+            case st:
+                status();
+                break;
+            case fe:
+                fetch();
+                break;
+            case pu:
+                pull();
+                break;
+            default:
+                status();
         }
     }
 
-    private static boolean notBlank(String s) {
-        return s != null && !s.isBlank();
-    }
 }
