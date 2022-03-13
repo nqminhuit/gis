@@ -4,7 +4,7 @@ import static java.lang.System.err;
 import static org.nqm.GitWrapper.*;
 import org.nqm.enums.GisOption;
 import java.util.Optional;
-import io.micronaut.configuration.picocli.PicocliRunner;
+import picocli.CommandLine;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Parameters;
 
@@ -22,7 +22,7 @@ public class GisCommand implements Runnable {
     String value;
 
     public static void main(String[] args) throws Exception {
-        PicocliRunner.run(GisCommand.class, args);
+        System.exit(new CommandLine(new GisCommand()).execute(args));
     }
 
     @Override
