@@ -3,4 +3,6 @@
 .vscode
 target
 Dockerfile
-Dockerfile.graalvm
+Dockerfile.*
+zzmm__
+README.md

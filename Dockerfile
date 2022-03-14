@@ -1,15 +1,15 @@
-FROM ubuntu:20.04
-RUN apt update && apt install -y curl unzip zip gcc zlib1g-dev
+FROM quay.io/quarkus/ubi-quarkus-mandrel:22.0.0.2-Final-java17
 
-RUN curl -s "https://get.sdkman.io" | bash;
-SHELL ["/bin/bash", "-c"]
-RUN ["/bin/bash", "-c", "source /root/.sdkman/bin/sdkman-init.sh"]
+USER root
 
-# RUN sdk version
-# RUN sdk install java 22.0.0.2.r17-grl
-# gu install native-image
-COPY . /home/app/gis
-WORKDIR /home/app/gis
+COPY pom.xml /app/gis/
+COPY .mvn /app/gis/.mvn
+COPY mvnw /app/gis/
+WORKDIR /app/gis
+RUN ./mvnw verify clean --fail-never
 
-# RUN ./mvnw clean package
-# native-image -cp target/gis-1.0.0.jar "org.nqm.GisCommand"
+COPY . /app/gis
+RUN ./mvnw clean package
+RUN native-image -cp target/gis-1.0.0.jar "org.nqm.GisCommand"
+RUN mv org.nqm.giscommand gis
+RUN chmod +x gis
