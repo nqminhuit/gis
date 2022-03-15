@@ -1,7 +1,9 @@
 package org.nqm;
 
 import static java.lang.System.err;
-import static org.nqm.GitWrapper.*;
+import static org.nqm.GitWrapper.fetch;
+import static org.nqm.GitWrapper.pull;
+import static org.nqm.GitWrapper.status;
 import org.nqm.enums.GisOption;
 import java.util.Optional;
 import picocli.CommandLine;
@@ -21,8 +23,9 @@ public class GisCommand implements Runnable {
     @Parameters(index = "1", arity = "0..1")
     String value;
 
-    public static void main(String[] args) throws Exception {
-        System.exit(new CommandLine(new GisCommand()).execute(args));
+    public static void main(String[] args) {
+        // System.exit(new CommandLine(new GisCommand()).execute(args));
+        new CommandLine(new GisCommand()).execute(args);
     }
 
     @Override

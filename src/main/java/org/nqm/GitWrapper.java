@@ -2,19 +2,20 @@ package org.nqm;
 
 import static java.lang.System.err;
 import static java.lang.System.out;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.nio.file.Files;
+import org.nqm.vertx.CommandVerticle;
+import org.nqm.vertx.GisVertx;
 import java.nio.file.Path;
-import java.util.Optional;
-import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Stream;
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Promise;
+import io.vertx.core.buffer.Buffer;
 
 final class GitWrapper {
 
     private static final String GIT = "/usr/bin/git %s";
+
+    private static final String CURRENT_DIR = System.getProperty("user.dir");
 
     private GitWrapper() {}
 
@@ -40,62 +41,41 @@ final class GitWrapper {
     }
 
 
-    private static void run(Function<Path, Integer> consume, Runnable errHandling) {
+    private static void run(Function<Path, Void> consume, Runnable errHandling) {
         var gitModulesFilePath = Path.of(".", ".gitmodules");
         if (!gitModulesFilePath.toFile().exists()) {
             out.println("There is no git submodules under this directory!");
             return;
         }
 
-        var currentDir = System.getProperty("user.dir");
-
-        Consumer<? super Integer> handleError = exitCode -> {
-            if (exitCode != 0) {
-                errHandling.run();
-            }
-        };
-
-        Optional.of(consume.apply(Path.of(currentDir))).ifPresent(handleError);
-
-        getSubModuleDirectories(gitModulesFilePath)
-            .forEach(dir -> Optional.of(consume.apply(Path.of(currentDir, dir))).ifPresent(handleError));
+        var vertx = GisVertx.instance();
+        vertx.fileSystem().readFile(gitModulesFilePath.toString())
+            .map(GitWrapper::extractDirs)
+            .onComplete((AsyncResult<Stream<String>> ar) -> {
+                if (ar.succeeded()) {
+                    ar.result().forEach(dir -> vertx.executeBlocking((Promise<Void> p) -> p.complete(consume.apply(Path.of(CURRENT_DIR, dir)))));
+                    vertx.executeBlocking((Promise<Void> p) -> p.complete(consume.apply(Path.of(CURRENT_DIR))));
+                }
+                else {
+                    err.println("failed to read file");
+                    System.exit(1);
+                }
+            });
     }
 
-    private static int call(Path path, String command) {
+    private static Void call(Path path, String command) {
         if (!path.toFile().exists()) {
-            // err.println("path '%s' is not found".formatted(path.toString())); TODO make this debugable
-            return 1;
+            return null;
         }
-
-        out.println("Entering '%s'".formatted(path.toString()));
-        try {
-            var pr = Runtime.getRuntime().exec(GIT.formatted(command), null, path.toFile());
-            var input = new BufferedReader(new InputStreamReader(pr.getInputStream()));
-            var line = "";
-            while (isNotBlank(line = input.readLine())) {
-                out.println(line);
-            }
-            return pr.waitFor();
-        }
-        catch (IOException | InterruptedException e) {
-            throw new RuntimeException(e);
-        }
+        GisVertx.instance().deployVerticle(new CommandVerticle(GIT, command, path));
+        return null;
     }
 
-    private static Stream<String> getSubModuleDirectories(Path path) {
-        try {
-            return Files.readAllLines(path).stream()
-                .map(String::trim)
-                .filter(s -> s.startsWith("path"))
-                .map(s -> s.replace("path = ", ""));
-        }
-        catch (IOException e) {
-            return Stream.of();
-        }
-    }
-
-    private static boolean isNotBlank(String s) {
-        return s != null && !s.isBlank();
+    private static Stream<String> extractDirs(Buffer buffer) {
+        return Stream.of(buffer.toString().split("\n"))
+            .map(String::trim)
+            .filter(s -> s.startsWith("path"))
+            .map(s -> s.replace("path = ", ""));
     }
 
 }
