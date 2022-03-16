@@ -38,7 +38,7 @@ public class CommandVerticle extends AbstractVerticle {
                 Optional.of(res.result()).ifPresent(this::safelyPrint);
                 // root should be considered the last dir
                 if (System.getProperty("user.dir").equals(path.toString())) {
-                    GisVertx.instance().close();
+                    System.exit(0);
                 }
             });
     }
