@@ -10,7 +10,7 @@ RUN ./mvnw verify clean --fail-never
 
 COPY . /app/gis
 RUN ./mvnw clean package
-RUN native-image -cp target/gis-1.0.0.jar "org.nqm.GisCommand" \
+RUN native-image -cp target/gis-*.jar "org.nqm.GisCommand" \
     --no-fallback \
     --no-server \
     --allow-incomplete-classpath \

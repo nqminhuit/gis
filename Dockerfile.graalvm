@@ -1,9 +1,0 @@
-FROM ghcr.io/graalvm/native-image:ol8-java17
-
-COPY . /home/app/gis
-WORKDIR /home/app/gis
-
-RUN ./mvnw clean package
-RUN native-image -cp target/gis-1.0.0.jar "org.nqm.GisCommand"
-RUN mv org.nqm.giscommand gis
-RUN chmod +x gis
