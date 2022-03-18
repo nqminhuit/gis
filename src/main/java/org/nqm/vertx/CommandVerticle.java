@@ -23,20 +23,19 @@ public class CommandVerticle extends AbstractVerticle {
 
   private static final String SPACES_NOT_INSIDE_SQUARE_BRACKETS = "\\s((?<!\\[.*)|(?!.*\\]))";
 
-  private final String git;
-  private final String command;
+  private final String[] commandWithArgs;
   private final Path path;
   private final boolean colorOutput;
 
-  public CommandVerticle(String git, String command, Path path, boolean colorOutput) {
-    this.git = git;
-    this.command = command;
+  public CommandVerticle(Path path, boolean colorOutput, String... args) {
     this.path = path;
     this.colorOutput = colorOutput;
-  }
 
-  public CommandVerticle(String git, String command, Path path) {
-    this(git, command, path, false);
+    this.commandWithArgs = new String[args.length + 1];
+    this.commandWithArgs[0] = "/usr/bin/git";
+    for (int i = 0; i < args.length; i++) {
+      this.commandWithArgs[i + 1] = args[i];
+    }
   }
 
   @Override
@@ -44,7 +43,7 @@ public class CommandVerticle extends AbstractVerticle {
     vertx.executeBlocking(
       (Promise<Process> promise) -> {
         try {
-          promise.complete(Runtime.getRuntime().exec(git.formatted(command), null, path.toFile()));
+          promise.complete(new ProcessBuilder(commandWithArgs).directory(path.toFile()).start());
         }
         catch (IOException e) {
           throw new RuntimeException(e);
