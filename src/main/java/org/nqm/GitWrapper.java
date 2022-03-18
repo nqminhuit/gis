@@ -1,7 +1,8 @@
 package org.nqm;
 
 import static java.lang.System.err;
-import static java.lang.System.out;
+import static org.nqm.utils.StdOutUtils.errln;
+import static org.nqm.utils.StdOutUtils.warnln;
 import org.nqm.vertx.CommandVerticle;
 import org.nqm.vertx.GisVertx;
 import java.nio.file.Path;
@@ -20,7 +21,7 @@ final class GitWrapper {
   private GitWrapper() {}
 
   public static void status() {
-    run(path -> call(path, "status -sb --ignore-submodules"), err::println);
+    run(path -> call(path, "status -sb --ignore-submodules", true), err::println);
   }
 
   public static void fetch() {
@@ -33,7 +34,7 @@ final class GitWrapper {
 
   public static void checkOut(String branch) {
     run(path -> call(path, "checkout %s".formatted(branch)),
-      () -> err.println("Could not checkout branch '%s'".formatted(branch)));
+      () -> errln("Could not checkout branch '%s'".formatted(branch)));
   }
 
   public static void checkOutNewBranch(String branch) {
@@ -44,7 +45,7 @@ final class GitWrapper {
   private static void run(Function<Path, Void> consume, Runnable errHandling) {
     var gitModulesFilePath = Path.of(".", ".gitmodules");
     if (!gitModulesFilePath.toFile().exists()) {
-      out.println("There is no git submodules under this directory!");
+      warnln("There is no git submodules under this directory!");
       return;
     }
 
@@ -58,18 +59,22 @@ final class GitWrapper {
           vertx.executeBlocking((Promise<Void> p) -> p.complete(consume.apply(Path.of(CURRENT_DIR))));
         }
         else {
-          err.println("failed to read file");
+          errln("failed to read file");
           System.exit(1);
         }
       });
   }
 
-  private static Void call(Path path, String command) {
+  private static Void call(Path path, String command, boolean colorOutput) {
     if (!path.toFile().exists()) {
       return null;
     }
-    GisVertx.instance().deployVerticle(new CommandVerticle(GIT, command, path));
+    GisVertx.instance().deployVerticle(new CommandVerticle(GIT, command, path, colorOutput));
     return null;
+  }
+
+  private static Void call(Path path, String command) {
+    return call(path, command, false);
   }
 
   private static Stream<String> extractDirs(Buffer buffer) {
