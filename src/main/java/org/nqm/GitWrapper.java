@@ -14,14 +14,12 @@ import io.vertx.core.buffer.Buffer;
 
 final class GitWrapper {
 
-  private static final String GIT = "/usr/bin/git %s";
-
   private static final String CURRENT_DIR = System.getProperty("user.dir");
 
   private GitWrapper() {}
 
   public static void status() {
-    run(path -> call(path, "status -sb --ignore-submodules", true), err::println);
+    run(path -> call(path, true, "status", "-sb", "--ignore-submodules"), err::println);
   }
 
   public static void fetch() {
@@ -33,7 +31,7 @@ final class GitWrapper {
   }
 
   public static void checkOut(String branch) {
-    run(path -> call(path, "checkout %s".formatted(branch)),
+    run(path -> call(path, "checkout", branch),
       () -> errln("Could not checkout branch '%s'".formatted(branch)));
   }
 
@@ -65,16 +63,17 @@ final class GitWrapper {
       });
   }
 
-  private static Void call(Path path, String command, boolean colorOutput) {
+  private static Void call(Path path, boolean colorOutput, String... args) {
     if (!path.toFile().exists()) {
+      // TODO if debug enable, print it out
       return null;
     }
-    GisVertx.instance().deployVerticle(new CommandVerticle(GIT, command, path, colorOutput));
+    GisVertx.instance().deployVerticle(new CommandVerticle(path, colorOutput, args));
     return null;
   }
 
-  private static Void call(Path path, String command) {
-    return call(path, command, false);
+  private static Void call(Path path, String... args) {
+    return call(path, false, args);
   }
 
   private static Stream<String> extractDirs(Buffer buffer) {
