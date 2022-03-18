@@ -1,9 +1,9 @@
 package org.nqm;
 
-import static java.lang.System.err;
 import static org.nqm.GitWrapper.fetch;
 import static org.nqm.GitWrapper.pull;
 import static org.nqm.GitWrapper.status;
+import static org.nqm.utils.StdOutUtils.errln;
 import org.nqm.enums.GisAction;
 import java.util.Optional;
 import picocli.CommandLine;
@@ -18,6 +18,7 @@ import picocli.CommandLine.Parameters;
   version = "1.0.0-alpha")
 public class GisCommand implements Runnable {
 
+  // TODO: replace action with picocli sub commands
   @Parameters(index = "0", description = "Valid values: ${COMPLETION-CANDIDATES}")
   GisAction action;
 
@@ -36,7 +37,7 @@ public class GisCommand implements Runnable {
   @Override
   public void run() {
     switch (action) {
-      case co -> value.ifPresentOrElse(GitWrapper::checkOut, () -> err.println("Please specify branch!"));
+      case co -> value.ifPresentOrElse(GitWrapper::checkOut, () -> errln("Please specify branch!"));
       case fe -> fetch();
       case pu -> pull();
       case st -> status();

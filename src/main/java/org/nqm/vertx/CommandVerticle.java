@@ -2,24 +2,41 @@ package org.nqm.vertx;
 
 import static java.lang.System.out;
 import static org.nqm.utils.ExceptionUtils.throwIf;
+import static org.nqm.utils.StdOutUtils.CL_GREEN;
+import static org.nqm.utils.StdOutUtils.CL_PURPLE;
+import static org.nqm.utils.StdOutUtils.CL_RED;
+import static org.nqm.utils.StdOutUtils.FONT_BOLD;
+import static org.nqm.utils.StdOutUtils.coloringWord;
+import static org.nqm.utils.StdOutUtils.infof;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.file.Path;
 import java.util.Optional;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Promise;
 
 public class CommandVerticle extends AbstractVerticle {
 
+  private static final String SPACES_NOT_INSIDE_SQUARE_BRACKETS = "\\s((?<!\\[.*)|(?!.*\\]))";
+
   private final String git;
   private final String command;
   private final Path path;
+  private final boolean colorOutput;
 
-  public CommandVerticle(String git, String command, Path path) {
+  public CommandVerticle(String git, String command, Path path, boolean colorOutput) {
     this.git = git;
     this.command = command;
     this.path = path;
+    this.colorOutput = colorOutput;
+  }
+
+  public CommandVerticle(String git, String command, Path path) {
+    this(git, command, path, false);
   }
 
   @Override
@@ -46,10 +63,10 @@ public class CommandVerticle extends AbstractVerticle {
   private void safelyPrint(Process pr) {
     var line = "";
     var input = new BufferedReader(new InputStreamReader(pr.getInputStream()));
-    var sb = new StringBuilder("Entering '%s'".formatted(path.toString())).append('\n');
+    var sb = new StringBuilder(infof("Entering '%s'", "" + path.getFileName())).append('\n');
     try {
       while (isNotBlank(line = input.readLine())) {
-        sb.append(line).append('\n');
+        sb.append(colorOutput ? coloringOuput(line) : line).append('\n');
       }
       out.print(sb.toString());
       Optional.of(pr.waitFor())
@@ -64,4 +81,27 @@ public class CommandVerticle extends AbstractVerticle {
   private static boolean isNotBlank(String s) {
     return s != null && !s.isBlank();
   }
+
+  private static String coloringOuput(String line) {
+    var words = Stream.of(line.split(SPACES_NOT_INSIDE_SQUARE_BRACKETS))
+      .filter(Predicate.not(String::isBlank))
+      .toArray(String[]::new);
+
+    try {
+      String startWord = words[0];
+      if (!startWord.startsWith("##")) {
+        words[0] = coloringWord(startWord, CL_RED);
+      }
+      else {
+        words[1] = coloringWord(FONT_BOLD + words[1], CL_PURPLE);
+      }
+
+      words[2] = coloringWord(words[2], CL_GREEN);
+    }
+    catch (ArrayIndexOutOfBoundsException e) {
+      // just ignore it
+    }
+    return Stream.of(words).collect(Collectors.joining(" "));
+  }
+
 }
