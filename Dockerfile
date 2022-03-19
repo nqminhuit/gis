@@ -10,7 +10,7 @@ RUN ./mvnw verify clean --fail-never
 
 COPY . /app/gis
 RUN ./mvnw clean package
-RUN native-image -cp target/gis-*.jar "org.nqm.GisCommand" \
+RUN native-image -cp target/gis-*.jar "org.nqm.Gis" \
     --no-fallback \
     --no-server \
     --allow-incomplete-classpath \
@@ -24,5 +24,5 @@ io.netty.handler.ssl.BouncyCastleAlpnSslUtils,\
 io.netty.handler.ssl.OpenSslAsyncPrivateKeyMethod,\
 io.netty.internal.tcnative.SSLPrivateKeyMethod
 
-RUN mv org.nqm.giscommand gis
+RUN mv org.nqm.gis gis
 RUN chmod +x gis

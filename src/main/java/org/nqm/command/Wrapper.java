@@ -1,55 +1,30 @@
-package org.nqm;
+package org.nqm.command;
 
-import static java.lang.System.err;
-import static org.nqm.utils.StdOutUtils.errln;
-import static org.nqm.utils.StdOutUtils.warnln;
 import org.nqm.vertx.CommandVerticle;
 import org.nqm.vertx.GisVertx;
 import java.nio.file.Path;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Stream;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 
-final class GitWrapper {
+public final class Wrapper {
 
   private static final String CURRENT_DIR = System.getProperty("user.dir");
 
-  private GitWrapper() {}
+  private Wrapper() {}
 
-  public static void status() {
-    run(path -> call(path, true, "status", "-sb", "--ignore-submodules"), err::println);
-  }
-
-  public static void fetch() {
-    run(path -> call(path, "fetch"), err::println);
-  }
-
-  public static void pull() {
-    run(path -> call(path, "pull"), err::println);
-  }
-
-  public static void checkOut(String branch) {
-    run(path -> call(path, "checkout", branch),
-      () -> errln("Could not checkout branch '%s'".formatted(branch)));
-  }
-
-  public static void checkOutNewBranch(String branch) {
-    run(path -> call(path, "checkout -b %s".formatted(branch)), err::println);
-  }
-
-
-  private static void run(Function<Path, Void> consume, Runnable errHandling) {
+  public static void execute(Function<Path, Void> consume) {
     var gitModulesFilePath = Path.of(".", ".gitmodules");
     if (!gitModulesFilePath.toFile().exists()) {
-      warnln("There is no git submodules under this directory!");
-      return;
+      throw new RuntimeException("There is no git submodules under this directory!");
     }
 
     var vertx = GisVertx.instance();
     vertx.fileSystem().readFile(gitModulesFilePath.toString())
-      .map(GitWrapper::extractDirs)
+      .map(Wrapper::extractDirs)
       .onComplete((AsyncResult<Stream<String>> ar) -> {
         if (ar.succeeded()) {
           ar.result().forEach(dir -> vertx.executeBlocking(
@@ -57,13 +32,12 @@ final class GitWrapper {
           vertx.executeBlocking((Promise<Void> p) -> p.complete(consume.apply(Path.of(CURRENT_DIR))));
         }
         else {
-          errln("failed to read file");
-          System.exit(1);
+          throw new RuntimeException("failed to read file");
         }
       });
   }
 
-  private static Void call(Path path, boolean colorOutput, String... args) {
+  public static Void deployVertx(Path path, boolean colorOutput, String... args) {
     if (!path.toFile().exists()) {
       // TODO if debug enable, print it out
       return null;
@@ -72,8 +46,32 @@ final class GitWrapper {
     return null;
   }
 
-  private static Void call(Path path, String... args) {
-    return call(path, false, args);
+  public static Void deployVertx(Path path, String... args) {
+    return deployVertx(path, false, args);
+  }
+
+
+  public static void getAllModuleDirs(Consumer<Path> consumeDir) {
+    var gitModulesFilePath = Path.of(".", ".gitmodules");
+    if (!gitModulesFilePath.toFile().exists()) {
+      throw new RuntimeException("There is no git submodules under this directory!");
+    }
+
+    GisVertx.instance().fileSystem().readFile(gitModulesFilePath.toString())
+      .map(Wrapper::extractDirs)
+      .onComplete((AsyncResult<Stream<String>> ar) -> {
+        if (ar.succeeded()) {
+          ar.result()
+            .map(dir -> Path.of(CURRENT_DIR, dir))
+            .filter(dir -> dir.toFile().exists())
+            .forEach(dir -> consumeDir.accept(dir));
+
+          consumeDir.accept(Path.of(CURRENT_DIR));
+        }
+        else {
+          throw new RuntimeException("failed to read file '.gitmodules'");
+        }
+      });
   }
 
   private static Stream<String> extractDirs(Buffer buffer) {

@@ -2,6 +2,7 @@ package org.nqm.vertx;
 
 import static java.lang.System.out;
 import static org.nqm.utils.ExceptionUtils.throwIf;
+import static org.nqm.utils.GisStringUtils.isNotBlank;
 import static org.nqm.utils.StdOutUtils.CL_GREEN;
 import static org.nqm.utils.StdOutUtils.CL_PURPLE;
 import static org.nqm.utils.StdOutUtils.CL_RED;
@@ -75,10 +76,6 @@ public class CommandVerticle extends AbstractVerticle {
     catch (IOException | InterruptedException e) {
       throw new RuntimeException(e);
     }
-  }
-
-  private static boolean isNotBlank(String s) {
-    return s != null && !s.isBlank();
   }
 
   private static String coloringOuput(String line) {
