@@ -41,41 +41,33 @@ For more details, just run:
 ```
 
 # Comparison
-## git status
-|git|gis|
-|---|---|
-|`git submodule foreach git status -sb --ignore-submodules`|`gis st`|
-|(not include root module)|(include root module)|
-| 67ms  |    49ms  |
-| 141ms |    106ms |
-| 103ms |    56ms  |
-| 148ms |    109ms |
-| 155ms |    118ms |
-| 157ms |    116ms |
-| 126ms |    108ms |
-| 151ms |    103ms |
-| 67ms  |    118ms |
-| 148ms |    50ms  |
-| 134ms |    50ms  |
-|average = **127ms**|average = **89.36ms**|
 
-## git fetch
+notes:
+- `git submodule` commands do not take the root module into account, however `gis` does.
+- the data was generated on the same repository, same machine.
 
-Since the duration results from `git` command are too obvious, I only run 5 times.
+## status
 
-|git|gis|
-|---|---|
-|`git submodule foreach git fetch`|`gis fe`|
-|(not include root module)|(include root module)|
-| 22s751ms | 5s550ms |
-| 23s503ms | 5s214ms |
-| 20s482ms | 3s223ms |
-| 21s587ms | 3s284ms |
-| 24s75ms | 3s273ms |
-| | 3s34ms  |
-| | 3s596ms |
-| | 3s100ms |
-| | 3s157ms |
-| | 3s147ms |
-| | 3s594ms |
-|average = **22s**479.6ms|average = **3s**679.818ms|
+![status: git vs gis](assets/git_vs_gis.svg)
+
+command for generating the above numbers:
+```shell script
+for i in {1..1000}; do { time git submodule foreach git status -sb --ignore-submodules; } 2>> git done
+# took 28s638ms in total
+
+for i in {1..1000}; do { time giss st; } 2>> gis done
+# took 13s654ms in total
+```
+
+## fetch
+
+![fetch: git vs gis](assets/fetch_git_vs_gis.svg)
+
+command for generating the above numbers:
+```shell script
+for i in {1..100}; do { time git submodule foreach git fetch; } 2>> git_fe done
+# took 29m43s442ms
+
+for i in {1..100}; do { time giss fe; } 2>> gis_fe done
+# took 5m11s832ms
+```
