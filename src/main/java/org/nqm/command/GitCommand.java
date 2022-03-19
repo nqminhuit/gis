@@ -6,6 +6,7 @@ import static org.nqm.utils.GisStringUtils.convertToPathFromRegex;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
@@ -43,20 +44,25 @@ public class GitCommand {
       paths.add(path.toString());
     });
 
-    var inputRepos = new BufferedReader(new InputStreamReader(System.in));
-    try {
+    try (var inputRepos = new BufferedReader(new InputStreamReader(System.in))) {
       Stream.of(inputRepos.readLine().split(","))
         .map(String::trim)
         .map(regex -> convertToPathFromRegex(regex, paths))
         .filter(Predicate.not(String::isBlank))
         .forEach(repo -> {
           System.out.println("running git checkout -b '%s' in repo '%s'".formatted(newBranch, repo));
+          deployVertx(Path.of(repo), "checkout", "-b", newBranch);
         });
     }
     catch (IOException e) {
       throw new RuntimeException(e);
     }
-    System.exit(0);
+  }
+
+  @Command(name = "remove-branch", aliases = "rm")
+  void removeBranch(@Parameters(index = "0", paramLabel = "<branch name>") String branch) {
+    // TODO need confirmation from user
+    forEachModulesDo(path -> deployVertx(path, "branch", "-d", branch));
   }
 
 }
