@@ -17,4 +17,6 @@ public class GisVertx {
     }
     return INSTANCE;
   }
+
+  // TODO maybe use EventBus (https://vertx.io/docs/vertx-core/java/#event_bus) to signal when to exit app
 }

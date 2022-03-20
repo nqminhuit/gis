@@ -53,6 +53,7 @@ public class CommandVerticle extends AbstractVerticle {
       false,
       res -> {
         Optional.of(res.result()).ifPresent(this::safelyPrint);
+        // TODO cannot use this logic
         // root should be considered the last dir
         if (System.getProperty("user.dir").equals(path.toString())) {
           System.exit(0);

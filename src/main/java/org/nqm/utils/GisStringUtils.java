@@ -16,11 +16,10 @@ public class GisStringUtils {
       return items.get(items.size() - 1);
     }
 
-    for (String s : items) {
-      if (Pattern.compile(".*%s.*".formatted(regex)).matcher(s).matches()) {
-        return s;
-      }
-    }
-    return "";
+    var p = Pattern.compile(".*%s.*".formatted(regex));
+    return items.stream()
+      .filter(s -> p.matcher(s).matches())
+      .findFirst()
+      .orElse("");
   }
 }
