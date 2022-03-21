@@ -35,17 +35,21 @@ public final class Wrapper {
       .map(Wrapper::extractDirs)
       .onComplete((AsyncResult<Stream<String>> ar) -> {
         if (ar.succeeded()) {
+          consumeDir(Path.of(CURRENT_DIR), consumeDir);
           ar.result()
             .map(dir -> Path.of(CURRENT_DIR, dir))
             .filter(dir -> dir.toFile().exists())
-            .forEach(dir -> consumeDir.accept(dir));
-
-          consumeDir.accept(Path.of(CURRENT_DIR));
+            .forEach(dir -> consumeDir(dir, consumeDir));
         }
         else {
           throw new RuntimeException("failed to read file '.gitmodules'");
         }
       });
+  }
+
+  private static void consumeDir(Path path, Consumer<Path> consumer) {
+    GisVertx.eventAddDir(path);
+    consumer.accept(path);
   }
 
   private static Stream<String> extractDirs(Buffer buffer) {
