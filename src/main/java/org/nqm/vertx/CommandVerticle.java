@@ -9,6 +9,7 @@ import static org.nqm.utils.StdOutUtils.CL_RED;
 import static org.nqm.utils.StdOutUtils.FONT_BOLD;
 import static org.nqm.utils.StdOutUtils.coloringWord;
 import static org.nqm.utils.StdOutUtils.infof;
+import org.nqm.config.GisConfig;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -33,7 +34,7 @@ public class CommandVerticle extends AbstractVerticle {
     this.colorOutput = colorOutput;
 
     this.commandWithArgs = new String[args.length + 1];
-    this.commandWithArgs[0] = "/usr/bin/git";
+    this.commandWithArgs[0] = GisConfig.GIT_HOME_DIR;
     for (int i = 0; i < args.length; i++) {
       this.commandWithArgs[i + 1] = args[i];
     }

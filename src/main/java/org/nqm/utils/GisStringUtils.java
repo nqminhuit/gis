@@ -1,5 +1,6 @@
 package org.nqm.utils;
 
+import static org.nqm.config.GisConfig.CURRENT_DIR;
 import java.util.List;
 import java.util.regex.Pattern;
 
@@ -13,7 +14,7 @@ public class GisStringUtils {
 
   public static String convertToPathFromRegex(String regex, List<String> items) {
     if (".".equals(regex)) {
-      return items.get(items.size() - 1);
+      return "" + CURRENT_DIR;
     }
 
     var p = Pattern.compile(".*%s.*".formatted(regex));

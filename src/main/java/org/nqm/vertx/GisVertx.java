@@ -1,10 +1,10 @@
 package org.nqm.vertx;
 
+import static org.nqm.config.GisConfig.VERTX_OPTIONS;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import io.vertx.core.Vertx;
-import io.vertx.core.VertxOptions;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.eventbus.Message;
 
@@ -19,11 +19,7 @@ public class GisVertx {
 
   public static Vertx instance() {
     if (vertxInstance == null) {
-      var options = new VertxOptions();
-      options.setEventLoopPoolSize(1);
-      options.setWorkerPoolSize(1);
-      options.setInternalBlockingPoolSize(1);
-      vertxInstance = Vertx.vertx(options);
+      vertxInstance = Vertx.vertx(VERTX_OPTIONS);
     }
     return vertxInstance;
   }

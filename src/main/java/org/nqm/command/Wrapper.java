@@ -1,5 +1,6 @@
 package org.nqm.command;
 
+import static org.nqm.config.GisConfig.CURRENT_DIR;
 import org.nqm.vertx.CommandVerticle;
 import org.nqm.vertx.GisVertx;
 import java.nio.file.Path;
@@ -9,8 +10,6 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.buffer.Buffer;
 
 public final class Wrapper {
-
-  private static final String CURRENT_DIR = System.getProperty("user.dir");
 
   private Wrapper() {}
 
