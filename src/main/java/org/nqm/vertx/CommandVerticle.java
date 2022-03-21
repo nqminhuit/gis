@@ -1,13 +1,16 @@
 package org.nqm.vertx;
 
 import static java.lang.System.out;
-import static org.nqm.utils.ExceptionUtils.throwIf;
+import static org.nqm.utils.GisStringUtils.isNotBlank;
 import static org.nqm.utils.StdOutUtils.CL_GREEN;
 import static org.nqm.utils.StdOutUtils.CL_PURPLE;
 import static org.nqm.utils.StdOutUtils.CL_RED;
 import static org.nqm.utils.StdOutUtils.FONT_BOLD;
 import static org.nqm.utils.StdOutUtils.coloringWord;
+import static org.nqm.utils.StdOutUtils.errln;
 import static org.nqm.utils.StdOutUtils.infof;
+import static org.nqm.utils.StdOutUtils.warnln;
+import org.nqm.config.GisConfig;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -32,10 +35,11 @@ public class CommandVerticle extends AbstractVerticle {
     this.colorOutput = colorOutput;
 
     this.commandWithArgs = new String[args.length + 1];
-    this.commandWithArgs[0] = "/usr/bin/git";
+    this.commandWithArgs[0] = GisConfig.GIT_HOME_DIR;
     for (int i = 0; i < args.length; i++) {
       this.commandWithArgs[i + 1] = args[i];
     }
+    GisVertx.eventAddDir(path);
   }
 
   @Override
@@ -46,16 +50,14 @@ public class CommandVerticle extends AbstractVerticle {
           promise.complete(new ProcessBuilder(commandWithArgs).directory(path.toFile()).start());
         }
         catch (IOException e) {
-          throw new RuntimeException(e);
+          // TODO log stacktrace if enable debug.
+          errln(e.getMessage());
         }
       },
       false,
       res -> {
         Optional.of(res.result()).ifPresent(this::safelyPrint);
-        // root should be considered the last dir
-        if (System.getProperty("user.dir").equals(path.toString())) {
-          System.exit(0);
-        }
+        GisVertx.eventRemoveDir(path);
       });
   }
 
@@ -69,16 +71,16 @@ public class CommandVerticle extends AbstractVerticle {
       }
       out.print(sb.toString());
       Optional.of(pr.waitFor())
-        .ifPresent(exitCode -> throwIf(exitCode != 0,
-          () -> new RuntimeException("Process exits with code: '%s'".formatted(exitCode))));
+        .filter(exitCode -> exitCode != 0)
+        .ifPresent(exitCode -> {
+          // TODO log stacktrace if enable debug.
+          warnln("Could not perform on module: '%s'".formatted(this.path.getFileName()));
+        });
     }
     catch (IOException | InterruptedException e) {
-      throw new RuntimeException(e);
+      // TODO log stacktrace if enable debug.
+      errln(e.getMessage());
     }
-  }
-
-  private static boolean isNotBlank(String s) {
-    return s != null && !s.isBlank();
   }
 
   private static String coloringOuput(String line) {

@@ -56,7 +56,7 @@
             <manifest>
               <addClasspath>true</addClasspath>
               <classpathPrefix>${project.build.directory}/lib</classpathPrefix>
-              <mainClass>org.nqm.GisCommand</mainClass>
+              <mainClass>org.nqm.Gis</mainClass>
             </manifest>
           </archive>
         </configuration>
