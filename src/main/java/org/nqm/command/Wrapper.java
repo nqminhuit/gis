@@ -1,6 +1,7 @@
 package org.nqm.command;
 
 import static org.nqm.config.GisConfig.CURRENT_DIR;
+import static org.nqm.utils.StdOutUtils.errln;
 import org.nqm.vertx.CommandVerticle;
 import org.nqm.vertx.GisVertx;
 import java.nio.file.Path;
@@ -27,7 +28,8 @@ public final class Wrapper {
   public static void forEachModulesDo(Consumer<Path> consumeDir) {
     var gitModulesFilePath = Path.of(".", ".gitmodules");
     if (!gitModulesFilePath.toFile().exists()) {
-      throw new RuntimeException("There is no git submodules under this directory!");
+      errln("There is no git submodules under this directory!");
+      return;
     }
 
     GisVertx.instance().fileSystem().readFile(gitModulesFilePath.toString())
@@ -41,7 +43,7 @@ public final class Wrapper {
             .forEach(dir -> consumeDir.accept(dir));
         }
         else {
-          throw new RuntimeException("failed to read file '.gitmodules'");
+          errln("failed to read file '.gitmodules'");
         }
       });
   }

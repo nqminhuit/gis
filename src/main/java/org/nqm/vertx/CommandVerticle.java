@@ -7,6 +7,7 @@ import static org.nqm.utils.StdOutUtils.CL_PURPLE;
 import static org.nqm.utils.StdOutUtils.CL_RED;
 import static org.nqm.utils.StdOutUtils.FONT_BOLD;
 import static org.nqm.utils.StdOutUtils.coloringWord;
+import static org.nqm.utils.StdOutUtils.errln;
 import static org.nqm.utils.StdOutUtils.infof;
 import static org.nqm.utils.StdOutUtils.warnln;
 import org.nqm.config.GisConfig;
@@ -49,7 +50,8 @@ public class CommandVerticle extends AbstractVerticle {
           promise.complete(new ProcessBuilder(commandWithArgs).directory(path.toFile()).start());
         }
         catch (IOException e) {
-          throw new RuntimeException(e);
+          // TODO log stacktrace if enable debug.
+          errln(e.getMessage());
         }
       },
       false,
@@ -71,12 +73,13 @@ public class CommandVerticle extends AbstractVerticle {
       Optional.of(pr.waitFor())
         .filter(exitCode -> exitCode != 0)
         .ifPresent(exitCode -> {
-          // TODO log info if enable debug.
+          // TODO log stacktrace if enable debug.
           warnln("Could not perform on module: '%s'".formatted(this.path.getFileName()));
         });
     }
     catch (IOException | InterruptedException e) {
-      throw new RuntimeException(e);
+      // TODO log stacktrace if enable debug.
+      errln(e.getMessage());
     }
   }
 

@@ -1,8 +1,10 @@
 package org.nqm.command;
 
+import static java.lang.System.out;
 import static org.nqm.command.Wrapper.deployVertx;
 import static org.nqm.command.Wrapper.forEachModulesDo;
 import static org.nqm.utils.GisStringUtils.convertToPathFromRegex;
+import static org.nqm.utils.StdOutUtils.errln;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -37,10 +39,10 @@ public class GitCommand {
 
   @Command(name = "create-branch", aliases = "cb")
   void checkoutNewBranch(@Parameters(index = "0", paramLabel = "<new_branch_name>") String newBranch) {
-    System.out.println("Which repositories to create branch? (separate by comma, use '.' for root)");
+    out.println("Which repositories to create branch? (separate by comma, use '.' for root)");
     var paths = new ArrayList<String>();
     forEachModulesDo(path -> {
-      System.out.println(" - " + path);
+      out.println(" - " + path);
       paths.add(path.toString());
     });
 
@@ -50,12 +52,13 @@ public class GitCommand {
         .map(regex -> convertToPathFromRegex(regex, paths))
         .filter(Predicate.not(String::isBlank))
         .forEach(repo -> {
-          System.out.println("running git checkout -b '%s' in repo '%s'".formatted(newBranch, repo));
+          out.println("running git checkout -b '%s' in repo '%s'".formatted(newBranch, repo));
           deployVertx(Path.of(repo), "checkout", "-b", newBranch);
         });
     }
     catch (IOException e) {
-      throw new RuntimeException(e);
+      // TODO log stacktrace if enable debug.
+      errln(e.getMessage());
     }
   }
 
