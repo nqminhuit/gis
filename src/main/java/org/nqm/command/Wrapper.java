@@ -25,7 +25,7 @@ public final class Wrapper {
     deployVertx(path, false, args);
   }
 
-  public static void forEachModulesDo(Consumer<Path> consumeDir) {
+  public static void forEachModuleDo(Consumer<Path> consumeDir) {
     var gitModulesFilePath = Path.of(".", ".gitmodules");
     if (!gitModulesFilePath.toFile().exists()) {
       errln("There is no git submodules under this directory!");

@@ -2,9 +2,10 @@ package org.nqm.command;
 
 import static java.lang.System.out;
 import static org.nqm.command.Wrapper.deployVertx;
-import static org.nqm.command.Wrapper.forEachModulesDo;
+import static org.nqm.command.Wrapper.forEachModuleDo;
 import static org.nqm.utils.GisStringUtils.convertToPathFromRegex;
 import static org.nqm.utils.StdOutUtils.errln;
+import org.nqm.config.GisConfig;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -19,42 +20,40 @@ public class GitCommand {
 
   @Command(name = "pull", aliases = "pu")
   void pull() {
-    forEachModulesDo(path -> deployVertx(path, "pull"));
+    forEachModuleDo(path -> deployVertx(path, "pull"));
   }
 
   @Command(name = "status", aliases = "st")
   void status() {
-    forEachModulesDo(path -> deployVertx(path, true, "status", "-sb", "--ignore-submodules"));
+    forEachModuleDo(path -> deployVertx(path, true, "status", "-sb", "--ignore-submodules"));
   }
 
   @Command(name = "fetch", aliases = "fe")
   void fetch() {
-    forEachModulesDo(path -> deployVertx(path, "fetch"));
+    forEachModuleDo(path -> deployVertx(path, "fetch"));
   }
 
   @Command(name = "checkout", aliases = "co")
   void checkout(@Parameters(index = "0", paramLabel = "<branch name>") String branch) {
-    forEachModulesDo(path -> deployVertx(path, "checkout", branch));
+    forEachModuleDo(path -> deployVertx(path, "checkout", branch));
   }
 
-  @Command(name = "create-branch", aliases = "cb")
+  @Command(name = "checkout-branch", aliases = "cb")
   void checkoutNewBranch(@Parameters(index = "0", paramLabel = "<new_branch_name>") String newBranch) {
     out.println("Which repositories to create branch? (separate by comma, use '.' for root)");
     var paths = new ArrayList<String>();
-    forEachModulesDo(path -> {
-      out.println(" - " + path);
-      paths.add(path.toString());
+    forEachModuleDo(path -> {
+      var sPath = path.toString();
+      out.println(sPath.equals(GisConfig.CURRENT_DIR) ? " - ./" : " - " + path.getFileName());
+      paths.add(sPath);
     });
 
     try (var inputRepos = new BufferedReader(new InputStreamReader(System.in))) {
       Stream.of(inputRepos.readLine().split(","))
-        .map(String::trim)
-        .map(regex -> convertToPathFromRegex(regex, paths))
+        .distinct()
+        .map(regex -> convertToPathFromRegex(regex.trim(), paths))
         .filter(Predicate.not(String::isBlank))
-        .forEach(repo -> {
-          out.println("running git checkout -b '%s' in repo '%s'".formatted(newBranch, repo));
-          deployVertx(Path.of(repo), "checkout", "-b", newBranch);
-        });
+        .forEach(repo -> deployVertx(Path.of(repo), "checkout", "-b", newBranch));
     }
     catch (IOException e) {
       // TODO log stacktrace if enable debug.
@@ -64,8 +63,8 @@ public class GitCommand {
 
   @Command(name = "remove-branch", aliases = "rm")
   void removeBranch(@Parameters(index = "0", paramLabel = "<branch name>") String branch) {
-    // TODO need confirmation from user
-    forEachModulesDo(path -> deployVertx(path, "branch", "-d", branch));
+    // TODO need confirmation/acknowledgement from user
+    forEachModuleDo(path -> deployVertx(path, "branch", "-d", branch));
   }
 
 }
