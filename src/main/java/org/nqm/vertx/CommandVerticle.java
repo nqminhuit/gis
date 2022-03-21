@@ -1,7 +1,6 @@
 package org.nqm.vertx;
 
 import static java.lang.System.out;
-import static org.nqm.utils.ExceptionUtils.throwIf;
 import static org.nqm.utils.GisStringUtils.isNotBlank;
 import static org.nqm.utils.StdOutUtils.CL_GREEN;
 import static org.nqm.utils.StdOutUtils.CL_PURPLE;
@@ -9,6 +8,7 @@ import static org.nqm.utils.StdOutUtils.CL_RED;
 import static org.nqm.utils.StdOutUtils.FONT_BOLD;
 import static org.nqm.utils.StdOutUtils.coloringWord;
 import static org.nqm.utils.StdOutUtils.infof;
+import static org.nqm.utils.StdOutUtils.warnln;
 import org.nqm.config.GisConfig;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -38,6 +38,7 @@ public class CommandVerticle extends AbstractVerticle {
     for (int i = 0; i < args.length; i++) {
       this.commandWithArgs[i + 1] = args[i];
     }
+    GisVertx.eventAddDir(path);
   }
 
   @Override
@@ -68,8 +69,11 @@ public class CommandVerticle extends AbstractVerticle {
       }
       out.print(sb.toString());
       Optional.of(pr.waitFor())
-        .ifPresent(exitCode -> throwIf(exitCode != 0,
-          () -> new RuntimeException("Process exits with code: '%s'".formatted(exitCode))));
+        .filter(exitCode -> exitCode != 0)
+        .ifPresent(exitCode -> {
+          // TODO log info if enable debug.
+          warnln("Could not perform on module: '%s'".formatted(this.path.getFileName()));
+        });
     }
     catch (IOException | InterruptedException e) {
       throw new RuntimeException(e);
