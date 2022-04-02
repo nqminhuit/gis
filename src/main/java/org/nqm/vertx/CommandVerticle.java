@@ -39,6 +39,7 @@ public class CommandVerticle extends AbstractVerticle {
     for (int i = 0; i < args.length; i++) {
       this.commandWithArgs[i + 1] = args[i];
     }
+    // TODO if debug enabled....
     GisVertx.eventAddDir(path);
   }
 
@@ -64,10 +65,12 @@ public class CommandVerticle extends AbstractVerticle {
   private void safelyPrint(Process pr) {
     var line = "";
     var input = new BufferedReader(new InputStreamReader(pr.getInputStream()));
-    var sb = new StringBuilder(infof("Entering '%s'", "" + path.getFileName())).append('\n');
+    var sb = new StringBuilder(infof("%s", "" + path.getFileName())).append('\n');
     try {
       while (isNotBlank(line = input.readLine())) {
-        sb.append(colorOutput ? coloringOuput(line) : line).append('\n');
+        sb.append("  ")
+          .append(colorOutput ? coloringOuput(line) : line)
+          .append('\n');
       }
       out.print(sb.toString());
       Optional.of(pr.waitFor())
