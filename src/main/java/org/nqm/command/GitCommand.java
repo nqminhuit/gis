@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 import org.nqm.config.GisConfig;
+import org.nqm.config.GisLog;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
@@ -58,8 +59,8 @@ public class GitCommand {
         .forEach(repo -> deployVertx(Path.of(repo), "checkout", "-b", newBranch));
     }
     catch (IOException e) {
-      // TODO log stacktrace if enable debug.
       errln(e.getMessage());
+      GisLog.debug(e);
     }
   }
 
@@ -86,7 +87,6 @@ public class GitCommand {
       path -> isSameBranchUnderPath(branch, path),
       path -> deployVertx(path, args));
   }
-  // TODO: new command: $ git remote prune origin
 
   private boolean isSameBranchUnderPath(String branch, Path path) {
     try {
@@ -97,7 +97,7 @@ public class GitCommand {
       return currentBranch.equals(branch);
     }
     catch (IOException e) {
-      // TODO if debug enable...
+      GisLog.debug(e);
       return false;
     }
   }
@@ -112,7 +112,7 @@ public class GitCommand {
         .isPresent();
     }
     catch (IOException e) {
-      // TODO log stacktrace if enable debug.
+      GisLog.debug(e);
       return false;
     }
   }
