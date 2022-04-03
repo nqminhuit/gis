@@ -1,6 +1,7 @@
 package org.nqm.utils;
 
 import static java.lang.System.err;
+import static java.lang.System.out;
 
 public class StdOutUtils {
 
@@ -24,6 +25,10 @@ public class StdOutUtils {
 
   public static void warnln(String msg) {
     err.println(CL_YELLOW + "WARNING: " + msg + CL_RESET);
+  }
+
+  public static void debugln(String msg) {
+    out.println(CL_YELLOW + "[DEBUG] " + msg + CL_RESET);
   }
 
   public static String infof(String msgFormat, String word) {

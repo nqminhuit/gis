@@ -10,7 +10,6 @@ import static org.nqm.utils.StdOutUtils.coloringWord;
 import static org.nqm.utils.StdOutUtils.errln;
 import static org.nqm.utils.StdOutUtils.infof;
 import static org.nqm.utils.StdOutUtils.warnln;
-import org.nqm.config.GisConfig;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -19,6 +18,8 @@ import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.nqm.config.GisConfig;
+import org.nqm.config.GisLog;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Promise;
 
@@ -39,7 +40,7 @@ public class CommandVerticle extends AbstractVerticle {
     for (int i = 0; i < args.length; i++) {
       this.commandWithArgs[i + 1] = args[i];
     }
-    // TODO if debug enabled....
+    GisLog.debug("executing command '%s' under directory '%s'", commandWithArgs, path);
     GisVertx.eventAddDir(path);
   }
 
@@ -51,8 +52,8 @@ public class CommandVerticle extends AbstractVerticle {
           promise.complete(new ProcessBuilder(commandWithArgs).directory(path.toFile()).start());
         }
         catch (IOException e) {
-          // TODO log stacktrace if enable debug.
           errln(e.getMessage());
+          GisLog.debug(e);
         }
       },
       false,
@@ -76,13 +77,13 @@ public class CommandVerticle extends AbstractVerticle {
       Optional.of(pr.waitFor())
         .filter(exitCode -> exitCode != 0)
         .ifPresent(exitCode -> {
-          // TODO log stacktrace if enable debug.
+          GisLog.debug("exit with code: '%s'".formatted(exitCode));
           warnln("Could not perform on module: '%s'".formatted(this.path.getFileName()));
         });
     }
     catch (IOException | InterruptedException e) {
-      // TODO log stacktrace if enable debug.
       errln(e.getMessage());
+      GisLog.debug(e);
     }
   }
 
@@ -103,7 +104,7 @@ public class CommandVerticle extends AbstractVerticle {
       words[2] = coloringWord(words[2], CL_GREEN);
     }
     catch (ArrayIndexOutOfBoundsException e) {
-      // just ignore it
+      GisLog.debug(e.getMessage());
     }
     return Stream.of(words).collect(Collectors.joining(" "));
   }

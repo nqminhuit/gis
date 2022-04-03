@@ -6,6 +6,7 @@ import java.nio.file.Path;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
+import org.nqm.config.GisLog;
 import org.nqm.vertx.CommandVerticle;
 import org.nqm.vertx.GisVertx;
 import io.vertx.core.AsyncResult;
@@ -17,7 +18,7 @@ public final class Wrapper {
 
   public static void deployVertx(Path path, boolean colorOutput, String... args) {
     if (!path.toFile().exists()) {
-      // TODO if debug enable, print it out
+      GisLog.debug("directory '%s' does not exist!".formatted("" + path));
     }
     GisVertx.instance().deployVerticle(new CommandVerticle(path, colorOutput, args));
   }
@@ -54,7 +55,7 @@ public final class Wrapper {
       consumeDir.accept(path);
     }
     else {
-      // TODO if debug enable...
+      GisLog.debug("directory '%s' does not satisfy the predicate".formatted("" + path));
       GisVertx.eventRemoveDir(path);
     }
   }
