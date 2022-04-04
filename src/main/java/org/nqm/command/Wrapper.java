@@ -56,7 +56,6 @@ public final class Wrapper {
     }
     else {
       GisLog.debug("directory '%s' does not satisfy the predicate".formatted("" + path));
-      GisVertx.eventRemoveDir(path);
     }
   }
 

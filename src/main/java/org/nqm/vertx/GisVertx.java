@@ -4,6 +4,7 @@ import static org.nqm.config.GisConfig.VERTX_OPTIONS;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import org.nqm.config.GisLog;
 import io.vertx.core.Vertx;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.eventbus.Message;
@@ -48,16 +49,19 @@ public class GisVertx {
 
   private static void handleRemoveProcessedDir(Message<Object> msg) {
     processedModules().removeIf(d -> d.equals("" + msg.body()));
+    GisLog.debug("### queue size = '%s'".formatted(processedModules().size()));
     if (processedModules().size() < 1) {
       System.exit(0);
     }
   }
 
   public static void eventAddDir(Path dir) {
+    GisLog.debug("+++ adding dir '%s' to queue".formatted("" + dir));
     eventBus().send(GisVertx.ADDR_ADD_DIR, "" + dir);
   }
 
   public static void eventRemoveDir(Path dir) {
+    GisLog.debug("--- removing dir '%s' from queue".formatted("" + dir));
     eventBus().send(GisVertx.ADDR_REM_DIR, "" + dir);
   }
 
