@@ -2,6 +2,7 @@ package org.nqm.command;
 
 import static org.nqm.config.GisConfig.CURRENT_DIR;
 import static org.nqm.utils.StdOutUtils.errln;
+import java.io.File;
 import java.nio.file.Path;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
@@ -27,10 +28,15 @@ public final class Wrapper {
     deployVertx(path, false, args);
   }
 
-  private static void forEachModuleWith(Predicate<Path> pred, Consumer<Path> consumeDir, boolean includeRoot) {
-    var gitModulesFilePath = Path.of(".", ".gitmodules");
-    if (!gitModulesFilePath.toFile().exists()) {
-      errln("There is no git submodules under this directory!");
+  private static void forEachModuleWith(Predicate<Path> pred, Consumer<Path> consumeDir, boolean withRoot) {
+    var gitModulesFilePath = Stream.of(Path.of(".", ".gis-modules"), Path.of(".", ".gitmodules"))
+      .map(Path::toFile)
+      .filter(File::exists)
+      .findFirst()
+      .orElse(null);
+
+    if (gitModulesFilePath == null) {
+      errln("Could not find '.gis-modules' or '.gitmodules' under this directory!");
       return;
     }
 
@@ -38,7 +44,7 @@ public final class Wrapper {
       .map(Wrapper::extractDirs)
       .onComplete((AsyncResult<Stream<String>> ar) -> {
         if (ar.succeeded()) {
-          shouldConsumeDirOrNot(pred.and(x -> includeRoot), consumeDir, Path.of(CURRENT_DIR));
+          shouldConsumeDirOrNot(pred.and(x -> withRoot), consumeDir, Path.of(CURRENT_DIR));
           ar.result()
             .map(dir -> Path.of(CURRENT_DIR, dir))
             .filter(dir -> dir.toFile().exists())
