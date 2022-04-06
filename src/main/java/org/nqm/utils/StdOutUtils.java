@@ -20,15 +20,15 @@ public class StdOutUtils {
   public static final String FONT_BOLD = "\u001B[1m";
 
   public static void errln(String msg) {
-    err.println(CL_RED + "ERROR: " + msg + CL_RESET);
+    err.println("  " + CL_RED + "ERROR: " + msg + CL_RESET);
   }
 
   public static void warnln(String msg) {
-    err.println(CL_YELLOW + "WARNING: " + msg + CL_RESET);
+    err.println("  " + CL_YELLOW + "WARNING: " + msg + CL_RESET);
   }
 
   public static void debugln(String msg) {
-    out.println(CL_YELLOW + "[DEBUG] " + msg + CL_RESET);
+    out.println("  " + CL_YELLOW + "[DEBUG] " + msg + CL_RESET);
   }
 
   public static String infof(String msgFormat, String word) {
