@@ -3,8 +3,8 @@ package org.nqm.command;
 import static java.lang.System.out;
 import static org.nqm.command.Wrapper.deployVertx;
 import static org.nqm.command.Wrapper.forEachModuleDo;
-import static org.nqm.command.Wrapper.forEachSubmoduleDo;
 import static org.nqm.command.Wrapper.forEachModuleWith;
+import static org.nqm.command.Wrapper.forEachSubmoduleDo;
 import static org.nqm.utils.GisStringUtils.convertToPathFromRegex;
 import static org.nqm.utils.StdOutUtils.errln;
 import java.io.BufferedReader;
@@ -17,6 +17,7 @@ import java.util.function.Predicate;
 import java.util.stream.Stream;
 import org.nqm.config.GisConfig;
 import org.nqm.config.GisLog;
+import org.nqm.utils.GisStringUtils;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
@@ -48,8 +49,10 @@ public class GitCommand {
 
   @Command(name = "checkout-branch", aliases = "cb")
   void checkoutNewBranch(@Parameters(index = "0", paramLabel = "<new_branch_name>") String newBranch) {
-    out.println("Which module to create branch? (separate by comma, use '.' for root,"
-      + " '%s' for all modules, '%s' for all submodules)".formatted(ALL_MODULES, ALL_SUBMODULES));
+    out.println("""
+      Which module to create branch?
+      (separate by ',', use '.' for root, use '%s' for all modules, use '%s' for all submodules)
+      """.formatted(ALL_MODULES, ALL_SUBMODULES));
     var paths = new ArrayList<String>();
     forEachModuleDo(path -> {
       var sPath = path.toString();
@@ -59,13 +62,16 @@ public class GitCommand {
 
     try (var inputRepos = new BufferedReader(new InputStreamReader(System.in))) {
       var input = inputRepos.readLine().split(",");
+      if (input.length == 1 && GisStringUtils.isBlank(input[0])) {
+        System.exit(0); // TODO: should centralize system exit to 1 place?
+      }
       Consumer<Path> deployCommand = path -> deployVertx(path, "checkout", "-b", newBranch);
-      if (streamOf(input).map(String::trim).filter(ALL_MODULES::equals).findFirst().isPresent()) {
+      if (streamOf(input).filter(ALL_MODULES::equals).findFirst().isPresent()) {
         forEachModuleDo(deployCommand);
         return;
       }
 
-      if (streamOf(input).map(String::trim).filter(ALL_SUBMODULES::equals).findFirst().isPresent()) {
+      if (streamOf(input).filter(ALL_SUBMODULES::equals).findFirst().isPresent()) {
         forEachSubmoduleDo(deployCommand);
         return;
       }
@@ -83,7 +89,7 @@ public class GitCommand {
   }
 
   private static Stream<String> streamOf(String[] input) throws IOException {
-    return Stream.of(input).distinct().map(String::trim);
+    return Stream.of(input).map(String::trim).distinct();
   }
 
   @Command(name = "remove-branch", aliases = "rm")
