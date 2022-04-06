@@ -27,7 +27,7 @@ public final class Wrapper {
     deployVertx(path, false, args);
   }
 
-  public static void forEachModuleWith(Predicate<Path> pred, Consumer<Path> consumeDir) {
+  private static void forEachModuleWith(Predicate<Path> pred, Consumer<Path> consumeDir, boolean includeRoot) {
     var gitModulesFilePath = Path.of(".", ".gitmodules");
     if (!gitModulesFilePath.toFile().exists()) {
       errln("There is no git submodules under this directory!");
@@ -38,7 +38,7 @@ public final class Wrapper {
       .map(Wrapper::extractDirs)
       .onComplete((AsyncResult<Stream<String>> ar) -> {
         if (ar.succeeded()) {
-          shouldConsumeDirOrNot(pred, consumeDir, Path.of(CURRENT_DIR));
+          shouldConsumeDirOrNot(pred.and(x -> includeRoot), consumeDir, Path.of(CURRENT_DIR));
           ar.result()
             .map(dir -> Path.of(CURRENT_DIR, dir))
             .filter(dir -> dir.toFile().exists())
@@ -48,6 +48,10 @@ public final class Wrapper {
           errln("failed to read file '.gitmodules'");
         }
       });
+  }
+
+  public static void forEachModuleWith(Predicate<Path> pred, Consumer<Path> consumeDir) {
+    forEachModuleWith(pred, consumeDir, true);
   }
 
   private static void shouldConsumeDirOrNot(Predicate<Path> pred, Consumer<Path> consumeDir, Path path) {
@@ -61,6 +65,10 @@ public final class Wrapper {
 
   public static void forEachModuleDo(Consumer<Path> consumeDir) {
     forEachModuleWith(p -> true, consumeDir);
+  }
+
+  public static void forEachSubmoduleDo(Consumer<Path> consumeDir) {
+    forEachModuleWith(p -> true, consumeDir, false);
   }
 
   private static Stream<String> extractDirs(Buffer buffer) {
