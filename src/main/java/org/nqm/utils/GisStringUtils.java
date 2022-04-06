@@ -12,6 +12,10 @@ public class GisStringUtils {
     return s != null && !s.isBlank();
   }
 
+  public static boolean isBlank(String s) {
+    return !isNotBlank(s);
+  }
+
   public static String convertToPathFromRegex(String regex, List<String> items) {
     if (".".equals(regex)) {
       return "" + CURRENT_DIR;
