@@ -50,11 +50,8 @@ public class GisVertx {
   }
 
   private static void processedModule(Message<Object> msg) {
-    var module = "" + msg.body();
     var modules = processedModules();
-    if (modules.get(module) != null) {
-      modules.put(module, true);
-    }
+    modules.computeIfPresent("" + msg.body(), (k, v) -> true);
     if (!modules.isEmpty() && modules.values().stream().allMatch(Boolean.TRUE::equals)) {
       System.exit(0);
     }

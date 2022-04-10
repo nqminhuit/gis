@@ -74,7 +74,7 @@ public class CommandVerticle extends AbstractVerticle {
     var sb = new StringBuilder(infof("%s", "" + path.getFileName()));
     try {
       while (isNotBlank(line = input.readLine())) {
-        sb.append(commandWithArgs[1].equals("status") ? gitStatus(line) : "\n  %s".formatted(line));
+        sb.append(commandWithArgs[1].equals("status") ? gitStatus(line) : "%n  %s".formatted(line));
       }
       out.println(sb.toString());
       Optional.of(pr.waitFor())
