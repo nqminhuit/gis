@@ -61,40 +61,17 @@ public class CommandVerticle extends AbstractVerticle {
   private void safelyPrint(Process pr) {
     var line = "";
     var input = new BufferedReader(new InputStreamReader(pr.getInputStream()));
-    var sb = new StringBuilder(infof("%s", "" + path.getFileName())).append('\n');
+    var sb = new StringBuilder(infof("%s", "" + path.getFileName()));
     try {
       while (isNotBlank(line = input.readLine())) {
-        if (line.startsWith("# branch.oid")) {
-          continue;
-        }
-        if (line.startsWith("# branch.head")) {
-          sb.append("  ## ").append(coloringWord(line.split("\s")[2], CL_GREEN)).append("...");
-        }
-        else if (line.startsWith("# branch.upstream")) {
-          sb.append(coloringWord(line.split("\s")[2], CL_RED));
-        }
-        else if (line.startsWith("# branch.ab")) {
-          Optional.of(line.split("\s"))
-            .map(CommandVerticle::buildAheadBehind)
-            .filter(GisStringUtils::isNotBlank)
-            .map(" [%s]"::formatted)
-            .ifPresent(sb::append);
-          sb.append('\n');
+        if (commandWithArgs[1].equals("status")) {
+          sb.append(gitStatus(line));
         }
         else {
-          final var immutableLine = line;
-          UnaryOperator<String> getFiles = filesChange -> immutableLine.startsWith("2")
-            ? Optional.of(filesChange.split("\t")).map(s -> s[1] + " -> " + s[0]).orElse("")
-            : filesChange;
-
-          Optional.of(line.split("\s"))
-            .ifPresent(splitS -> sb.append("  ")
-              .append(Optional.of(splitS[1].toCharArray()).map(CommandVerticle::buildStaging).orElse(""))
-              .append(Optional.of(splitS[splitS.length - 1]).map(getFiles).orElse(""))
-              .append('\n'));
+          sb.append("\n  ").append(line);
         }
       }
-      out.print(sb.toString());
+      out.println(sb.toString());
       Optional.of(pr.waitFor())
         .filter(exitCode -> exitCode != 0)
         .ifPresent(exitCode -> {
@@ -110,6 +87,38 @@ public class CommandVerticle extends AbstractVerticle {
       GisLog.debug(e);
       Thread.currentThread().interrupt();
     }
+  }
+
+  private static String gitStatus(String line) {
+    var sb = new StringBuilder();
+    if (line.startsWith("# branch.oid")) {
+      return "";
+    }
+    if (line.startsWith("# branch.head")) {
+      sb.append("\n  ## ").append(coloringWord(line.split("\s")[2], CL_GREEN));
+    }
+    else if (line.startsWith("# branch.upstream")) {
+      sb.append("...").append(coloringWord(line.split("\s")[2], CL_RED));
+    }
+    else if (line.startsWith("# branch.ab")) {
+      Optional.of(line.split("\s"))
+        .map(CommandVerticle::buildAheadBehind)
+        .filter(GisStringUtils::isNotBlank)
+        .map(" [%s]"::formatted)
+        .ifPresent(sb::append);
+    }
+    else {
+      final var immutableLine = line;
+      UnaryOperator<String> getFiles = filesChange -> immutableLine.startsWith("2")
+        ? Optional.of(filesChange.split("\t")).map(s -> s[1] + " -> " + s[0]).orElse("")
+        : filesChange;
+
+      Optional.of(line.split("\s"))
+        .ifPresent(splitS -> sb.append("\n  ")
+          .append(Optional.of(splitS[1].toCharArray()).map(CommandVerticle::buildStaging).orElse(""))
+          .append(Optional.of(splitS[splitS.length - 1]).map(getFiles).orElse("")));
+    }
+    return sb.toString();
   }
 
   private static String buildAheadBehind(String[] splitS) {
