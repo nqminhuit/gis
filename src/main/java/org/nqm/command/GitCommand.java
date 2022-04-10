@@ -34,7 +34,7 @@ public class GitCommand {
 
   @Command(name = "status", aliases = "st")
   void status() {
-    forEachModuleDo(path -> deployVertx(path, true, "status", "-sb", "--ignore-submodules"));
+    forEachModuleDo(path -> deployVertx(path, "status", "-sb", "--ignore-submodules", "--porcelain=v2"));
   }
 
   @Command(name = "fetch", aliases = "fe")
@@ -106,11 +106,7 @@ public class GitCommand {
     if (!isConfirmed("Are you sure you want to push to remote '%s' [Y/n]".formatted(branch))) {
       return;
     }
-
-    var args = newRemoteBranch
-      ? new String[] { "push", "-u", "origin", branch }
-      : new String[] { "push" };
-
+    var args = newRemoteBranch ? new String[] { "push", "-u", "origin", branch } : new String[] { "push" };
     forEachModuleWith(
       path -> isSameBranchUnderPath(branch, path),
       path -> deployVertx(path, args));

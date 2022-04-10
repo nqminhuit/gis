@@ -39,4 +39,7 @@ public class StdOutUtils {
     return color + word + CL_RESET;
   }
 
+  public static String coloringWord(Character c, String color) {
+    return color + c + CL_RESET;
+  }
 }
