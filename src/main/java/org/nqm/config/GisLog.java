@@ -11,6 +11,8 @@ public class GisLog {
 
   private static Boolean isDebugEnabled;
 
+  private GisLog() {}
+
   public static void setIsDebugEnabled(boolean b) {
     if (isDebugEnabled == null) {
       isDebugEnabled = b;

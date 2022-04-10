@@ -18,6 +18,8 @@ public class GisVertx {
   public static final String ADDR_ADD_DIR = "add.dir";
   public static final String ADDR_REM_DIR = "remove.dir";
 
+  private GisVertx() {}
+
   public static Vertx instance() {
     if (vertxInstance == null) {
       vertxInstance = Vertx.vertx(VERTX_OPTIONS);
@@ -50,7 +52,7 @@ public class GisVertx {
   private static void handleRemoveProcessedDir(Message<Object> msg) {
     processedModules().removeIf(d -> d.equals("" + msg.body()));
     GisLog.debug("### queue size = '%s'".formatted(processedModules().size()));
-    if (processedModules().size() < 1) {
+    if (processedModules().isEmpty()) {
       System.exit(0);
     }
   }

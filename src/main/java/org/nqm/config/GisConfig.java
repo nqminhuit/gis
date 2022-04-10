@@ -15,7 +15,6 @@ public class GisConfig {
     options.setEventLoopPoolSize(1);
     options.setWorkerPoolSize(1);
     options.setInternalBlockingPoolSize(1);
-    // options.setWarningExceptionTime(100);
     options.setBlockedThreadCheckInterval(10000);
     return options;
   }

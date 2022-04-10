@@ -1,7 +1,7 @@
 package org.nqm.utils;
 
-import static java.lang.System.err;
-import static java.lang.System.out;
+import static java.lang.System.err; // NOSONAR
+import static java.lang.System.out; // NOSONAR
 
 public class StdOutUtils {
 
