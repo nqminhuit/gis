@@ -1,6 +1,6 @@
 package org.nqm.vertx;
 
-import static java.lang.System.out;
+import static java.lang.System.out; // NOSONAR
 import static java.util.function.Predicate.not;
 import static org.nqm.utils.GisStringUtils.isNotBlank;
 import static org.nqm.utils.StdOutUtils.CL_GREEN;
@@ -14,7 +14,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.file.Path;
 import java.util.Optional;
-import java.util.function.Function;
+import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.nqm.config.GisConfig;
@@ -83,7 +83,7 @@ public class CommandVerticle extends AbstractVerticle {
         }
         else {
           final var immutableLine = line;
-          Function<String, String> getFiles = filesChange -> immutableLine.startsWith("2")
+          UnaryOperator<String> getFiles = filesChange -> immutableLine.startsWith("2")
             ? Optional.of(filesChange.split("\t")).map(s -> s[1] + " -> " + s[0]).orElse("")
             : filesChange;
 
@@ -102,9 +102,13 @@ public class CommandVerticle extends AbstractVerticle {
           warnln("Could not perform on module: '%s'".formatted(this.path.getFileName()));
         });
     }
-    catch (IOException | InterruptedException e) {
+    catch (IOException e) {
       errln(e.getMessage());
       GisLog.debug(e);
+    }
+    catch (InterruptedException e) {
+      GisLog.debug(e);
+      Thread.currentThread().interrupt();
     }
   }
 

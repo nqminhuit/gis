@@ -1,6 +1,6 @@
 package org.nqm.command;
 
-import static java.lang.System.out;
+import static java.lang.System.out; // NOSONAR
 import static org.nqm.command.Wrapper.deployVertx;
 import static org.nqm.command.Wrapper.forEachModuleDo;
 import static org.nqm.command.Wrapper.forEachModuleWith;
@@ -66,12 +66,12 @@ public class GitCommand {
         System.exit(0); // TODO: should centralize system exit to 1 place?
       }
       Consumer<Path> deployCommand = path -> deployVertx(path, "checkout", "-b", newBranch);
-      if (streamOf(input).filter(ALL_MODULES::equals).findFirst().isPresent()) {
+      if (streamOf(input).anyMatch(ALL_MODULES::equals)) {
         forEachModuleDo(deployCommand);
         return;
       }
 
-      if (streamOf(input).filter(ALL_SUBMODULES::equals).findFirst().isPresent()) {
+      if (streamOf(input).anyMatch(ALL_SUBMODULES::equals)) {
         forEachSubmoduleDo(deployCommand);
         return;
       }
@@ -88,7 +88,7 @@ public class GitCommand {
     }
   }
 
-  private static Stream<String> streamOf(String[] input) throws IOException {
+  private static Stream<String> streamOf(String[] input) {
     return Stream.of(input).map(String::trim).distinct();
   }
 
@@ -114,7 +114,7 @@ public class GitCommand {
 
   private boolean isSameBranchUnderPath(String branch, Path path) {
     try {
-      var proc = new ProcessBuilder("git", "branch", "--show-current")
+      var proc = new ProcessBuilder(GisConfig.GIT_HOME_DIR, "branch", "--show-current")
         .directory(path.toFile())
         .start();
       var currentBranch = new BufferedReader(new InputStreamReader(proc.getInputStream())).readLine();
@@ -130,10 +130,7 @@ public class GitCommand {
     out.print(question + " ");
     try (var reader = new BufferedReader(new InputStreamReader(System.in))) {
       var input = reader.readLine();
-      return Stream.of(new String[] { "y", "ye", "yes" })
-        .filter(s -> s.equalsIgnoreCase(input))
-        .findFirst()
-        .isPresent();
+      return Stream.of("y", "ye", "yes").anyMatch(s -> s.equalsIgnoreCase(input));
     }
     catch (IOException e) {
       GisLog.debug(e);
