@@ -17,15 +17,11 @@ public final class Wrapper {
 
   private Wrapper() {}
 
-  public static void deployVertx(Path path, boolean colorOutput, String... args) {
+  public static void deployVertx(Path path, String... args) {
     if (!path.toFile().exists()) {
       GisLog.debug("directory '%s' does not exist!".formatted("" + path));
     }
-    GisVertx.instance().deployVerticle(new CommandVerticle(path, colorOutput, args));
-  }
-
-  public static void deployVertx(Path path, String... args) {
-    deployVertx(path, false, args);
+    GisVertx.instance().deployVerticle(new CommandVerticle(path, args));
   }
 
   private static void forEachModuleWith(Predicate<Path> pred, Consumer<Path> consumeDir, boolean withRoot) {

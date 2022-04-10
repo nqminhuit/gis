@@ -1,11 +1,10 @@
 package org.nqm.vertx;
 
 import static java.lang.System.out;
+import static java.util.function.Predicate.not;
 import static org.nqm.utils.GisStringUtils.isNotBlank;
 import static org.nqm.utils.StdOutUtils.CL_GREEN;
-import static org.nqm.utils.StdOutUtils.CL_PURPLE;
 import static org.nqm.utils.StdOutUtils.CL_RED;
-import static org.nqm.utils.StdOutUtils.FONT_BOLD;
 import static org.nqm.utils.StdOutUtils.coloringWord;
 import static org.nqm.utils.StdOutUtils.errln;
 import static org.nqm.utils.StdOutUtils.infof;
@@ -15,26 +14,22 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.file.Path;
 import java.util.Optional;
-import java.util.function.Predicate;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.nqm.config.GisConfig;
 import org.nqm.config.GisLog;
+import org.nqm.utils.GisStringUtils;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Promise;
 
 public class CommandVerticle extends AbstractVerticle {
 
-  private static final String SPACES_NOT_INSIDE_SQUARE_BRACKETS = "\\s((?<!\\[.*)|(?!.*\\]))";
-
   private final String[] commandWithArgs;
   private final Path path;
-  private final boolean colorOutput;
 
-  public CommandVerticle(Path path, boolean colorOutput, String... args) {
+  public CommandVerticle(Path path, String... args) {
     this.path = path;
-    this.colorOutput = colorOutput;
-
     this.commandWithArgs = new String[args.length + 1];
     this.commandWithArgs[0] = GisConfig.GIT_HOME_DIR;
     for (int i = 0; i < args.length; i++) {
@@ -69,9 +64,35 @@ public class CommandVerticle extends AbstractVerticle {
     var sb = new StringBuilder(infof("%s", "" + path.getFileName())).append('\n');
     try {
       while (isNotBlank(line = input.readLine())) {
-        sb.append("  ")
-          .append(colorOutput ? coloringOuput(line) : line)
-          .append('\n');
+        if (line.startsWith("# branch.oid")) {
+          continue;
+        }
+        if (line.startsWith("# branch.head")) {
+          sb.append("  ## ").append(coloringWord(line.split("\s")[2], CL_GREEN)).append("...");
+        }
+        else if (line.startsWith("# branch.upstream")) {
+          sb.append(coloringWord(line.split("\s")[2], CL_RED));
+        }
+        else if (line.startsWith("# branch.ab")) {
+          Optional.of(line.split("\s"))
+            .map(CommandVerticle::buildAheadBehind)
+            .filter(GisStringUtils::isNotBlank)
+            .map(" [%s]"::formatted)
+            .ifPresent(sb::append);
+          sb.append('\n');
+        }
+        else {
+          final var immutableLine = line;
+          Function<String, String> getFiles = filesChange -> immutableLine.startsWith("2")
+            ? Optional.of(filesChange.split("\t")).map(s -> s[1] + " -> " + s[0]).orElse("")
+            : filesChange;
+
+          Optional.of(line.split("\s"))
+            .ifPresent(splitS -> sb.append("  ")
+              .append(Optional.of(splitS[1].toCharArray()).map(CommandVerticle::buildStaging).orElse(""))
+              .append(Optional.of(splitS[splitS.length - 1]).map(getFiles).orElse(""))
+              .append('\n'));
+        }
       }
       out.print(sb.toString());
       Optional.of(pr.waitFor())
@@ -87,26 +108,27 @@ public class CommandVerticle extends AbstractVerticle {
     }
   }
 
-  private static String coloringOuput(String line) {
-    var words = Stream.of(line.split(SPACES_NOT_INSIDE_SQUARE_BRACKETS))
-      .filter(Predicate.not(String::isBlank))
-      .toArray(String[]::new);
-
-    try {
-      String startWord = words[0];
-      if (!startWord.startsWith("##")) {
-        words[0] = coloringWord(startWord, CL_RED);
-      }
-      else {
-        words[1] = coloringWord(FONT_BOLD + words[1], CL_PURPLE);
-      }
-
-      words[2] = coloringWord(words[2], CL_GREEN);
-    }
-    catch (ArrayIndexOutOfBoundsException e) {
-      GisLog.debug(e.getMessage());
-    }
-    return Stream.of(words).collect(Collectors.joining(" "));
+  private static String buildAheadBehind(String[] splitS) {
+    var ahead = Optional.of(splitS[2])
+      .map(s -> s.replace("+", ""))
+      .filter(not("0"::equals))
+      .map(s -> "ahead " + coloringWord(s, CL_GREEN))
+      .orElse("");
+    var behind = Optional.of(splitS[3])
+      .map(s -> s.replace("-", ""))
+      .filter(not("0"::equals))
+      .map(s -> "behind " + coloringWord(s, CL_RED))
+      .orElse("");
+    return Stream.of(ahead, behind).filter(not(String::isBlank)).collect(Collectors.joining(", "));
   }
 
+  private static String buildStaging(char[] chars) {
+    return Optional.of(chars[0])
+      .map(s -> s != '.' ? coloringWord(s, CL_GREEN) : s + "")
+      .orElse("") +
+      Optional.of(chars[1])
+        .map(s -> s != '.' ? coloringWord(s, CL_RED) : s + "")
+        .orElse("")
+      + " ";
+  }
 }
