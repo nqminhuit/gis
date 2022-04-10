@@ -17,8 +17,6 @@ public class StdOutUtils {
   public static final String CL_CYAN = "\u001B[36m";
   public static final String CL_WHITE = "\u001B[37m";
 
-  public static final String FONT_BOLD = "\u001B[1m";
-
   public static void errln(String msg) {
     err.println("  " + CL_RED + "ERROR: " + msg + CL_RESET);
   }

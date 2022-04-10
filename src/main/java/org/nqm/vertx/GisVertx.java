@@ -2,8 +2,8 @@ package org.nqm.vertx;
 
 import static org.nqm.config.GisConfig.VERTX_OPTIONS;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 import org.nqm.config.GisLog;
 import io.vertx.core.Vertx;
 import io.vertx.core.eventbus.EventBus;
@@ -13,7 +13,7 @@ public class GisVertx {
 
   private static Vertx vertxInstance;
   private static EventBus eventBus;
-  private static List<String> processedModules;
+  private static Map<String, Boolean> processedModules;
 
   public static final String ADDR_ADD_DIR = "add.dir";
   public static final String ADDR_REM_DIR = "remove.dir";
@@ -27,9 +27,9 @@ public class GisVertx {
     return vertxInstance;
   }
 
-  private static List<String> processedModules() {
+  private static Map<String, Boolean> processedModules() {
     if (processedModules == null) {
-      processedModules = new ArrayList<>();
+      processedModules = new HashMap<>();
     }
     return processedModules;
   }
@@ -39,31 +39,31 @@ public class GisVertx {
       eventBus = instance().eventBus();
     }
 
-    eventBus.consumer(ADDR_ADD_DIR).handler(GisVertx::handleAddProcessedDir);
-    eventBus.consumer(ADDR_REM_DIR).handler(GisVertx::handleRemoveProcessedDir);
+    eventBus.consumer(ADDR_ADD_DIR).handler(GisVertx::addNewModule);
+    eventBus.consumer(ADDR_REM_DIR).handler(GisVertx::processedModule);
 
     return eventBus;
   }
 
-  private static void handleAddProcessedDir(Message<Object> msg) {
-    processedModules().add("" + msg.body());
+  private static void addNewModule(Message<Object> msg) {
+    processedModules().put("" + msg.body(), false);
   }
 
-  private static void handleRemoveProcessedDir(Message<Object> msg) {
-    processedModules().removeIf(d -> d.equals("" + msg.body()));
-    GisLog.debug("### queue size = '%s'".formatted(processedModules().size()));
-    if (processedModules().isEmpty()) {
+  private static void processedModule(Message<Object> msg) {
+    var modules = processedModules();
+    modules.computeIfPresent("" + msg.body(), (k, v) -> true);
+    if (!modules.isEmpty() && modules.values().stream().allMatch(Boolean.TRUE::equals)) {
       System.exit(0);
     }
   }
 
   public static void eventAddDir(Path dir) {
-    GisLog.debug("+++ adding dir '%s' to queue".formatted("" + dir));
+    GisLog.debug("+++ adding module '%s' to queue".formatted("" + dir.getFileName()));
     eventBus().send(GisVertx.ADDR_ADD_DIR, "" + dir);
   }
 
   public static void eventRemoveDir(Path dir) {
-    GisLog.debug("--- removing dir '%s' from queue".formatted("" + dir));
+    GisLog.debug("--- removing module '%s' from queue".formatted("" + dir.getFileName()));
     eventBus().send(GisVertx.ADDR_REM_DIR, "" + dir);
   }
 

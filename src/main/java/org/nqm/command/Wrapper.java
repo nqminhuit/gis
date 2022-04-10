@@ -2,6 +2,7 @@ package org.nqm.command;
 
 import static org.nqm.config.GisConfig.CURRENT_DIR;
 import static org.nqm.utils.StdOutUtils.errln;
+import static org.nqm.utils.StdOutUtils.warnln;
 import java.io.File;
 import java.nio.file.Path;
 import java.util.function.Consumer;
@@ -22,6 +23,10 @@ public final class Wrapper {
       GisLog.debug("directory '%s' does not exist!".formatted("" + path));
     }
     GisVertx.instance().deployVerticle(new CommandVerticle(path, args));
+  }
+
+  private static void deployEmptyVertx() {
+    GisVertx.instance().deployVerticle(new CommandVerticle());
   }
 
   private static void forEachModuleWith(Predicate<Path> pred, Consumer<Path> consumeDir, boolean withRoot) {
@@ -47,7 +52,7 @@ public final class Wrapper {
             .forEach(dir -> shouldConsumeDirOrNot(pred, consumeDir, dir));
         }
         else {
-          errln("failed to read file '.gitmodules'");
+          errln("failed to read file '.gis-modules' or '.gitmodules'");
         }
       });
   }
@@ -61,7 +66,8 @@ public final class Wrapper {
       consumeDir.accept(path);
     }
     else {
-      GisLog.debug("directory '%s' does not satisfy the predicate".formatted("" + path));
+      warnln("module '%s' does not satisfy the predicate".formatted("" + path.getFileName()));
+      deployEmptyVertx();
     }
   }
 

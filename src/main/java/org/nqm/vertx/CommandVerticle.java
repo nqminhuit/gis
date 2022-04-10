@@ -35,12 +35,22 @@ public class CommandVerticle extends AbstractVerticle {
     for (int i = 0; i < args.length; i++) {
       this.commandWithArgs[i + 1] = args[i];
     }
-    GisLog.debug("executing command '%s' under directory '%s'", commandWithArgs, path);
+    GisLog.debug("executing command '%s' under module '%s'", commandWithArgs, path.getFileName());
     GisVertx.eventAddDir(path);
+  }
+
+  public CommandVerticle() {
+    this.path = null;
+    this.commandWithArgs = null;
+    GisVertx.eventAddDir(Path.of("."));
   }
 
   @Override
   public void start() {
+    if (path == null) {
+      GisVertx.eventRemoveDir(Path.of("."));
+      return;
+    }
     vertx.executeBlocking(
       (Promise<Process> promise) -> {
         try {
@@ -64,12 +74,7 @@ public class CommandVerticle extends AbstractVerticle {
     var sb = new StringBuilder(infof("%s", "" + path.getFileName()));
     try {
       while (isNotBlank(line = input.readLine())) {
-        if (commandWithArgs[1].equals("status")) {
-          sb.append(gitStatus(line));
-        }
-        else {
-          sb.append("\n  ").append(line);
-        }
+        sb.append(commandWithArgs[1].equals("status") ? gitStatus(line) : "%n  %s".formatted(line));
       }
       out.println(sb.toString());
       Optional.of(pr.waitFor())
