@@ -1,13 +1,12 @@
 # Introduction
-- Features: extension for `git` to support submodule functions.
-- Blazing-fast command line application written in `Java` and built with latest technologies:
+- Features: extension for `git` to manage multiple [repositories](https://github.com/nqminhuit/gis/issues/14) or git submodules.
+- Blazing-fast command line application written in `Java` and built on top of latest technologies:
     - `native image` from GraalVM to compile into machine code and run without JVM or JDK.
     - [Eclipse Vert.x](https://vertx.io/) for asynchronuos execution. (*)
-- Easy to setup:
-    - The app is completely bundled into an executable file.
-    - No extra dependencies needed.
-    - Just download and extract the `tar` file from `release` page.
-    - Add the file to your shell `path` for quick access.
+- Easy to use:
+    - The app is completely bundled into a standalone executable file, no extra dependencies needed.
+    - Add `.gis-modules` file if you need to manage multiple repos (not git submodules)
+    - Run `gis -h` or `gis <commands> -h` for help
 
 (*): the configs of Vertx were minimized to use as least resource as possible.
 
