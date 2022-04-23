@@ -22,6 +22,9 @@ public class StdOutUtils {
   public static final String CL_CYAN = "\u001B[36m";
   public static final String CL_WHITE = "\u001B[37m";
 
+  private static final String UNTRACKED_SYM = "?";
+  private static final String RENAME_SYM = "2";
+
   public static void errln(String msg) {
     err.println("  " + CL_RED + "ERROR: " + msg + CL_RESET);
   }
@@ -89,16 +92,35 @@ public class StdOutUtils {
         .ifPresent(sb::append);
     }
     else {
-      final var immutableLine = line;
-      UnaryOperator<String> getFiles = filesChange -> immutableLine.startsWith("2")
-        ? Optional.of(filesChange.split("\t")).map(s -> s[1] + " -> " + s[0]).orElse("")
-        : filesChange;
-
       Optional.of(line.split("\s"))
+        .map(StdOutUtils::preProcessUntrackFile)
         .ifPresent(splitS -> sb.append("\n  ")
           .append(Optional.of(splitS[1].toCharArray()).map(StdOutUtils::buildStaging).orElse(""))
-          .append(Optional.of(splitS[splitS.length - 1]).map(getFiles).orElse("")));
+          .append(Optional.of(splitS[splitS.length - 1]).map(getFiles(line)).orElse("")));
     }
     return sb.toString();
+  }
+
+  private static String[] preProcessUntrackFile(String[] fileStats) {
+    var length = fileStats.length;
+    if (length < 1) {
+      return null;
+    }
+    if (!UNTRACKED_SYM.equals(fileStats[0])) {
+      return fileStats;
+    }
+    var newStats = new String[length + 1];
+    newStats[0] = fileStats[0];
+    newStats[1] = " " + UNTRACKED_SYM;
+    for (int i = 1; i < length; i++) {
+      newStats[i + 1] = fileStats[i];
+    }
+    return newStats;
+  }
+
+  private static UnaryOperator<String> getFiles(String line) {
+    return filesChange -> line.startsWith(RENAME_SYM)
+      ? Optional.of(filesChange.split("\t")).map(s -> s[1] + " -> " + s[0]).orElse("")
+      : filesChange;
   }
 }
