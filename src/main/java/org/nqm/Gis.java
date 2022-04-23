@@ -11,7 +11,7 @@ import picocli.CommandLine.ScopeType;
   name = "gis",
   description = "Git extension wrapper which supports submodules",
   mixinStandardHelpOptions = true,
-  version = "1.0.0")
+  version = "1.0.1")
 public class Gis extends GitCommand {
 
   @Option(names = "-v", description = "Show more details information.", scope = ScopeType.INHERIT)
