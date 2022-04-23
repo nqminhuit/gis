@@ -88,10 +88,6 @@ public class GitCommand {
     }
   }
 
-  private static Stream<String> streamOf(String[] input) {
-    return Stream.of(input).map(String::trim).distinct();
-  }
-
   @Command(name = "remove-branch", aliases = "rm")
   void removeBranch(@Parameters(index = "0", paramLabel = "<branch name>") String branch) {
     if (isConfirmed("Are you sure you want to remove branch '%s' ? [Y/n]".formatted(branch))) {
@@ -101,15 +97,20 @@ public class GitCommand {
 
   @Command(name = "push", aliases = "pus")
   void push(@Parameters(index = "0", paramLabel = "<branch name>") String branch,
-    @Option(names = "-r", description = "push to remote origin branch") boolean newRemoteBranch) {
+    @Option(names = "-f", description = "force to update remote origin branch") boolean isForce,
+    @Option(names = "-r", description = "push to remote origin branch") boolean isNewRemoteBranch) {
 
     if (!isConfirmed("Are you sure you want to push to remote '%s' [Y/n]".formatted(branch))) {
       return;
     }
-    var args = newRemoteBranch ? new String[] { "push", "-u", "origin", branch } : new String[] { "push" };
+    var args = isNewRemoteBranch ? new String[] { "push", "-u", "origin", branch } : shouldForcePush(isForce);
     forEachModuleWith(
       path -> isSameBranchUnderPath(branch, path),
       path -> deployVertx(path, args));
+  }
+
+  private static Stream<String> streamOf(String[] input) {
+    return Stream.of(input).map(String::trim).distinct();
   }
 
   private boolean isSameBranchUnderPath(String branch, Path path) {
@@ -138,4 +139,7 @@ public class GitCommand {
     }
   }
 
+  private String[] shouldForcePush(boolean isForce) {
+    return isForce ? new String[] { "push", "-f" } : new String[] { "push" };
+  }
 }
