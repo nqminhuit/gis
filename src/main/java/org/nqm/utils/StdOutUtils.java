@@ -74,37 +74,29 @@ public class StdOutUtils {
   }
 
   public static String gitStatus(String line) {
-    var sb = new StringBuilder();
-    if (line.startsWith("# branch.oid")) {
-      return "";
-    }
-    if (line.startsWith("# branch.head")) {
-      sb.append("\n  ## ").append(coloringWord(line.split("\s")[2], CL_GREEN));
-    }
-    else if (line.startsWith("# branch.upstream")) {
-      sb.append("...").append(coloringWord(line.split("\s")[2], CL_RED));
-    }
-    else if (line.startsWith("# branch.ab")) {
-      Optional.of(line.split("\s"))
+    var lineSplit = line.split("\s");
+    return switch (lineSplit[0] + lineSplit[1]) {
+      case "#branch.oid" -> "";
+      case "#branch.head" -> "\n  ## " + coloringWord(lineSplit[2], CL_GREEN);
+      case "#branch.upstream" -> "..." + coloringWord(lineSplit[2], CL_RED);
+      case "#branch.ab" -> Optional.of(lineSplit)
         .map(StdOutUtils::buildAheadBehind)
         .filter(GisStringUtils::isNotBlank)
         .map(" [%s]"::formatted)
-        .ifPresent(sb::append);
-    }
-    else {
-      Optional.of(line.split("\s"))
+        .orElse("");
+      default -> Optional.of(lineSplit)
         .map(StdOutUtils::preProcessUntrackFile)
-        .ifPresent(splitS -> sb.append("\n  ")
-          .append(Optional.of(splitS[1].toCharArray()).map(StdOutUtils::buildStaging).orElse(""))
-          .append(Optional.of(splitS[splitS.length - 1]).map(getFiles(line)).orElse("")));
-    }
-    return sb.toString();
+        .map(splitS -> "\n  "
+          + Optional.of(splitS[1].toCharArray()).map(StdOutUtils::buildStaging).orElse("")
+          + Optional.of(splitS[splitS.length - 1]).map(getFiles(line)).orElse(""))
+        .orElse("");
+    };
   }
 
   private static String[] preProcessUntrackFile(String[] fileStats) {
     var length = fileStats.length;
     if (length < 1) {
-      return null;
+      return new String[0];
     }
     if (!UNTRACKED_SYM.equals(fileStats[0])) {
       return fileStats;
