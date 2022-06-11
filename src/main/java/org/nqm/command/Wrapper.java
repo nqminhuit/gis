@@ -19,9 +19,6 @@ public final class Wrapper {
   private Wrapper() {}
 
   public static void deployVertx(Path path, String... args) {
-    if (!path.toFile().exists()) {
-      GisLog.debug("directory '%s' does not exist!".formatted("" + path));
-    }
     GisVertx.instance().deployVerticle(new CommandVerticle(path, args));
   }
 
@@ -48,7 +45,13 @@ public final class Wrapper {
           shouldConsumeDirOrNot(pred.and(x -> withRoot), consumeDir, Path.of(CURRENT_DIR));
           ar.result()
             .map(dir -> Path.of(CURRENT_DIR, dir))
-            .filter(dir -> dir.toFile().exists())
+            .filter(dir -> {
+              if (dir.toFile().exists()) {
+                return true;
+              }
+              GisLog.debug("directory '%s' does not exist, will be ignored!".formatted("" + dir));
+              return false;
+            })
             .forEach(dir -> shouldConsumeDirOrNot(pred, consumeDir, dir));
         }
         else {
