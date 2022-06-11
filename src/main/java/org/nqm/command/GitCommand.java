@@ -42,6 +42,11 @@ public class GitCommand {
     forEachModuleDo(path -> deployVertx(path, "fetch"));
   }
 
+  @Command(name = "fetch-origin", aliases = "fo")
+  void fetchOrigin(@Parameters(index = "0", paramLabel = "<branch name>") String branch) {
+    forEachModuleDo(path -> deployVertx(path, "fetch", "origin", "%s:%s".formatted(branch, branch)));
+  }
+
   @Command(name = "checkout", aliases = "co")
   void checkout(@Parameters(index = "0", paramLabel = "<branch name>") String branch) {
     forEachModuleDo(path -> deployVertx(path, "checkout", branch));
