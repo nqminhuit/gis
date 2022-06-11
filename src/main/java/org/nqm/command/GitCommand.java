@@ -114,6 +114,11 @@ public class GitCommand {
       path -> deployVertx(path, args));
   }
 
+  @Command(name = "remote-prune-origin", aliases = "rpo")
+  void remotePruneOrigin() {
+    forEachModuleDo(path -> deployVertx(path, "remote", "prune", "origin"));
+  }
+
   private static Stream<String> streamOf(String[] input) {
     return Stream.of(input).map(String::trim).distinct();
   }
