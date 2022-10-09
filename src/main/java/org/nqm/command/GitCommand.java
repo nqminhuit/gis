@@ -33,7 +33,11 @@ public class GitCommand {
   }
 
   @Command(name = "status", aliases = "st")
-  void status() {
+  void status(@Option(names = "--one-line") boolean oneLineOpt) {
+    if (oneLineOpt) {
+      forEachModuleDo(path -> deployVertx(path, "status", "-sb", "--ignore-submodules", "--porcelain=v2", "--gis-one-line"));
+      return;
+    }
     forEachModuleDo(path -> deployVertx(path, "status", "-sb", "--ignore-submodules", "--porcelain=v2"));
   }
 
