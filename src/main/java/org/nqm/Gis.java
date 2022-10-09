@@ -20,6 +20,10 @@ public class Gis extends GitCommand {
   }
 
   public static void main(String[] args) {
+    if (args.length == 0) {
+      new CommandLine(new Gis()).execute("status");
+      return;
+    }
     new CommandLine(new Gis()).execute(args);
   }
 
