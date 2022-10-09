@@ -119,6 +119,12 @@ public class GitCommand {
     forEachModuleDo(path -> deployVertx(path, "remote", "prune", "origin"));
   }
 
+  @Command(name = "stash")
+  void stash(@Option(names = "-pp", description = "pop") boolean isPop) {
+    var args = isPop ? new String[] { "stash", "pop" } : new String[] { "stash" };
+    forEachModuleDo(path -> deployVertx(path, args));
+  }
+
   private static Stream<String> streamOf(String[] input) {
     return Stream.of(input).map(String::trim).distinct();
   }
