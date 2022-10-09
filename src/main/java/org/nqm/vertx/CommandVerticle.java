@@ -14,6 +14,7 @@ import java.nio.file.Path;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Stream;
+import org.nqm.command.GitCommand;
 import org.nqm.config.GisConfig;
 import org.nqm.config.GisLog;
 import io.vertx.core.AbstractVerticle;
@@ -83,10 +84,11 @@ public class CommandVerticle extends AbstractVerticle {
     var line = "";
     var input = new BufferedReader(new InputStreamReader(pr.getInputStream()));
     var sb = new StringBuilder(infof("%s", "" + path.getFileName()));
+    var isOneLineOpt = "--gis-one-line".equals(gisOption);
     try {
       while (isNotBlank(line = input.readLine())) {
-        sb.append(commandWithArgs[1].equals("status")
-          ? "--gis-one-line".equals(gisOption) ? gitStatusOneLine(line) : gitStatus(line)
+        sb.append(commandWithArgs[1].equals(GitCommand.GIT_STATUS)
+          ? isOneLineOpt ? gitStatusOneLine(line) : gitStatus(line)
           : "%n  %s".formatted(line));
       }
       out.println(sb.toString());
