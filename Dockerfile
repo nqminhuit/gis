@@ -1,4 +1,4 @@
-FROM quay.io/quarkus/ubi-quarkus-mandrel:22.0.0.2-Final-java17
+FROM quay.io/quarkus/ubi-quarkus-mandrel:22.2.0.0-Final-java17
 
 USER root
 
