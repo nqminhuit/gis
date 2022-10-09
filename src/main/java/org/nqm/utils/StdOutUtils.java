@@ -50,6 +50,9 @@ public class StdOutUtils {
   }
 
   public static String buildStaging(char[] chars) {
+    if (chars.length == 0) {
+      return "";
+    }
     return Optional.of(chars[0])
       .map(s -> s != '.' ? coloringWord(s, CL_GREEN) : s + "")
       .orElse("") +
@@ -88,6 +91,25 @@ public class StdOutUtils {
         .map(StdOutUtils::preProcessUntrackFile)
         .map(splitS -> "\n  "
           + Optional.of(splitS[1].toCharArray()).map(StdOutUtils::buildStaging).orElse("")
+          + Optional.of(splitS[splitS.length - 1]).map(getFiles(line)).orElse(""))
+        .orElse("");
+    };
+  }
+
+  public static String gitStatusOneLine(String line) {
+    var lineSplit = line.split("\s");
+    return switch (lineSplit[0] + lineSplit[1]) {
+      case "#branch.oid" -> "";
+      case "#branch.head" -> " " + coloringWord(lineSplit[2], CL_BLUE);
+      case "#branch.upstream" -> "";
+      case "#branch.ab" -> Optional.of(lineSplit)
+        .map(StdOutUtils::buildAheadBehind)
+        .filter(GisStringUtils::isNotBlank)
+        .map("[%s]"::formatted)
+        .orElse("");
+      default -> Optional.of(lineSplit)
+        .map(StdOutUtils::preProcessUntrackFile)
+        .map(splitS -> " "
           + Optional.of(splitS[splitS.length - 1]).map(getFiles(line)).orElse(""))
         .orElse("");
     };
