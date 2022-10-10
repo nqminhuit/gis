@@ -100,7 +100,7 @@ public class StdOutUtils {
     var lineSplit = line.split("\s");
     return switch (lineSplit[0] + lineSplit[1]) {
       case "#branch.oid" -> "";
-      case "#branch.head" -> " " + coloringWord(lineSplit[2], CL_BLUE);
+      case "#branch.head" -> " " + coloringWord(lineSplit[2], CL_RED);
       case "#branch.upstream" -> "";
       case "#branch.ab" -> Optional.of(lineSplit)
         .map(StdOutUtils::buildAheadBehind)

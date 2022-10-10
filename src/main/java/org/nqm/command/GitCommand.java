@@ -27,18 +27,20 @@ public class GitCommand {
   private static final String ALL_MODULES = "***";
   private static final String ALL_SUBMODULES = "/**";
 
+  public static final String GIT_STATUS = "status";
+
   @Command(name = "pull", aliases = "pu")
   void pull() {
     forEachModuleDo(path -> deployVertx(path, "pull"));
   }
 
-  @Command(name = "status", aliases = "st")
+  @Command(name = GIT_STATUS, aliases = "st")
   void status(@Option(names = "--one-line") boolean oneLineOpt) {
     if (oneLineOpt) {
-      forEachModuleDo(path -> deployVertx(path, "status", "-sb", "--ignore-submodules", "--porcelain=v2", "--gis-one-line"));
+      forEachModuleDo(path -> deployVertx(path, GIT_STATUS, "-sb", "--ignore-submodules", "--porcelain=v2", "--gis-one-line"));
       return;
     }
-    forEachModuleDo(path -> deployVertx(path, "status", "-sb", "--ignore-submodules", "--porcelain=v2"));
+    forEachModuleDo(path -> deployVertx(path, GIT_STATUS, "-sb", "--ignore-submodules", "--porcelain=v2"));
   }
 
   @Command(name = "fetch", aliases = "fe")
@@ -99,7 +101,7 @@ public class GitCommand {
 
   @Command(name = "remove-branch", aliases = "rm")
   void removeBranch(@Parameters(index = "0", paramLabel = "<branch name>") String branch) {
-    if (isConfirmed("Are you sure you want to remove branch '%s' ? [Y/n]".formatted(branch))) {
+    if (isConfirmed("Sure you want to remove branch '%s' ? [Y/n]".formatted(branch))) {
       forEachModuleDo(path -> deployVertx(path, "branch", "-d", branch));
     }
   }
@@ -109,7 +111,7 @@ public class GitCommand {
     @Option(names = "-f", description = "force to update remote origin branch") boolean isForce,
     @Option(names = "-r", description = "push to remote origin branch") boolean isNewRemoteBranch) {
 
-    if (!isConfirmed("Are you sure you want to push to remote '%s' [Y/n]".formatted(branch))) {
+    if (!isConfirmed("Sure you want to push to remote '%s' [Y/n]".formatted(branch))) {
       return;
     }
     var args = isNewRemoteBranch ? new String[] { "push", "-u", "origin", branch } : shouldForcePush(isForce);
@@ -124,7 +126,7 @@ public class GitCommand {
   }
 
   @Command(name = "stash")
-  void stash(@Option(names = "-pp", description = "pop") boolean isPop) {
+  void stash(@Option(names = "-pp", description = "pop first stashed changes") boolean isPop) {
     var args = isPop ? new String[] { "stash", "pop" } : new String[] { "stash" };
     forEachModuleDo(path -> deployVertx(path, args));
   }
