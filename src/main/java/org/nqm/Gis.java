@@ -22,7 +22,7 @@ public class Gis extends GitCommand {
   public static void main(String[] args) {
     var gis = new CommandLine(new Gis());
     if (args.length == 0) {
-      gis.execute(GIT_STATUS);
+      gis.execute(GIT_STATUS, "--one-line");
       return;
     }
     gis.execute(args);
