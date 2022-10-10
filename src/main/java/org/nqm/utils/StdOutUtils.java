@@ -3,6 +3,7 @@ package org.nqm.utils;
 import static java.lang.System.err; // NOSONAR
 import static java.lang.System.out; // NOSONAR
 import static java.util.function.Predicate.not;
+import java.nio.file.Path;
 import java.util.Optional;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
@@ -110,7 +111,10 @@ public class StdOutUtils {
       default -> Optional.of(lineSplit)
         .map(StdOutUtils::preProcessUntrackFile)
         .map(splitS -> " "
-          + Optional.of(splitS[splitS.length - 1]).map(getFiles(line)).orElse(""))
+          + Optional.of(splitS[splitS.length - 1])
+            .map(getFiles(line))
+            .map(l -> Path.of(l).getFileName().toString())
+            .orElse(""))
         .orElse("");
     };
   }
