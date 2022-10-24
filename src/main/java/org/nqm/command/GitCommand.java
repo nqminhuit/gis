@@ -26,6 +26,7 @@ public class GitCommand {
 
   private static final String ALL_MODULES = "***";
   private static final String ALL_SUBMODULES = "/**";
+  private static final String ORIGIN = "origin";
 
   public static final String GIT_STATUS = "status";
 
@@ -50,7 +51,7 @@ public class GitCommand {
 
   @Command(name = "fetch-origin", aliases = "fo")
   void fetchOrigin(@Parameters(index = "0", paramLabel = "<branch name>") String branch) {
-    forEachModuleDo(path -> deployVertx(path, "fetch", "origin", "%s:%s".formatted(branch, branch)));
+    forEachModuleDo(path -> deployVertx(path, "fetch", ORIGIN, "%s:%s".formatted(branch, branch)));
   }
 
   @Command(name = "checkout", aliases = "co")
@@ -114,7 +115,7 @@ public class GitCommand {
     if (!isConfirmed("Sure you want to push to remote '%s' [Y/n]".formatted(branch))) {
       return;
     }
-    var args = isNewRemoteBranch ? new String[] { "push", "-u", "origin", branch } : shouldForcePush(isForce);
+    var args = isNewRemoteBranch ? new String[] { "push", "-u", ORIGIN, branch } : shouldForcePush(isForce);
     forEachModuleWith(
       path -> isSameBranchUnderPath(branch, path),
       path -> deployVertx(path, args));
@@ -122,7 +123,7 @@ public class GitCommand {
 
   @Command(name = "remote-prune-origin", aliases = "rpo")
   void remotePruneOrigin() {
-    forEachModuleDo(path -> deployVertx(path, "remote", "prune", "origin"));
+    forEachModuleDo(path -> deployVertx(path, "remote", "prune", ORIGIN));
   }
 
   @Command(name = "stash")
