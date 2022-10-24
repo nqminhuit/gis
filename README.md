@@ -36,7 +36,7 @@ The executable jar file will be created at `target/gis-<version>.jar`
 
 For more details, just run:
 ```shell script
-./gis
+./gis --help
 ```
 
 # Comparison
@@ -70,3 +70,23 @@ for i in {1..100}; do { time git submodule foreach git fetch; } 2>> git_fe_repor
 for i in {1..100}; do { time giss fe; } 2>> gis_fe_report done
 # took 5m11s832ms
 ```
+
+# Code quality
+
+Use Sonarqube to analyze code:
+```shell script
+docker run -d --name sonarqube -e SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true -p 9000:9000 sonarqube:8.9.10-community
+```
+
+Then go to `http://localhost:9000`
+- login (admin/admin), then change your password
+- go to `http://localhost:9000/projects` and click "Add a project"
+- choose "Manually"
+- input "Project key" and "Display name" e.g., "gis" then click "Set Up"
+- "Generate a token": enter a name for this token then click "Generate"
+- you will get something like this: 302481a5dee289283af983ac713174e2f2ed13da. Click "Continue"
+- as shown in the 2nd step, with maven:
+    ```shell script
+    mvn sonar:sonar -Dsonar.projectKey=gis -Dsonar.host.url=http://localhost:9000 -Dsonar.login=302481a5dee289283af983ac713174e2f2ed13da
+    ```
+- after the maven command above succcess, you will have a dashboard about `gis` project

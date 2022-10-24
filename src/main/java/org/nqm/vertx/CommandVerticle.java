@@ -43,7 +43,7 @@ public class CommandVerticle extends AbstractVerticle {
     var cmdWithArgs = new String[args.length + 1];
     cmdWithArgs[0] = GisConfig.GIT_HOME_DIR;
     var n = args.length;
-    for (int i = 0; i < n - 1; i++) {
+    for (var i = 0; i < n - 1; i++) {
       cmdWithArgs[i + 1] = args[i];
     }
     // for better performance it is to required all '--gis' options to be at the end of cmd
@@ -85,11 +85,15 @@ public class CommandVerticle extends AbstractVerticle {
     var input = new BufferedReader(new InputStreamReader(pr.getInputStream()));
     var sb = new StringBuilder(infof("%s", "" + path.getFileName()));
     var isOneLineOpt = "--gis-one-line".equals(gisOption);
+    var isStatusCmd = commandWithArgs[1].equals(GitCommand.GIT_STATUS);
     try {
       while (isNotBlank(line = input.readLine())) {
-        sb.append(commandWithArgs[1].equals(GitCommand.GIT_STATUS)
-          ? isOneLineOpt ? gitStatusOneLine(line) : gitStatus(line)
-          : "%n  %s".formatted(line));
+        if (isStatusCmd) {
+          sb.append(isOneLineOpt ? gitStatusOneLine(line) : gitStatus(line));
+        }
+        else {
+          sb.append("%n  %s".formatted(line));
+        }
       }
       out.println(sb.toString());
       Optional.of(pr.waitFor())

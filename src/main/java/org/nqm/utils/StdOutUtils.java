@@ -130,7 +130,7 @@ public class StdOutUtils {
     var newStats = new String[length + 1];
     newStats[0] = fileStats[0];
     newStats[1] = " " + UNTRACKED_SYM;
-    for (int i = 1; i < length; i++) {
+    for (var i = 1; i < length; i++) {
       newStats[i + 1] = fileStats[i];
     }
     return newStats;
