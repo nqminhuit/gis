@@ -126,9 +126,9 @@ public class CommandVerticle extends AbstractVerticle {
     var sb = new StringBuilder();
     try {
       while (isNotBlank(line = input.readLine())) {
-        sb.append("%n%s".formatted(line));
+        sb.append("%s%n".formatted(line));
       }
-      out.println(sb.toString());
+      out.print(sb.toString());
       Optional.of(pr.waitFor())
         .filter(exitCode -> exitCode != 0)
         .ifPresent(exitCode -> {
