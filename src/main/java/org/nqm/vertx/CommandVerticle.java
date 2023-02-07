@@ -75,7 +75,14 @@ public class CommandVerticle extends AbstractVerticle {
       },
       false,
       res -> {
-        Optional.of(res.result()).ifPresent(this::safelyPrint);
+        Optional.of(res.result()).ifPresent(p -> {
+          if ("--gis-no-print-modules-name".equals(gisOption)) {
+            safelyPrintWithoutModules(p);
+          }
+          else {
+            safelyPrint(p);
+          }
+        });
         GisVertx.eventRemoveDir(path);
       });
   }
@@ -112,4 +119,31 @@ public class CommandVerticle extends AbstractVerticle {
       Thread.currentThread().interrupt();
     }
   }
+
+  private void safelyPrintWithoutModules(Process pr) {
+    var line = "";
+    var input = new BufferedReader(new InputStreamReader(pr.getInputStream()));
+    var sb = new StringBuilder();
+    try {
+      while (isNotBlank(line = input.readLine())) {
+        sb.append("%n%s".formatted(line));
+      }
+      out.println(sb.toString());
+      Optional.of(pr.waitFor())
+        .filter(exitCode -> exitCode != 0)
+        .ifPresent(exitCode -> {
+          GisLog.debug("exit with code: '%s'".formatted(exitCode));
+          warnln("Could not perform on module: '%s'".formatted(this.path.getFileName()));
+        });
+    }
+    catch (IOException e) {
+      errln(e.getMessage());
+      GisLog.debug(e);
+    }
+    catch (InterruptedException e) {
+      GisLog.debug(e);
+      Thread.currentThread().interrupt();
+    }
+  }
+
 }

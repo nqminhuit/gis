@@ -132,6 +132,17 @@ public class GitCommand {
     forEachModuleDo(path -> deployVertx(path, args));
   }
 
+  @Command(name = "branches")
+  void listBranches(
+    @Option(names = "-nn", description = "do not print module name") boolean noPrintModuleName) {
+    var sArgs = Stream.of("for-each-ref", "--format=%(refname:short)", "refs/heads/" );
+    if (noPrintModuleName) {
+      sArgs = Stream.concat(sArgs, Stream.of("--gis-no-print-modules-name" ));
+    }
+    final var args = sArgs.toArray(String[]::new);
+    forEachModuleDo(path -> deployVertx(path, args));
+  }
+
   private static Stream<String> streamOf(String[] input) {
     return Stream.of(input).map(String::trim).distinct();
   }
