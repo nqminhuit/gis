@@ -126,6 +126,18 @@ public class GitCommand {
     forEachModuleDo(path -> deployVertx(path, "remote", "prune", ORIGIN));
   }
 
+  @Command(name = "local-prune", aliases = "prune")
+  void localPrune(@Parameters(index = "0", paramLabel = "<default branch name>") String branch) {
+    forEachModuleDo(path -> deployVertx(path,
+      "for-each-ref",
+      "--merged=%s".formatted(branch),
+      "--format=%(refname:short)",
+      "refs/heads/",
+      "--no-contains",
+      branch,
+      "--gis-execute"));
+  }
+
   @Command(name = "stash")
   void stash(@Option(names = "-pp", description = "pop first stashed changes") boolean isPop) {
     var args = isPop ? new String[] { "stash", "pop" } : new String[] { "stash" };

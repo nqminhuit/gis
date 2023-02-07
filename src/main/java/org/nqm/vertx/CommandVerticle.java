@@ -11,6 +11,8 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -18,6 +20,7 @@ import org.nqm.command.GitCommand;
 import org.nqm.config.GisConfig;
 import org.nqm.config.GisLog;
 import io.vertx.core.AbstractVerticle;
+import io.vertx.core.Future;
 import io.vertx.core.Promise;
 
 public class CommandVerticle extends AbstractVerticle {
@@ -73,18 +76,32 @@ public class CommandVerticle extends AbstractVerticle {
           GisLog.debug(e);
         }
       },
-      false,
-      res -> {
-        Optional.of(res.result()).ifPresent(p -> {
-          if ("--gis-no-print-modules-name".equals(gisOption)) {
-            safelyPrintWithoutModules(p);
-          }
-          else {
-            safelyPrint(p);
-          }
-        });
-        GisVertx.eventRemoveDir(path);
-      });
+      false)
+      .compose(res -> {
+        if ("--gis-execute".equals(gisOption)) {
+          executeCommand(res).forEach(f -> {
+            f.onComplete(r -> {
+              Optional.ofNullable(r.result()).ifPresent(p -> {
+                try {
+                  infof("%s", new String(p.getInputStream().readAllBytes()));
+                }
+                catch (IOException e) {
+                  errln(e.getMessage());
+                  GisLog.debug(e);
+                }
+              });
+            });
+          });
+        }
+        else if ("--gis-no-print-modules-name".equals(gisOption)) {
+          safelyPrintWithoutModules(res);
+        }
+        else {
+          safelyPrint(res);
+        }
+        return Future.succeededFuture();
+      })
+      .onComplete(r -> GisVertx.eventRemoveDir(path));
   }
 
   private void safelyPrint(Process pr) {
@@ -121,10 +138,10 @@ public class CommandVerticle extends AbstractVerticle {
   }
 
   private void safelyPrintWithoutModules(Process pr) {
-    var line = "";
     var input = new BufferedReader(new InputStreamReader(pr.getInputStream()));
     var sb = new StringBuilder();
     try {
+      var line = "";
       while (isNotBlank(line = input.readLine())) {
         sb.append("%s%n".formatted(line));
       }
@@ -144,6 +161,25 @@ public class CommandVerticle extends AbstractVerticle {
       GisLog.debug(e);
       Thread.currentThread().interrupt();
     }
+  }
+
+  private List<Future<Process>> executeCommand(Process pr) {
+    var input = new BufferedReader(new InputStreamReader(pr.getInputStream()));
+    var futures = new ArrayList<Future<Process>>();
+    try {
+      var line = "";
+      while (isNotBlank(line = input.readLine())) {
+        futures
+          .add(Future.succeededFuture(new ProcessBuilder(GisConfig.GIT_HOME_DIR, "branch", "-d", line)
+            .directory(path.toFile())
+            .start()));
+      }
+    }
+    catch (IOException e) {
+      errln(e.getMessage());
+      GisLog.debug(e);
+    }
+    return futures;
   }
 
 }
