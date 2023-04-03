@@ -42,6 +42,20 @@ public class StdOutUtils {
     return msgFormat.formatted(CL_CYAN + word + CL_RESET);
   }
 
+  public static String coloringBranch(String branch) {
+    if ("develop".equalsIgnoreCase(branch)
+      || "master".equalsIgnoreCase(branch)
+      || "main".equalsIgnoreCase(branch)) {
+      return coloringWord(branch, CL_RED);
+    }
+
+    if (branch.toLowerCase().startsWith("feature/")) {
+      return coloringWord(branch, CL_YELLOW);
+    }
+
+    return coloringWord(branch, CL_GREEN);
+  }
+
   public static String coloringWord(String word, String color) {
     return color + word + CL_RESET;
   }
@@ -101,7 +115,7 @@ public class StdOutUtils {
     var lineSplit = line.split("\s");
     return switch (lineSplit[0] + lineSplit[1]) {
       case "#branch.oid" -> "";
-      case "#branch.head" -> " " + coloringWord(lineSplit[2], CL_RED);
+      case "#branch.head" -> " " + coloringBranch(lineSplit[2]);
       case "#branch.upstream" -> "";
       case "#branch.ab" -> Optional.of(lineSplit)
         .map(StdOutUtils::buildAheadBehind)
