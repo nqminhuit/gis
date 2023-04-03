@@ -29,6 +29,7 @@ public class GitCommand {
   private static final String ORIGIN = "origin";
 
   public static final String GIT_STATUS = "status";
+  public static final String HOOKS_OPTION = "--hooks";
 
   @Command(name = "pull", aliases = "pu")
   void pull() {
@@ -124,6 +125,19 @@ public class GitCommand {
   @Command(name = "remote-prune-origin", aliases = "rpo")
   void remotePruneOrigin() {
     forEachModuleDo(path -> deployVertx(path, "remote", "prune", ORIGIN));
+  }
+
+  @Command(name = "local-prune", aliases = "prune")
+  void localPrune(@Parameters(index = "0", paramLabel = "<default branch name>") String branch) {
+    forEachModuleDo(path -> deployVertx(path,
+      "for-each-ref",
+      "--merged=%s".formatted(branch),
+      "--format=%(refname:short)",
+      "refs/heads/",
+      "--no-contains",
+      branch,
+      HOOKS_OPTION,
+      GisConfig.GIT_HOME_DIR + " branch -d %s"));
   }
 
   @Command(name = "stash")
