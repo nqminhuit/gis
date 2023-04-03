@@ -29,6 +29,7 @@ public class GitCommand {
   private static final String ORIGIN = "origin";
 
   public static final String GIT_STATUS = "status";
+  public static final String HOOKS_OPTION = "--hooks";
 
   @Command(name = "pull", aliases = "pu")
   void pull() {
@@ -135,7 +136,8 @@ public class GitCommand {
       "refs/heads/",
       "--no-contains",
       branch,
-      "--gis-execute"));
+      HOOKS_OPTION,
+      GisConfig.GIT_HOME_DIR + " branch -d %s"));
   }
 
   @Command(name = "stash")
