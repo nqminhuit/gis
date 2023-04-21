@@ -26,7 +26,7 @@ public final class Wrapper {
     GisVertx.instance().deployVerticle(new CommandVerticle());
   }
 
-  private static void forEachModuleWith(Predicate<Path> pred, Consumer<Path> consumeDir, boolean withRoot) {
+  public static void forEachModuleWith(Predicate<Path> pred, Consumer<Path> consumeDir) {
     var gitModulesFilePath = Stream.of(Path.of(".", ".gis-modules"), Path.of(".", ".gitmodules"))
       .map(Path::toFile)
       .filter(File::exists)
@@ -42,7 +42,7 @@ public final class Wrapper {
       .map(Wrapper::extractDirs)
       .onComplete((AsyncResult<Stream<String>> ar) -> {
         if (ar.succeeded()) {
-          shouldConsumeDirOrNot(pred.and(x -> withRoot), consumeDir, Path.of(CURRENT_DIR));
+          shouldConsumeDirOrNot(pred, consumeDir, Path.of(CURRENT_DIR));
           ar.result()
             .map(dir -> Path.of(CURRENT_DIR, dir))
             .filter(dir -> {
@@ -60,10 +60,6 @@ public final class Wrapper {
       });
   }
 
-  public static void forEachModuleWith(Predicate<Path> pred, Consumer<Path> consumeDir) {
-    forEachModuleWith(pred, consumeDir, true);
-  }
-
   private static void shouldConsumeDirOrNot(Predicate<Path> pred, Consumer<Path> consumeDir, Path path) {
     if (pred.test(path)) {
       consumeDir.accept(path);
@@ -76,10 +72,6 @@ public final class Wrapper {
 
   public static void forEachModuleDo(Consumer<Path> consumeDir) {
     forEachModuleWith(p -> true, consumeDir);
-  }
-
-  public static void forEachSubmoduleDo(Consumer<Path> consumeDir) {
-    forEachModuleWith(p -> true, consumeDir, false);
   }
 
   private static Stream<String> extractDirs(Buffer buffer) {
