@@ -19,14 +19,16 @@ public final class Wrapper {
   private Wrapper() {}
 
   public static void deployVertx(Path path, String... args) {
+    getFileMarker();
     GisVertx.instance().deployVerticle(new CommandVerticle(path, args));
   }
 
   private static void deployEmptyVertx() {
+    getFileMarker();
     GisVertx.instance().deployVerticle(new CommandVerticle());
   }
 
-  public static void forEachModuleWith(Predicate<Path> pred, Consumer<Path> consumeDir) {
+  private static File getFileMarker() {
     var gitModulesFilePath = Stream.of(Path.of(".", ".gis-modules"), Path.of(".", ".gitmodules"))
       .map(Path::toFile)
       .filter(File::exists)
@@ -35,9 +37,13 @@ public final class Wrapper {
 
     if (gitModulesFilePath == null) {
       errln("Could not find '.gis-modules' or '.gitmodules' under this directory!");
-      return;
+      System.exit(1);
     }
+    return gitModulesFilePath;
+  }
 
+  public static void forEachModuleWith(Predicate<Path> pred, Consumer<Path> consumeDir) {
+    var gitModulesFilePath = getFileMarker();
     GisVertx.instance().fileSystem().readFile(gitModulesFilePath.toString())
       .map(Wrapper::extractDirs)
       .onComplete((AsyncResult<Stream<String>> ar) -> {

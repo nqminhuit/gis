@@ -68,7 +68,9 @@ public class GitCommand {
       return;
     }
     streamOf(modules)
+      .distinct()
       .filter(Predicate.not(String::isBlank))
+      .filter(module -> Path.of(module).toFile().exists())
       .map(Path::of)
       .forEach(deployCommand);
   }
