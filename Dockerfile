@@ -6,10 +6,10 @@ COPY pom.xml /app/gis/
 COPY .mvn /app/gis/.mvn
 COPY mvnw /app/gis/
 WORKDIR /app/gis
-RUN ./mvnw verify clean --fail-never
+RUN ./mvnw -q verify clean --fail-never
 
 COPY . /app/gis
-RUN ./mvnw clean package
+RUN ./mvnw -q clean package
 RUN native-image -cp target/gis-*.jar "org.nqm.Gis" \
     --no-fallback \
     --no-server \
