@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.nqm</groupId>
   <artifactId>gis</artifactId>
@@ -8,10 +8,15 @@
   <packaging>${packaging}</packaging>
 
   <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <packaging>jar</packaging>
-    <maven.compiler.target>17</maven.compiler.target>
-    <maven.compiler.source>17</maven.compiler.source>
-    <picocli.version>4.7.1</picocli.version>
+    <maven.compiler.target>21</maven.compiler.target>
+    <maven.compiler.source>21</maven.compiler.source>
+    <picocli.version>4.7.5</picocli.version>
+    <vertx.version>4.4.7</vertx.version>
+    <compiler.plugin.version>3.12.1</compiler.plugin.version>
+    <jar.plugin.version>3.3.0</jar.plugin.version>
   </properties>
 
   <dependencies>
@@ -23,7 +28,7 @@
     <dependency>
       <groupId>io.vertx</groupId>
       <artifactId>vertx-core</artifactId>
-      <version>4.4.1</version>
+      <version>${vertx.version}</version>
     </dependency>
   </dependencies>
 
@@ -33,7 +38,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
-        <version>3.10.1</version>
+        <version>${compiler.plugin.version}</version>
         <configuration>
           <annotationProcessorPaths combine.children="append">
             <path>
@@ -50,7 +55,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-jar-plugin</artifactId>
-        <version>3.2.2</version>
+        <version>${jar.plugin.version}</version>
         <configuration>
           <archive>
             <manifest>

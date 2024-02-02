@@ -1,4 +1,4 @@
-FROM quay.io/quarkus/ubi-quarkus-mandrel:22.3-java17
+FROM quay.io/quarkus/ubi-quarkus-mandrel-builder-image:jdk-21
 
 USER root
 
