@@ -7,9 +7,12 @@ import static org.nqm.command.Wrapper.forEachModuleWith;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.nqm.config.GisConfig;
 import org.nqm.config.GisLog;
@@ -127,6 +130,17 @@ public class GitCommand {
     }
     final var args = sArgs.toArray(String[]::new);
     forEachModuleDo(path -> deployVertx(path, args));
+  }
+
+  @Command(name = "init", description = "init .gis-modules for current directory")
+  void init() throws IOException {
+    var data = Files.list(Path.of("."))
+        .filter(Files::isDirectory)
+        .map(p -> p.getFileName())
+        .map("path = %s"::formatted)
+        .collect(Collectors.joining("\n"))
+        .getBytes();
+    Files.write(Paths.get(".gis-modules"), data);
   }
 
   private static Stream<String> streamOf(String[] input) {
