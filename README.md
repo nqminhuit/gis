@@ -13,14 +13,13 @@
 # Build from source
 
 ## Native image
-(require docker to build)
+(require docker/podman to build)
 
 There are 2 GraalVM distributions: [GraalVM CE](https://www.graalvm.org/22.0/docs/getting-started/) and [Mandrel](https://developers.redhat.com/blog/2021/04/14/mandrel-a-specialized-distribution-of-graalvm-for-quarkus). Since this app is written in Java completely, Mandrel is prefered.
 
 ```shell script
 cd gis
-docker build -t gis .
-docker create --name dkgis_ gis:latest; docker cp dkgis_:/app/gis/gis .; docker rm -f dkgis_;
+(podman build -t gis . || exit 1; podman create --name dkgis_ gis:latest; podman cp dkgis_:/app/gis/gis .; podman rm -f dkgis_)
 ```
 After the steps above, an executable file named `gis` will be created under project directory.
 
@@ -75,7 +74,7 @@ for i in {1..100}; do { time giss fe; } 2>> gis_fe_report done
 
 Use Sonarqube to analyze code:
 ```shell script
-docker run -d --name sonarqube -e SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true -p 9000:9000 sonarqube:8.9.10-community
+podman run -d --name sonarqube -e SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true -p 9000:9000 sonarqube:8.9.10-community
 ```
 
 Then go to `http://localhost:9000`
