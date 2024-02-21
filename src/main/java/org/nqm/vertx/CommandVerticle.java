@@ -23,7 +23,6 @@ import org.nqm.config.GisLog;
 import org.nqm.utils.GisStringUtils;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
-import io.vertx.core.Promise;
 
 public class CommandVerticle extends AbstractVerticle {
 
@@ -78,17 +77,7 @@ public class CommandVerticle extends AbstractVerticle {
       GisVertx.eventRemoveDir(Path.of("."));
       return;
     }
-    vertx.executeBlocking(
-      (Promise<Process> promise) -> {
-        try {
-          promise.complete(new ProcessBuilder(commandWithArgs).directory(path.toFile()).start());
-        }
-        catch (IOException e) {
-          errln(e.getMessage());
-          GisLog.debug(e);
-        }
-      },
-      false)
+    vertx.executeBlocking(() -> new ProcessBuilder(commandWithArgs).directory(path.toFile()).start(), false)
       .compose(res -> {
         if (GisStringUtils.isNotBlank(this.commandHook)) {
           gisExecuteCommand(res, this.commandHook).forEach(f -> {

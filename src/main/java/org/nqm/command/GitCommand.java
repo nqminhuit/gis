@@ -148,14 +148,13 @@ public class GitCommand {
   }
 
   private boolean isSameBranchUnderPath(String branch, Path path) {
-    try {
-      var proc = new ProcessBuilder(GisConfig.GIT_HOME_DIR, "branch", "--show-current")
-        .directory(path.toFile())
-        .start();
-      var currentBranch = new BufferedReader(new InputStreamReader(proc.getInputStream())).readLine();
-      return currentBranch.equals(branch);
-    }
-    catch (IOException e) {
+    try (BufferedReader currentBranch = new BufferedReader(
+        new InputStreamReader(new ProcessBuilder(GisConfig.GIT_HOME_DIR, "branch", "--show-current")
+            .directory(path.toFile())
+            .start()
+            .getInputStream()))) {
+      return currentBranch.readLine().equals(branch);
+    } catch (IOException e) {
       GisLog.debug(e);
       return false;
     }
