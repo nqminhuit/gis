@@ -1,4 +1,4 @@
-FROM quay.io/quarkus/ubi-quarkus-mandrel-builder-image:jdk-21
+FROM quay.io/quarkus/ubi-quarkus-mandrel-builder-image:23.1-jdk-21
 
 USER root
 
@@ -14,15 +14,7 @@ RUN native-image -cp target/gis-*.jar "org.nqm.Gis" \
     --no-fallback \
     --no-server \
     --allow-incomplete-classpath \
-    --initialize-at-run-time=io.netty.internal.tcnative.SSL,\
-io.netty.handler.ssl.OpenSslPrivateKeyMethod,\
-io.netty.internal.tcnative.CertificateVerifier,\
-io.netty.internal.tcnative.CertificateCompressionAlgo,\
-io.netty.internal.tcnative.AsyncSSLPrivateKeyMethod,\
-io.netty.handler.ssl.ReferenceCountedOpenSslEngine,\
-io.netty.handler.ssl.BouncyCastleAlpnSslUtils,\
-io.netty.handler.ssl.OpenSslAsyncPrivateKeyMethod,\
-io.netty.internal.tcnative.SSLPrivateKeyMethod
+    --initialize-at-run-time=io.netty.handler.ssl.BouncyCastleAlpnSslUtils
 
 RUN mv org.nqm.gis gis
 RUN chmod +x gis
