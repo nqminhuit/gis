@@ -9,6 +9,7 @@ import static org.nqm.utils.StdOutUtils.gitStatusOneLine;
 import static org.nqm.utils.StdOutUtils.infof;
 import static org.nqm.utils.StdOutUtils.warnln;
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.file.Path;
@@ -97,6 +98,9 @@ public class CommandVerticle extends AbstractVerticle {
         else if (Stream.of(gisOptions).anyMatch("--gis-no-print-modules-name"::equals)) {
           safelyPrintWithoutModules(res);
         }
+        else if (Stream.of(gisOptions).anyMatch("--gis-concat-modules-name"::equals)) {
+          safelyConcatModuleNames(res);
+        }
         else {
           safelyPrint(res);
         }
@@ -183,4 +187,31 @@ public class CommandVerticle extends AbstractVerticle {
     return futures;
   }
 
+  private void safelyConcatModuleNames(Process pr) {
+    var input = new BufferedReader(new InputStreamReader(pr.getInputStream()));
+    var sb = new StringBuilder();
+    try {
+      var line = "";
+      var shortPath = path.getFileName();
+      while (isNotBlank(line = input.readLine())) {
+        var f = "%s/%s".formatted(path, line);
+        if (new File(f).isFile()) {
+          sb.append("%s/%s%n".formatted(shortPath, line));
+        }
+      }
+      out.print(sb.toString());
+      Optional.of(pr.waitFor())
+          .filter(exitCode -> exitCode != 0)
+          .ifPresent(exitCode -> {
+            GisLog.debug("exit with code: '%s'".formatted(exitCode));
+            warnln("Could not perform on module: '%s'".formatted(this.path.getFileName()));
+          });
+    } catch (IOException e) {
+      errln(e.getMessage());
+      GisLog.debug(e);
+    } catch (InterruptedException e) {
+      GisLog.debug(e);
+      Thread.currentThread().interrupt();
+    }
+  }
 }
