@@ -143,6 +143,11 @@ public class GitCommand {
     Files.write(Paths.get(".gis-modules"), data);
   }
 
+  @Command(name = "files", description = "show modified files of all submodules")
+  void files() {
+    forEachModuleDo(path -> deployVertx(path, "diff", "--name-only", "--gis-concat-modules-name"));
+  }
+
   private static Stream<String> streamOf(String[] input) {
     return Stream.of(input).map(String::trim).distinct();
   }
