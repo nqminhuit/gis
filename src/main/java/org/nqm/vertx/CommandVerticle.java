@@ -190,12 +190,24 @@ public class CommandVerticle extends AbstractVerticle {
   private void safelyConcatModuleNames(Process pr) {
     var input = new BufferedReader(new InputStreamReader(pr.getInputStream()));
     var sb = new StringBuilder();
+    var isRootModule = path.toFile()
+        .listFiles((d, f) -> {
+          var stringF = "" + f;
+          return ".gitmodules".equals(stringF) || ".gis-modules".equals(stringF);
+        }).length > 0;
+
+    var line = "";
+    var shortPath = path.getFileName();
+
     try {
-      var line = "";
-      var shortPath = path.getFileName();
       while (isNotBlank(line = input.readLine())) {
         var f = "%s/%s".formatted(path, line);
-        if (new File(f).isFile()) {
+        if (!new File(f).isFile()) {
+          continue;
+        }
+        if (isRootModule) {
+          sb.append("./%s%n".formatted(line));
+        } else {
           sb.append("%s/%s%n".formatted(shortPath, line));
         }
       }
