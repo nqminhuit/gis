@@ -45,6 +45,7 @@ public class StdOutUtils {
   public static String coloringBranch(String branch) {
     if (branch.contains("develop")
       || "master".equalsIgnoreCase(branch)
+      || "beta".equalsIgnoreCase(branch)
       || "main".equalsIgnoreCase(branch)) {
       return coloringWord(branch, CL_RED);
     }
