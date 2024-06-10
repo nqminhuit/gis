@@ -53,6 +53,11 @@ public class GitCommand {
         path -> deployVertx(path, "rebase", "%s/%s".formatted(ORIGIN, getCurrentBranchUnderPath(path))));
   }
 
+  @Command(name = "rebase-origin", aliases = "re")
+  void rebaseOrigin(@Parameters(index = "0", paramLabel = "<branch name>") String branch) {
+    forEachModuleDo(path -> deployVertx(path, "rebase", "%s/%s".formatted(ORIGIN, branch)));
+  }
+
   @Command(name = "fetch-origin", aliases = "fo")
   void fetchOrigin(@Parameters(index = "0", paramLabel = "<branch name>") String branch) {
     forEachModuleDo(path -> deployVertx(path, "fetch", ORIGIN, "%s:%s".formatted(branch, branch)));
