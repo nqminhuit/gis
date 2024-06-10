@@ -16,6 +16,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.nqm.config.GisConfig;
 import org.nqm.config.GisLog;
+import org.nqm.utils.GisStringUtils;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
@@ -44,6 +45,12 @@ public class GitCommand {
   @Command(name = "fetch", aliases = "fe")
   void fetch() {
     forEachModuleDo(path -> deployVertx(path, "fetch"));
+  }
+
+  @Command(name = "rebase-current-origin", aliases = "ru")
+  void rebaseCurrentOrigin() {
+    forEachModuleDo(
+        path -> deployVertx(path, "rebase", "%s/%s".formatted(ORIGIN, getCurrentBranchUnderPath(path))));
   }
 
   @Command(name = "fetch-origin", aliases = "fo")
@@ -152,17 +159,24 @@ public class GitCommand {
     return Stream.of(input).map(String::trim).distinct();
   }
 
-  private boolean isSameBranchUnderPath(String branch, Path path) {
+  private String getCurrentBranchUnderPath(Path path) {
     try (BufferedReader currentBranch = new BufferedReader(
         new InputStreamReader(new ProcessBuilder(GisConfig.GIT_HOME_DIR, "branch", "--show-current")
             .directory(path.toFile())
             .start()
             .getInputStream()))) {
-      return currentBranch.readLine().equals(branch);
+      return currentBranch.readLine();
     } catch (IOException e) {
       GisLog.debug(e);
+      return "";
+    }
+  }
+
+  private boolean isSameBranchUnderPath(String branch, Path path) {
+    if (GisStringUtils.isBlank(branch)) {
       return false;
     }
+    return branch.equals(getCurrentBranchUnderPath(path));
   }
 
   private boolean isConfirmed(String question) {
