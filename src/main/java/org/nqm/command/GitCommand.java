@@ -10,6 +10,11 @@ import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -23,7 +28,10 @@ import picocli.CommandLine.Parameters;
 
 public class GitCommand {
 
+  private static final String FETCHED_AT = "(fetched at: %s)";
   private static final String ORIGIN = "origin";
+  private static final Path TMP_FILE =
+      Path.of("/", "tmp", "gis_fetch" + GisConfig.CURRENT_DIR.replace("/", "_"));
 
   public static final String GIT_STATUS = "status";
   public static final String HOOKS_OPTION = "--hooks";
@@ -36,15 +44,31 @@ public class GitCommand {
   @Command(name = GIT_STATUS, aliases = "st")
   void status(@Option(names = "--one-line") boolean oneLineOpt) {
     if (oneLineOpt) {
-      forEachModuleDo(path -> deployVertx(path, GIT_STATUS, "-sb", "--ignore-submodules", "--porcelain=v2", "--gis-one-line"));
-      return;
+      forEachModuleDo(path -> deployVertx(
+          path, GIT_STATUS, "-sb", "--ignore-submodules", "--porcelain=v2", "--gis-one-line"));
+    } else {
+      forEachModuleDo(path -> deployVertx(path, GIT_STATUS, "-sb", "--ignore-submodules", "--porcelain=v2"));
     }
-    forEachModuleDo(path -> deployVertx(path, GIT_STATUS, "-sb", "--ignore-submodules", "--porcelain=v2"));
+    var lastFetched = safelyReadLastFetched(TMP_FILE);
+    if (GisStringUtils.isNotBlank(lastFetched)) {
+      out.println(FETCHED_AT.formatted(lastFetched));
+    }
   }
 
   @Command(name = "fetch", aliases = "fe")
   void fetch() {
     forEachModuleDo(path -> deployVertx(path, "fetch"));
+    var timeFetch = LocalDateTime.ofInstant(Instant.now(), ZoneId.systemDefault())
+        .format(DateTimeFormatter.ofPattern("HH:mm:ss dd/MM/YYYY"));
+
+    try {
+      Files.write(TMP_FILE, timeFetch.getBytes(), StandardOpenOption.CREATE, StandardOpenOption.WRITE);
+    } catch (IOException e) {
+      GisLog.debug(e);
+      return;
+    }
+
+    out.println(FETCHED_AT.formatted(timeFetch));
   }
 
   @Command(name = "rebase-current-origin", aliases = "ru")
@@ -69,12 +93,13 @@ public class GitCommand {
   }
 
   @Command(name = "checkout-branch",
-    aliases = "cb",
-    description = "Create (and checkout) a spin-off branch with <new_branch_name> for <modules>.")
+      aliases = "cb",
+      description = "Create (and checkout) a spin-off branch with <new_branch_name> for <modules>.")
   void checkoutNewBranch(
-    @Parameters(index = "0", paramLabel = "<new_branch_name>", description = "branch name") String newBranch,
-    @Parameters(paramLabel = "<modules>",
-      description = "Specified modules. If empty, will create for all submodules and root.") String... modules) {
+      @Parameters(index = "0", paramLabel = "<new_branch_name>",
+          description = "branch name") String newBranch,
+      @Parameters(paramLabel = "<modules>",
+          description = "Specified modules. If empty, will create for all submodules and root.") String... modules) {
 
     Consumer<Path> deployCommand = path -> deployVertx(path, "checkout", "-b", newBranch);
 
@@ -83,11 +108,11 @@ public class GitCommand {
       return;
     }
     streamOf(modules)
-      .distinct()
-      .filter(Predicate.not(String::isBlank))
-      .filter(module -> Path.of(module).toFile().exists())
-      .map(Path::of)
-      .forEach(deployCommand);
+        .distinct()
+        .filter(Predicate.not(String::isBlank))
+        .filter(module -> Path.of(module).toFile().exists())
+        .map(Path::of)
+        .forEach(deployCommand);
   }
 
   @Command(name = "remove-branch", aliases = "rm")
@@ -99,13 +124,13 @@ public class GitCommand {
 
   @Command(name = "push", aliases = "pus")
   void push(@Parameters(index = "0", paramLabel = "<branch name>") String branch,
-    @Option(names = "-f", description = "force to update remote origin branch") boolean isForce,
-    @Option(names = "-r", description = "push to remote origin branch") boolean isNewRemoteBranch) {
+      @Option(names = "-f", description = "force to update remote origin branch") boolean isForce,
+      @Option(names = "-r", description = "push to remote origin branch") boolean isNewRemoteBranch) {
 
     if (!isConfirmed("Sure you want to push to remote '%s' [Y/n]".formatted(branch))) {
       return;
     }
-    var args = isNewRemoteBranch ? new String[] { "push", "-u", ORIGIN, branch } : shouldForcePush(isForce);
+    var args = isNewRemoteBranch ? new String[] {"push", "-u", ORIGIN, branch} : shouldForcePush(isForce);
     forEachModuleWith(path -> isSameBranchUnderPath(branch, path), path -> deployVertx(path, args));
   }
 
@@ -117,28 +142,28 @@ public class GitCommand {
   @Command(name = "local-prune", aliases = "prune")
   void localPrune(@Parameters(index = "0", paramLabel = "<default branch name>") String branch) {
     forEachModuleDo(path -> deployVertx(path,
-      "for-each-ref",
-      "--merged=%s".formatted(branch),
-      "--format=%(refname:short)",
-      "refs/heads/",
-      "--no-contains",
-      branch,
-      HOOKS_OPTION,
-      GisConfig.GIT_HOME_DIR + " branch -d %s"));
+        "for-each-ref",
+        "--merged=%s".formatted(branch),
+        "--format=%(refname:short)",
+        "refs/heads/",
+        "--no-contains",
+        branch,
+        HOOKS_OPTION,
+        GisConfig.GIT_HOME_DIR + " branch -d %s"));
   }
 
   @Command(name = "stash")
   void stash(@Option(names = "-pp", description = "pop first stashed changes") boolean isPop) {
-    var args = isPop ? new String[] { "stash", "pop" } : new String[] { "stash" };
+    var args = isPop ? new String[] {"stash", "pop"} : new String[] {"stash"};
     forEachModuleDo(path -> deployVertx(path, args));
   }
 
   @Command(name = "branches")
   void listBranches(
-    @Option(names = "-nn", description = "do not print module name") boolean noPrintModuleName) {
-    var sArgs = Stream.of("for-each-ref", "--format=%(refname:short)", "refs/heads/" );
+      @Option(names = "-nn", description = "do not print module name") boolean noPrintModuleName) {
+    var sArgs = Stream.of("for-each-ref", "--format=%(refname:short)", "refs/heads/");
     if (noPrintModuleName) {
-      sArgs = Stream.concat(sArgs, Stream.of("--gis-no-print-modules-name" ));
+      sArgs = Stream.concat(sArgs, Stream.of("--gis-no-print-modules-name"));
     }
     final var args = sArgs.toArray(String[]::new);
     forEachModuleDo(path -> deployVertx(path, args));
@@ -189,14 +214,22 @@ public class GitCommand {
     try (var reader = new BufferedReader(new InputStreamReader(System.in))) {
       var input = reader.readLine();
       return Stream.of("y", "ye", "yes").anyMatch(s -> s.equalsIgnoreCase(input));
-    }
-    catch (IOException e) {
+    } catch (IOException e) {
       GisLog.debug(e);
       return false;
     }
   }
 
   private String[] shouldForcePush(boolean isForce) {
-    return isForce ? new String[] { "push", "-f" } : new String[] { "push" };
+    return isForce ? new String[] {"push", "-f"} : new String[] {"push"};
+  }
+
+  private static String safelyReadLastFetched(Path path) {
+    try {
+      return Files.readString(path);
+    } catch (IOException e) {
+      GisLog.debug(e);
+      return "";
+    }
   }
 }
