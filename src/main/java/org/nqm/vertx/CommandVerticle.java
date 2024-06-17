@@ -16,6 +16,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.nqm.command.GitCommand;
@@ -52,10 +53,11 @@ public class CommandVerticle extends AbstractVerticle {
    * Hooks should be placed at the end of command for optimize
    */
   private String extractHookCommand(String... args) {
+    var predicate = Predicate.not(HOOKS_OPTION::equals);
     return Stream.of(args)
-      .dropWhile(arg -> !HOOKS_OPTION.equals(arg))
-      .filter(arg -> !HOOKS_OPTION.equals(arg))
-      .collect(Collectors.joining(" "));
+        .dropWhile(predicate)
+        .filter(predicate)
+        .collect(Collectors.joining(" "));
   }
 
   /**
