@@ -1,6 +1,5 @@
 package org.nqm.command;
 
-import static java.lang.System.out; // NOSONAR
 import static org.nqm.command.Wrapper.deployVertx;
 import static org.nqm.command.Wrapper.forEachModuleDo;
 import static org.nqm.command.Wrapper.forEachModuleWith;
@@ -22,6 +21,7 @@ import java.util.stream.Stream;
 import org.nqm.config.GisConfig;
 import org.nqm.config.GisLog;
 import org.nqm.utils.GisStringUtils;
+import org.nqm.utils.StdOutUtils;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
@@ -51,7 +51,7 @@ public class GitCommand {
     }
     var lastFetched = safelyReadLastFetched(TMP_FILE);
     if (GisStringUtils.isNotBlank(lastFetched)) {
-      out.println(FETCHED_AT.formatted(lastFetched));
+      StdOutUtils.println(FETCHED_AT.formatted(lastFetched));
     }
   }
 
@@ -68,7 +68,7 @@ public class GitCommand {
       return;
     }
 
-    out.println(FETCHED_AT.formatted(timeFetch));
+    StdOutUtils.println(FETCHED_AT.formatted(timeFetch));
   }
 
   @Command(name = "rebase-current-origin", aliases = "ru")
@@ -210,7 +210,7 @@ public class GitCommand {
   }
 
   private boolean isConfirmed(String question) {
-    out.print(question + " ");
+    StdOutUtils.print(question + " ");
     try (var reader = new BufferedReader(new InputStreamReader(System.in))) {
       var input = reader.readLine();
       return Stream.of("y", "ye", "yes").anyMatch(s -> s.equalsIgnoreCase(input));

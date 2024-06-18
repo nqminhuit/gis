@@ -26,6 +26,14 @@ public class StdOutUtils {
   private static final String UNTRACKED_SYM = "?";
   private static final String RENAME_SYM = "2";
 
+  public static void println(String msg) {
+    out.println(msg);
+  }
+
+  public static void print(String msg) {
+    out.print(msg);
+  }
+
   public static void errln(String msg) {
     err.println("  " + CL_RED + "ERROR: " + msg + CL_RESET);
   }

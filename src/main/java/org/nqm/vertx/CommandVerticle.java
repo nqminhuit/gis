@@ -1,6 +1,5 @@
 package org.nqm.vertx;
 
-import static java.lang.System.out; // NOSONAR
 import static org.nqm.command.GitCommand.HOOKS_OPTION;
 import static org.nqm.utils.GisStringUtils.isNotBlank;
 import static org.nqm.utils.StdOutUtils.errln;
@@ -23,6 +22,7 @@ import org.nqm.command.GitCommand;
 import org.nqm.config.GisConfig;
 import org.nqm.config.GisLog;
 import org.nqm.utils.GisStringUtils;
+import org.nqm.utils.StdOutUtils;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
 
@@ -126,7 +126,7 @@ public class CommandVerticle extends AbstractVerticle {
           sb.append("%n  %s".formatted(line));
         }
       }
-      out.println(sb.toString());
+      StdOutUtils.println(sb.toString());
       Optional.of(pr.waitFor())
         .filter(exitCode -> exitCode != 0)
         .ifPresent(exitCode -> {
@@ -152,7 +152,7 @@ public class CommandVerticle extends AbstractVerticle {
       while (isNotBlank(line = input.readLine())) {
         sb.append("%s%n".formatted(line));
       }
-      out.print(sb.toString());
+      StdOutUtils.print(sb.toString());
       Optional.of(pr.waitFor())
         .filter(exitCode -> exitCode != 0)
         .ifPresent(exitCode -> {
@@ -213,7 +213,7 @@ public class CommandVerticle extends AbstractVerticle {
           sb.append("%s/%s%n".formatted(shortPath, line));
         }
       }
-      out.print(sb.toString());
+      StdOutUtils.print(sb.toString());
       Optional.of(pr.waitFor())
           .filter(exitCode -> exitCode != 0)
           .ifPresent(exitCode -> {

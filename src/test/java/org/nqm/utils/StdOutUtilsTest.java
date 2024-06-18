@@ -146,4 +146,25 @@ class StdOutUtilsTest {
         "1 AM N... 000000 100644 100644 0000000000000000000000000000000000000000 266d4a9eb53eff40687ab923a152a879cd558ad6 src/test/java/org/nqm/utils/StdOutUtilsTest.java"))
             .isEqualTo(" StdOutUtilsTest.java");
   }
+
+  @Test
+  void print_OK() {
+    // when:
+    StdOutUtils.print("sysout print");
+
+    // then:
+    assertThat(outCaptor.toByteArray())
+        .isEqualTo("sysout print".getBytes())
+        .containsExactly(115, 121, 115, 111, 117, 116, 32, 112, 114, 105, 110, 116);
+  }
+  @Test
+  void println_OK() {
+    // when:
+    StdOutUtils.println("sysout println");
+
+    // then:
+    assertThat(outCaptor.toByteArray())
+        .isEqualTo("sysout println\n".getBytes())
+        .containsExactly(115, 121, 115, 111, 117, 116, 32, 112, 114, 105, 110, 116, 108, 110, 10);
+  }
 }
