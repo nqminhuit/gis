@@ -15,8 +15,8 @@ public class GisVertx {
   private static EventBus eventBus;
   private static Map<String, Boolean> processedModules;
 
-  public static final String ADDR_ADD_DIR = "add.dir";
-  public static final String ADDR_REM_DIR = "remove.dir";
+  private static final String ADDR_ADD_DIR = "add.dir";
+  private static final String ADDR_REM_DIR = "remove.dir";
 
   private GisVertx() {}
 
@@ -40,7 +40,7 @@ public class GisVertx {
     }
 
     eventBus.consumer(ADDR_ADD_DIR).handler(GisVertx::addNewModule);
-    eventBus.consumer(ADDR_REM_DIR).handler(GisVertx::processedModule);
+    eventBus.consumer(ADDR_REM_DIR).handler(GisVertx::removeProcessedModule);
 
     return eventBus;
   }
@@ -49,7 +49,7 @@ public class GisVertx {
     processedModules().put("" + msg.body(), false);
   }
 
-  private static void processedModule(Message<Object> msg) {
+  private static void removeProcessedModule(Message<Object> msg) {
     var modules = processedModules();
     modules.computeIfPresent("" + msg.body(), (k, v) -> true);
     if (!modules.isEmpty() && modules.values().stream().allMatch(Boolean.TRUE::equals)) {
