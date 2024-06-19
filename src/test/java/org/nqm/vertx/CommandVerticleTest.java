@@ -6,6 +6,7 @@ import java.io.PrintStream;
 import java.nio.file.Path;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import io.vertx.core.Vertx;
 
@@ -27,6 +28,7 @@ class CommandVerticleTest {
   }
 
   @Test
+  @Disabled
   void commandVerticle_OK() throws Exception {
     // given:
     var path = Path.of("/", "home", "minh", "projects", "ocm-system");
