@@ -59,7 +59,7 @@ public class GitCommand {
   void fetch() {
     forEachModuleDo(path -> deployVertx(path, "fetch"));
     var timeFetch = LocalDateTime.ofInstant(Instant.now(), ZoneId.systemDefault())
-        .format(DateTimeFormatter.ofPattern("HH:mm:ss dd/MM/YYYY"));
+        .format(DateTimeFormatter.ofPattern("HH:mm:ss dd/MM/yyyy"));
 
     try {
       Files.write(TMP_FILE, timeFetch.getBytes(), StandardOpenOption.CREATE, StandardOpenOption.WRITE);
@@ -170,14 +170,18 @@ public class GitCommand {
   }
 
   @Command(name = "init", description = "init .gis-modules for current directory")
-  void init() throws IOException {
-    var data = Files.list(Path.of("."))
-        .filter(Files::isDirectory)
-        .map(p -> p.getFileName())
-        .map("path = %s"::formatted)
-        .collect(Collectors.joining("\n"))
-        .getBytes();
-    Files.write(Paths.get(".gis-modules"), data);
+  void init() {
+    try (var stream = Files.list(Path.of("."))) {
+      var data = stream.filter(Files::isDirectory)
+          .map(Path::getFileName)
+          .map("path = %s"::formatted)
+          .collect(Collectors.joining("\n"))
+          .getBytes();
+      Files.write(Paths.get(".gis-modules"), data);
+    } catch (IOException e) {
+      GisLog.debug(e);
+      StdOutUtils.errln(e.getMessage());
+    }
   }
 
   @Command(name = "files", description = "show modified files of all submodules")
