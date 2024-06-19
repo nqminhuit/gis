@@ -1,6 +1,5 @@
 package org.nqm.command;
 
-import static java.lang.System.out; // NOSONAR
 import static org.nqm.command.Wrapper.deployVertx;
 import static org.nqm.command.Wrapper.forEachModuleDo;
 import static org.nqm.command.Wrapper.forEachModuleWith;
@@ -22,6 +21,7 @@ import java.util.stream.Stream;
 import org.nqm.config.GisConfig;
 import org.nqm.config.GisLog;
 import org.nqm.utils.GisStringUtils;
+import org.nqm.utils.StdOutUtils;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
@@ -51,7 +51,7 @@ public class GitCommand {
     }
     var lastFetched = safelyReadLastFetched(TMP_FILE);
     if (GisStringUtils.isNotBlank(lastFetched)) {
-      out.println(FETCHED_AT.formatted(lastFetched));
+      StdOutUtils.println(FETCHED_AT.formatted(lastFetched));
     }
   }
 
@@ -59,7 +59,7 @@ public class GitCommand {
   void fetch() {
     forEachModuleDo(path -> deployVertx(path, "fetch"));
     var timeFetch = LocalDateTime.ofInstant(Instant.now(), ZoneId.systemDefault())
-        .format(DateTimeFormatter.ofPattern("HH:mm:ss dd/MM/YYYY"));
+        .format(DateTimeFormatter.ofPattern("HH:mm:ss dd/MM/yyyy"));
 
     try {
       Files.write(TMP_FILE, timeFetch.getBytes(), StandardOpenOption.CREATE, StandardOpenOption.WRITE);
@@ -68,7 +68,7 @@ public class GitCommand {
       return;
     }
 
-    out.println(FETCHED_AT.formatted(timeFetch));
+    StdOutUtils.println(FETCHED_AT.formatted(timeFetch));
   }
 
   @Command(name = "rebase-current-origin", aliases = "ru")
@@ -170,14 +170,18 @@ public class GitCommand {
   }
 
   @Command(name = "init", description = "init .gis-modules for current directory")
-  void init() throws IOException {
-    var data = Files.list(Path.of("."))
-        .filter(Files::isDirectory)
-        .map(p -> p.getFileName())
-        .map("path = %s"::formatted)
-        .collect(Collectors.joining("\n"))
-        .getBytes();
-    Files.write(Paths.get(".gis-modules"), data);
+  void init() {
+    try (var stream = Files.list(Path.of("."))) {
+      var data = stream.filter(Files::isDirectory)
+          .map(Path::getFileName)
+          .map("path = %s"::formatted)
+          .collect(Collectors.joining("\n"))
+          .getBytes();
+      Files.write(Paths.get(".gis-modules"), data);
+    } catch (IOException e) {
+      GisLog.debug(e);
+      StdOutUtils.errln(e.getMessage());
+    }
   }
 
   @Command(name = "files", description = "show modified files of all submodules")
@@ -210,7 +214,7 @@ public class GitCommand {
   }
 
   private boolean isConfirmed(String question) {
-    out.print(question + " ");
+    StdOutUtils.print(question + " ");
     try (var reader = new BufferedReader(new InputStreamReader(System.in))) {
       var input = reader.readLine();
       return Stream.of("y", "ye", "yes").anyMatch(s -> s.equalsIgnoreCase(input));

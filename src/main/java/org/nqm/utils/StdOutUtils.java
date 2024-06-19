@@ -26,6 +26,14 @@ public class StdOutUtils {
   private static final String UNTRACKED_SYM = "?";
   private static final String RENAME_SYM = "2";
 
+  public static void println(String msg) {
+    out.println(msg);
+  }
+
+  public static void print(String msg) {
+    out.print(msg);
+  }
+
   public static void errln(String msg) {
     err.println("  " + CL_RED + "ERROR: " + msg + CL_RESET);
   }
@@ -42,7 +50,7 @@ public class StdOutUtils {
     return msgFormat.formatted(CL_CYAN + word + CL_RESET);
   }
 
-  public static String coloringBranch(String branch) {
+  private static String coloringBranch(String branch) {
     if (branch.contains("develop")
       || "master".equalsIgnoreCase(branch)
       || "beta".equalsIgnoreCase(branch)
@@ -57,15 +65,15 @@ public class StdOutUtils {
     return coloringWord(branch, CL_GREEN);
   }
 
-  public static String coloringWord(String word, String color) {
+  private static String coloringWord(String word, String color) {
     return color + word + CL_RESET;
   }
 
-  public static String coloringWord(Character c, String color) {
+  private static String coloringWord(Character c, String color) {
     return color + c + CL_RESET;
   }
 
-  public static String buildStaging(char[] chars) {
+  private static String buildStaging(char[] chars) {
     if (chars.length == 0) {
       return "";
     }
@@ -124,7 +132,6 @@ public class StdOutUtils {
         .map("[%s]"::formatted)
         .orElse("");
       default -> Optional.of(lineSplit)
-        .map(StdOutUtils::preProcessUntrackFile)
         .map(splitS -> " "
           + Optional.of(splitS[splitS.length - 1])
             .map(getFiles(line))

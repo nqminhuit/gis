@@ -1,6 +1,5 @@
 package org.nqm.vertx;
 
-import static java.lang.System.out; // NOSONAR
 import static org.nqm.command.GitCommand.HOOKS_OPTION;
 import static org.nqm.utils.GisStringUtils.isNotBlank;
 import static org.nqm.utils.StdOutUtils.errln;
@@ -23,11 +22,14 @@ import org.nqm.command.GitCommand;
 import org.nqm.config.GisConfig;
 import org.nqm.config.GisLog;
 import org.nqm.utils.GisStringUtils;
+import org.nqm.utils.StdOutUtils;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
 
 public class CommandVerticle extends AbstractVerticle {
 
+  private static final String WARN_MSG_FMT = "Could not perform on module: '%s'";
+  private static final String EXIT_WITH_CODE_MSG_FMT = "exit with code: '%s'";
   private static final String OPTION_PREFIX = "--gis";
   private final String[] commandWithArgs;
   private String[] gisOptions;
@@ -81,34 +83,27 @@ public class CommandVerticle extends AbstractVerticle {
       return;
     }
     vertx.executeBlocking(() -> new ProcessBuilder(commandWithArgs).directory(path.toFile()).start(), false)
-      .compose(res -> {
-        if (GisStringUtils.isNotBlank(this.commandHook)) {
-          gisExecuteCommand(res, this.commandHook).forEach(f -> {
-            f.onComplete(r -> {
-              Optional.ofNullable(r.result()).ifPresent(p -> {
-                try {
-                  infof("%s", new String(p.getInputStream().readAllBytes()));
-                }
-                catch (IOException e) {
-                  errln(e.getMessage());
-                  GisLog.debug(e);
-                }
-              });
-            });
-          });
-        }
-        else if (Stream.of(gisOptions).anyMatch("--gis-no-print-modules-name"::equals)) {
-          safelyPrintWithoutModules(res);
-        }
-        else if (Stream.of(gisOptions).anyMatch("--gis-concat-modules-name"::equals)) {
-          safelyConcatModuleNames(res);
-        }
-        else {
-          safelyPrint(res);
-        }
-        return Future.succeededFuture();
-      })
-      .onComplete(r -> GisVertx.eventRemoveDir(path));
+        .compose(res -> {
+          if (GisStringUtils.isNotBlank(this.commandHook)) {
+            gisExecuteCommand(res, this.commandHook)
+                .forEach(f -> f.onComplete(r -> Optional.ofNullable(r.result()).ifPresent(p -> {
+                  try {
+                    infof("%s", new String(p.getInputStream().readAllBytes()));
+                  } catch (IOException e) {
+                    errln(e.getMessage());
+                    GisLog.debug(e);
+                  }
+                })));
+          } else if (Stream.of(gisOptions).anyMatch("--gis-no-print-modules-name"::equals)) {
+            safelyPrintWithoutModules(res);
+          } else if (Stream.of(gisOptions).anyMatch("--gis-concat-modules-name"::equals)) {
+            safelyConcatModuleNames(res);
+          } else {
+            safelyPrint(res);
+          }
+          return Future.succeededFuture();
+        })
+        .onComplete(r -> GisVertx.eventRemoveDir(path));
   }
 
   private void safelyPrint(Process pr) {
@@ -126,12 +121,12 @@ public class CommandVerticle extends AbstractVerticle {
           sb.append("%n  %s".formatted(line));
         }
       }
-      out.println(sb.toString());
+      StdOutUtils.println(sb.toString());
       Optional.of(pr.waitFor())
         .filter(exitCode -> exitCode != 0)
         .ifPresent(exitCode -> {
-          GisLog.debug("exit with code: '%s'".formatted(exitCode));
-          warnln("Could not perform on module: '%s'".formatted(this.path.getFileName()));
+          GisLog.debug(EXIT_WITH_CODE_MSG_FMT.formatted(exitCode));
+          warnln(WARN_MSG_FMT.formatted(this.path.getFileName()));
         });
     }
     catch (IOException e) {
@@ -152,12 +147,12 @@ public class CommandVerticle extends AbstractVerticle {
       while (isNotBlank(line = input.readLine())) {
         sb.append("%s%n".formatted(line));
       }
-      out.print(sb.toString());
+      StdOutUtils.print(sb.toString());
       Optional.of(pr.waitFor())
         .filter(exitCode -> exitCode != 0)
         .ifPresent(exitCode -> {
-          GisLog.debug("exit with code: '%s'".formatted(exitCode));
-          warnln("Could not perform on module: '%s'".formatted(this.path.getFileName()));
+          GisLog.debug(EXIT_WITH_CODE_MSG_FMT.formatted(exitCode));
+          warnln(WARN_MSG_FMT.formatted(this.path.getFileName()));
         });
     }
     catch (IOException e) {
@@ -213,12 +208,12 @@ public class CommandVerticle extends AbstractVerticle {
           sb.append("%s/%s%n".formatted(shortPath, line));
         }
       }
-      out.print(sb.toString());
+      StdOutUtils.print(sb.toString());
       Optional.of(pr.waitFor())
           .filter(exitCode -> exitCode != 0)
           .ifPresent(exitCode -> {
-            GisLog.debug("exit with code: '%s'".formatted(exitCode));
-            warnln("Could not perform on module: '%s'".formatted(this.path.getFileName()));
+            GisLog.debug(EXIT_WITH_CODE_MSG_FMT.formatted(exitCode));
+            warnln(WARN_MSG_FMT.formatted(this.path.getFileName()));
           });
     } catch (IOException e) {
       errln(e.getMessage());

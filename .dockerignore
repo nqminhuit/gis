@@ -3,6 +3,7 @@
 .vscode
 target
 Dockerfile
+Containerfile
 Dockerfile.*
 zzmm__
 README.md

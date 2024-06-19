@@ -9,7 +9,7 @@ WORKDIR /app/gis
 RUN ./mvnw -q verify clean --fail-never
 
 COPY . /app/gis
-RUN ./mvnw -q clean package
+RUN ./mvnw -B -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn clean package
 RUN native-image -cp target/gis-*.jar "org.nqm.Gis" --no-fallback --initialize-at-run-time=io.netty.handler.ssl.BouncyCastleAlpnSslUtils
 
 RUN mv org.nqm.gis gis
