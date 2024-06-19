@@ -74,18 +74,18 @@ for i in {1..100}; do { time giss fe; } 2>> gis_fe_report done
 
 Use Sonarqube to analyze code:
 ```shell script
-podman run -d --name sonarqube -e SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true -p 9000:9000 sonarqube:8.9.10-community
+podman run -d --name sonarqube -e SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true -p 9876:9000 docker.io/sonarqube:9.9.5-community
 ```
 
-Then go to `http://localhost:9000`
+Then go to `http://localhost:9876`
 - login (admin/admin), then change your password
-- go to `http://localhost:9000/projects` and click "Add a project"
+- go to `http://localhost:9876/projects` and click "Add a project"
 - choose "Manually"
 - input "Project key" and "Display name" e.g., "gis" then click "Set Up"
 - "Generate a token": enter a name for this token then click "Generate"
 - you will get something like this: 302481a5dee289283af983ac713174e2f2ed13da. Click "Continue"
 - as shown in the 2nd step, with maven:
     ```shell script
-    mvn sonar:sonar -Dsonar.projectKey=gis -Dsonar.host.url=http://localhost:9000 -Dsonar.login=302481a5dee289283af983ac713174e2f2ed13da
+    mvn sonar:sonar -Dsonar.projectKey=gis -Dsonar.host.url=http://localhost:9876 -Dsonar.login=302481a5dee289283af983ac713174e2f2ed13da
     ```
 - after the maven command above succcess, you will have a dashboard about `gis` project
