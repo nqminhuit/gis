@@ -14,7 +14,7 @@
     <maven.compiler.target>21</maven.compiler.target>
     <maven.compiler.source>21</maven.compiler.source>
     <picocli.version>4.7.6</picocli.version>
-    <vertx.version>4.5.8</vertx.version>
+    <vertx.version>4.4.8</vertx.version>
     <compiler.plugin.version>3.12.1</compiler.plugin.version>
     <jar.plugin.version>3.3.0</jar.plugin.version>
   </properties>
