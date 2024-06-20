@@ -53,7 +53,7 @@ command for generating the above numbers:
 for i in {1..1000}; do { time git submodule foreach git status -sb --ignore-submodules; } 2>> git_st_report done
 # took 28s638ms in total
 
-for i in {1..1000}; do { time giss st; } 2>> gis_st_report done
+for i in {1..1000}; do { time gis st; } 2>> gis_st_report done
 # took 13s654ms in total
 ```
 
@@ -66,7 +66,7 @@ command for generating the above numbers:
 for i in {1..100}; do { time git submodule foreach git fetch; } 2>> git_fe_report done
 # took 29m43s442ms
 
-for i in {1..100}; do { time giss fe; } 2>> gis_fe_report done
+for i in {1..100}; do { time gis fe; } 2>> gis_fe_report done
 # took 5m11s832ms
 ```
 
