@@ -27,6 +27,7 @@ import picocli.CommandLine.Parameters;
 
 public class GitCommand {
 
+  private static final String CHECKOUT = "checkout";
   private static final String FETCHED_AT = "(fetched at: %s)";
   private static final String ORIGIN = "origin";
   private static final Path TMP_FILE =
@@ -43,9 +44,9 @@ public class GitCommand {
   @Command(name = GIT_STATUS, aliases = "st")
   void status(@Option(names = "--one-line") boolean oneLineOpt) {
     if (oneLineOpt) {
-      forEachModuleDo(new String[]{GIT_STATUS, "-sb", "--ignore-submodules", "--porcelain=v2", "--gis-one-line"});
+      forEachModuleDo(GIT_STATUS, "-sb", "--ignore-submodules", "--porcelain=v2", "--gis-one-line");
     } else {
-      forEachModuleDo(new String[] {GIT_STATUS, "-sb", "--ignore-submodules", "--porcelain=v2"});
+      forEachModuleDo(GIT_STATUS, "-sb", "--ignore-submodules", "--porcelain=v2");
     }
     var lastFetched = safelyReadLastFetched(TMP_FILE);
     if (GisStringUtils.isNotBlank(lastFetched)) {
@@ -72,22 +73,21 @@ public class GitCommand {
   @Command(name = "rebase-current-origin", aliases = "ru")
   void rebaseCurrentOrigin() {
     throw new GisException("this function is in progress");
-    // forEachModuleDo(new String[] {"rebase", "%s/%s".formatted(ORIGIN, getCurrentBranchUnderPath(path))});
   }
 
   @Command(name = "rebase-origin", aliases = "re")
   void rebaseOrigin(@Parameters(index = "0", paramLabel = "<branch name>") String branch) {
-    forEachModuleDo(new String[] {"rebase", "%s/%s".formatted(ORIGIN, branch)});
+    forEachModuleDo("rebase", "%s/%s".formatted(ORIGIN, branch));
   }
 
   @Command(name = "fetch-origin", aliases = "fo")
   void fetchOrigin(@Parameters(index = "0", paramLabel = "<branch name>") String branch) {
-    forEachModuleDo(new String[] {"fetch", ORIGIN, "%s:%s".formatted(branch, branch)});
+    forEachModuleDo("fetch", ORIGIN, "%s:%s".formatted(branch, branch));
   }
 
-  @Command(name = "checkout", aliases = "co")
+  @Command(name = CHECKOUT, aliases = "co")
   void checkout(@Parameters(index = "0", paramLabel = "<branch name>") String branch) {
-    forEachModuleDo(new String[] {"checkout", branch});
+    forEachModuleDo(CHECKOUT, branch);
   }
 
   @Command(name = "checkout-branch",
@@ -99,7 +99,7 @@ public class GitCommand {
       @Parameters(paramLabel = "<modules>",
           description = "Specified modules. If empty, will create for all submodules and root.") String... modules) {
     if (null == modules) {
-      forEachModuleDo(new String[] {"checkout", "-b", newBranch});
+      forEachModuleDo(CHECKOUT, "-b", newBranch);
       return;
     }
     var specifiedPaths = streamOf(modules)
@@ -108,13 +108,13 @@ public class GitCommand {
         .filter(module -> Path.of(module).toFile().exists())
         .map(Path::of)
         .toList();
-    forEachModuleWith(specifiedPaths::contains, new String[] {"checkout", "-b", newBranch});
+    forEachModuleWith(specifiedPaths::contains, CHECKOUT, "-b", newBranch);
   }
 
   @Command(name = "remove-branch", aliases = "rm")
   void removeBranch(@Parameters(index = "0", paramLabel = "<branch name>") String branch) {
     if (isConfirmed("Sure you want to remove branch '%s' ? [Y/n]".formatted(branch))) {
-      forEachModuleDo(new String[]{"branch", "-d", branch});
+      forEachModuleDo("branch", "-d", branch);
     }
   }
 
@@ -132,20 +132,19 @@ public class GitCommand {
 
   @Command(name = "remote-prune-origin", aliases = "rpo")
   void remotePruneOrigin() {
-    forEachModuleDo(new String[] {"remote", "prune", ORIGIN});
+    forEachModuleDo("remote", "prune", ORIGIN);
   }
 
   @Command(name = "local-prune", aliases = "prune")
   void localPrune(@Parameters(index = "0", paramLabel = "<default branch name>") String branch) {
-    forEachModuleDo(new String[] {
-        "for-each-ref",
+    forEachModuleDo("for-each-ref",
         "--merged=%s".formatted(branch),
         "--format=%(refname:short)",
         "refs/heads/",
         "--no-contains",
         branch,
         HOOKS_OPTION,
-        GisConfig.GIT_HOME_DIR + " branch -d %s"});
+        GisConfig.GIT_HOME_DIR + " branch -d %s");
   }
 
   @Command(name = "stash")
@@ -182,7 +181,7 @@ public class GitCommand {
 
   @Command(name = "files", description = "show modified files of all submodules")
   void files() {
-    forEachModuleDo(new String[] {"diff", "--name-only", "--gis-concat-modules-name"});
+    forEachModuleDo("diff", "--name-only", "--gis-concat-modules-name");
   }
 
   private static Stream<String> streamOf(String[] input) {

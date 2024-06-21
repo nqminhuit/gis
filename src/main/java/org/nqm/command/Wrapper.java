@@ -35,6 +35,7 @@ public final class Wrapper {
               () -> new GisException("Could not find '.gis-modules' or '.gitmodules' under this directory!"));
     } catch (InterruptedException | ExecutionException e) {
       GisLog.debug(e);
+      Thread.currentThread().interrupt();
       throw new GisException(e.getMessage());
     }
     return gitModulesFilePath;
