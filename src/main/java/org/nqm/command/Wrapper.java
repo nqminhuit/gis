@@ -5,10 +5,14 @@ import static org.nqm.utils.StdOutUtils.errln;
 import static org.nqm.utils.StdOutUtils.warnln;
 import java.io.File;
 import java.nio.file.Path;
+import java.util.Objects;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 import org.nqm.config.GisLog;
+import org.nqm.exception.GisException;
 import org.nqm.vertx.CommandVerticle;
 import org.nqm.vertx.GisVertx;
 import io.vertx.core.AsyncResult;
@@ -17,6 +21,10 @@ import io.vertx.core.buffer.Buffer;
 public final class Wrapper {
 
   private Wrapper() {}
+
+  private static File isFileExist(File f) {
+    return f.exists() ? f : null;
+  }
 
   public static void deployVertx(Path path, String... args) {
     getFileMarker();
@@ -29,15 +37,17 @@ public final class Wrapper {
   }
 
   private static File getFileMarker() {
-    var gitModulesFilePath = Stream.of(Path.of(".", ".gis-modules"), Path.of(".", ".gitmodules"))
-      .map(Path::toFile)
-      .filter(File::exists)
-      .findFirst()
-      .orElse(null);
-
-    if (gitModulesFilePath == null) {
-      errln("Could not find '.gis-modules' or '.gitmodules' under this directory!");
-      System.exit(1);
+    File gitModulesFilePath;
+    try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+      var f1 = executor.submit(() -> isFileExist(Path.of(".", ".gis-modules").toFile()));
+      var f2 = executor.submit(() -> isFileExist(Path.of(".", ".gitmodules").toFile()));
+      gitModulesFilePath = Stream.of(f1.get(), f2.get())
+        .filter(Objects::nonNull)
+        .findFirst()
+        .orElseThrow(() -> new GisException("Could not find '.gis-modules' or '.gitmodules' under this directory!"));
+    } catch (InterruptedException | ExecutionException e) {
+      GisLog.debug(e);
+      throw new GisException(e.getMessage());
     }
     return gitModulesFilePath;
   }
