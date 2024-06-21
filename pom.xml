@@ -14,7 +14,6 @@
     <maven.compiler.target>21</maven.compiler.target>
     <maven.compiler.source>21</maven.compiler.source>
     <picocli.version>4.7.6</picocli.version>
-    <vertx.version>4.4.8</vertx.version>
     <junit.version>5.10.2</junit.version>
     <assertj.version>3.26.0</assertj.version>
     <maven-surefire.version>3.3.0</maven-surefire.version>
@@ -27,11 +26,6 @@
       <groupId>info.picocli</groupId>
       <artifactId>picocli</artifactId>
       <version>${picocli.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>io.vertx</groupId>
-      <artifactId>vertx-core</artifactId>
-      <version>${vertx.version}</version>
     </dependency>
     <dependency>
       <groupId>org.junit.jupiter</groupId>
