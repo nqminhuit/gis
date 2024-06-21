@@ -98,7 +98,7 @@ public class GitCommand {
           description = "branch name") String newBranch,
       @Parameters(paramLabel = "<modules>",
           description = "Specified modules. If empty, will create for all submodules and root.") String... modules) {
-    if (null == modules) {
+    if (null == modules || modules.length < 1) {
       forEachModuleDo(CHECKOUT, "-b", newBranch);
       return;
     }
@@ -112,8 +112,9 @@ public class GitCommand {
   }
 
   @Command(name = "remove-branch", aliases = "rm")
-  void removeBranch(@Parameters(index = "0", paramLabel = "<branch name>") String branch) {
-    if (isConfirmed("Sure you want to remove branch '%s' ? [Y/n]".formatted(branch))) {
+  void removeBranch(@Parameters(index = "0", paramLabel = "<branch name>") String branch,
+          @Option(names = "-f", description = "force to delete branch without interactive prompt") boolean isForce) {
+    if (isForce || isConfirmed("Sure you want to remove branch '%s' ? [Y/n]".formatted(branch))) {
       forEachModuleDo("branch", "-d", branch);
     }
   }

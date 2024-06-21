@@ -15,8 +15,9 @@ public class GisLog {
 
   public static void setIsDebugEnabled(boolean b) {
     if (isDebugEnabled == null) {
-      isDebugEnabled = b;
+      isDebugEnabled = false;
     }
+    isDebugEnabled = b;
   }
 
   private static void debug(String msg, Throwable e) {

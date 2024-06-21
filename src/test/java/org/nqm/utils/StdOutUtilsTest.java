@@ -6,30 +6,10 @@ import static org.nqm.utils.StdOutUtils.CL_GREEN;
 import static org.nqm.utils.StdOutUtils.CL_RED;
 import static org.nqm.utils.StdOutUtils.CL_RESET;
 import static org.nqm.utils.StdOutUtils.CL_YELLOW;
-import java.io.ByteArrayOutputStream;
-import java.io.PrintStream;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.nqm.helper.StdBaseTest;
 
-class StdOutUtilsTest {
-
-  private final PrintStream out = System.out;
-  private final PrintStream err = System.err;
-  private final ByteArrayOutputStream outCaptor = new ByteArrayOutputStream();
-  private final ByteArrayOutputStream errCaptor = new ByteArrayOutputStream();
-
-  @BeforeEach
-  void setup() {
-    System.setOut(new PrintStream(outCaptor));
-    System.setErr(new PrintStream(errCaptor));
-  }
-
-  @AfterEach
-  void teardown() {
-    System.setOut(out);
-    System.setErr(err);
-  }
+class StdOutUtilsTest extends StdBaseTest {
 
   @Test
   void debugln_OK() {
