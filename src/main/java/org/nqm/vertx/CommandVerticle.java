@@ -23,10 +23,9 @@ import org.nqm.config.GisConfig;
 import org.nqm.config.GisLog;
 import org.nqm.utils.GisStringUtils;
 import org.nqm.utils.StdOutUtils;
-import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
 
-public class CommandVerticle extends AbstractVerticle {
+public class CommandVerticle {
 
   private static final String WARN_MSG_FMT = "Could not perform on module: '%s'";
   private static final String EXIT_WITH_CODE_MSG_FMT = "exit with code: '%s'";
@@ -76,35 +75,65 @@ public class CommandVerticle extends AbstractVerticle {
       .toArray(String[]::new);
   }
 
-  @Override
-  public void start() {
+  public void execute() {
     if (path == null) {
-      GisVertx.eventRemoveDir(Path.of("."));
       return;
     }
-    vertx.executeBlocking(() -> new ProcessBuilder(commandWithArgs).directory(path.toFile()).start(), false)
-        .compose(res -> {
-          if (GisStringUtils.isNotBlank(this.commandHook)) {
-            gisExecuteCommand(res, this.commandHook)
-                .forEach(f -> f.onComplete(r -> Optional.ofNullable(r.result()).ifPresent(p -> {
-                  try {
-                    infof("%s", new String(p.getInputStream().readAllBytes()));
-                  } catch (IOException e) {
-                    errln(e.getMessage());
-                    GisLog.debug(e);
-                  }
-                })));
-          } else if (Stream.of(gisOptions).anyMatch("--gis-no-print-modules-name"::equals)) {
-            safelyPrintWithoutModules(res);
-          } else if (Stream.of(gisOptions).anyMatch("--gis-concat-modules-name"::equals)) {
-            safelyConcatModuleNames(res);
-          } else {
-            safelyPrint(res);
-          }
-          return Future.succeededFuture();
-        })
-        .onComplete(r -> GisVertx.eventRemoveDir(path));
+    Process res;
+    try {
+      res = new ProcessBuilder(commandWithArgs).directory(path.toFile()).start();
+    } catch (IOException e) {
+      GisLog.debug(e);
+      return;
+    }
+
+    if (GisStringUtils.isNotBlank(this.commandHook)) {
+      gisExecuteCommand(res, this.commandHook)
+          .forEach(f -> f.onComplete(r -> Optional.ofNullable(r.result()).ifPresent(p -> {
+            try {
+              infof("%s", new String(p.getInputStream().readAllBytes()));
+            } catch (IOException e) {
+              errln(e.getMessage());
+              GisLog.debug(e);
+            }
+          })));
+    } else if (Stream.of(gisOptions).anyMatch("--gis-no-print-modules-name"::equals)) {
+      safelyPrintWithoutModules(res);
+    } else if (Stream.of(gisOptions).anyMatch("--gis-concat-modules-name"::equals)) {
+      safelyConcatModuleNames(res);
+    } else {
+      safelyPrint(res);
+    }
   }
+
+  // public void start() {
+  //   if (path == null) {
+  //     GisVertx.eventRemoveDir(Path.of("."));
+  //     return;
+  //   }
+  //   vertx.executeBlocking(() -> new ProcessBuilder(commandWithArgs).directory(path.toFile()).start(), false)
+  //       .compose(res -> {
+  //         if (GisStringUtils.isNotBlank(this.commandHook)) {
+  //           gisExecuteCommand(res, this.commandHook)
+  //               .forEach(f -> f.onComplete(r -> Optional.ofNullable(r.result()).ifPresent(p -> {
+  //                 try {
+  //                   infof("%s", new String(p.getInputStream().readAllBytes()));
+  //                 } catch (IOException e) {
+  //                   errln(e.getMessage());
+  //                   GisLog.debug(e);
+  //                 }
+  //               })));
+  //         } else if (Stream.of(gisOptions).anyMatch("--gis-no-print-modules-name"::equals)) {
+  //           safelyPrintWithoutModules(res);
+  //         } else if (Stream.of(gisOptions).anyMatch("--gis-concat-modules-name"::equals)) {
+  //           safelyConcatModuleNames(res);
+  //         } else {
+  //           safelyPrint(res);
+  //         }
+  //         return Future.succeededFuture();
+  //       })
+  //       .onComplete(r -> GisVertx.eventRemoveDir(path));
+  // }
 
   private void safelyPrint(Process pr) {
     var line = "";

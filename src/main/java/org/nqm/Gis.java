@@ -21,11 +21,13 @@ public class Gis extends GitCommand {
 
   public static void main(String[] args) {
     var gis = new CommandLine(new Gis());
+    int exitCode;
     if (args.length == 0) {
-      gis.execute(GIT_STATUS, "--one-line");
-      return;
+      exitCode = gis.execute(GIT_STATUS, "--one-line");
+    } else {
+      exitCode = gis.execute(args);
     }
-    gis.execute(args);
+    System.exit(exitCode);
   }
 
 }
