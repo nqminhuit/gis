@@ -19,7 +19,7 @@ There are 2 GraalVM distributions: [GraalVM CE](https://www.graalvm.org/22.0/doc
 
 ```shell script
 cd gis
-(podman build -t gis . || exit 1; podman create --name dkgis_ gis:latest; podman cp dkgis_:/app/gis/gis .; podman rm -f dkgis_)
+podman build -t gis . || return 1; podman create --name dkgis_ gis:latest; podman cp dkgis_:/app/gis/gis .; podman rm -f dkgis_
 ```
 After the steps above, an executable file named `gis` will be created under project directory.
 
