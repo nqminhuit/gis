@@ -97,49 +97,52 @@ Measure by [hyperfine](https://github.com/sharkdp/hyperfine)
 ```bash
 | Command          | Mean [ms]       | Min [ms] | Max [ms] | Relative |
 |------------------+-----------------+----------+----------+----------|
-| gis              | 96.6 ± 13.3     |     86.2 |    155.9 |     1.00 |
-| gis branches -nn | 73.2 ± 3.0      |     67.1 |     78.4 |     1.00 |
-| gis branches     | 73.1 ± 3.7      |     67.8 |     81.2 |     1.00 |
-| gis co br_tst_1  | 1088.8 ± 88.8   |    984.5 |   1297.2 |     1.00 |
-| gis fetch        | 4222.9 ± 1753.7 |   2839.8 |   7066.3 |     1.00 |
-| gis files        | 3597.6 ± 110.2  |   3502.3 |   3854.2 |     1.00 |
-| gis status       | 94.9 ± 5.1      |     88.6 |    108.5 |     1.00 |
+| gis              | 98.4 ± 5.9      |     89.0 |    110.9 |     1.00 |
+| gis branches -nn | 73.4 ± 3.1      |     65.6 |     82.8 |     1.00 |
+| gis branches     | 74.2 ± 3.0      |     66.3 |     79.2 |     1.00 |
+| gis co br_tst_1  | 4344.0 ± 2407.7 |   1264.6 |   7656.9 |     1.00 |
+| gis fetch        | 5095.3 ± 1722.7 |   3494.3 |   8454.7 |     1.00 |
+| gis files        | 3578.6 ± 50.8   |   3535.7 |   3715.6 |     1.00 |
+| gis status       | 98.6 ± 4.6      |     88.8 |    107.8 |     1.00 |
 ```
 
-
 Performance is run with:
-- number of submodules: 100
-- avg number of branch per submodules: 52.050
-- avg number of files per submodules: 1002.000
-- avg number of commit per submodules: 155.480
+- number of submodules: `100`
+- avg number of branch per submodules: `52.050`
+- avg number of files per submodules: `1002.000`
+- avg number of commit per submodules: `155.480`
 
 
 CPU info:
+```
 CPU NODE SOCKET CORE L1d:L1i:L2:L3 ONLINE    MAXMHZ   MINMHZ      MHZ
-  0    0      0    0 0:0:0:0          yes 4600.0000 800.0000 799.9910
-  1    0      0    0 0:0:0:0          yes 4600.0000 800.0000 800.2950
-  2    0      0    1 4:4:1:0          yes 4600.0000 800.0000 800.1080
-  3    0      0    1 4:4:1:0          yes 4600.0000 800.0000 800.0000
-  4    0      0    2 8:8:2:0          yes 4600.0000 800.0000 800.0540
+  0    0      0    0 0:0:0:0          yes 4600.0000 800.0000 800.0280
+  1    0      0    0 0:0:0:0          yes 4600.0000 800.0000 800.1450
+  2    0      0    1 4:4:1:0          yes 4600.0000 800.0000 800.3250
+  3    0      0    1 4:4:1:0          yes 4600.0000 800.0000 800.4990
+  4    0      0    2 8:8:2:0          yes 4600.0000 800.0000 800.2260
   5    0      0    2 8:8:2:0          yes 4600.0000 800.0000 800.0000
-  6    0      0    3 12:12:3:0        yes 4600.0000 800.0000 800.2280
+  6    0      0    3 12:12:3:0        yes 4600.0000 800.0000 799.5920
   7    0      0    3 12:12:3:0        yes 4600.0000 800.0000 800.0000
-  8    0      0    4 16:16:4:0        yes 4600.0000 800.0000 800.7560
+  8    0      0    4 16:16:4:0        yes 4600.0000 800.0000 800.0000
   9    0      0    4 16:16:4:0        yes 4600.0000 800.0000 800.0000
- 10    0      0    5 20:20:5:0        yes 4600.0000 800.0000 800.3980
+ 10    0      0    5 20:20:5:0        yes 4600.0000 800.0000 840.4300
  11    0      0    5 20:20:5:0        yes 4600.0000 800.0000 800.0000
  12    0      0    6 28:28:7:0        yes 3300.0000 800.0000 800.0000
- 13    0      0    7 29:29:7:0        yes 3300.0000 800.0000 800.5960
- 14    0      0    8 30:30:7:0        yes 3300.0000 800.0000 799.4260
+ 13    0      0    7 29:29:7:0        yes 3300.0000 800.0000 800.0000
+ 14    0      0    8 30:30:7:0        yes 3300.0000 800.0000 800.0000
  15    0      0    9 31:31:7:0        yes 3300.0000 800.0000 800.0000
+```
 
-RAM info:RANGE                                 SIZE  STATE REMOVABLE  BLOCK
+RAM info:
+```
+RANGE                                 SIZE  STATE REMOVABLE  BLOCK
 0x0000000000000000-0x000000007fffffff   2G online       yes   0-15
 0x0000000100000000-0x000000087fffffff  30G online       yes 32-271
 
 Memory block size:       128M
 Total online memory:      32G
 Total offline memory:      0B
+```
 
-
-gis version: 1.1.3-dev
+gis version: `1.1.4`

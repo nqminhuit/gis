@@ -4,7 +4,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.nqm</groupId>
   <artifactId>gis</artifactId>
-  <version>1.1.4-dev</version>
+  <version>1.1.4</version>
   <packaging>${packaging}</packaging>
 
   <properties>
