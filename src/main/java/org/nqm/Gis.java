@@ -11,7 +11,7 @@ import picocli.CommandLine.ScopeType;
   name = "gis",
   description = "Git extension wrapper which supports submodules",
   mixinStandardHelpOptions = true,
-  version = "1.1.4")
+  version = "2.0.0-dev")
 public class Gis extends GitCommand {
 
   @Option(names = "-v", description = "Show more details information.", scope = ScopeType.INHERIT)
@@ -21,11 +21,13 @@ public class Gis extends GitCommand {
 
   public static void main(String[] args) {
     var gis = new CommandLine(new Gis());
+    int exitCode;
     if (args.length == 0) {
-      gis.execute(GIT_STATUS, "--one-line");
-      return;
+      exitCode = gis.execute(GIT_STATUS, "--one-line");
+    } else {
+      exitCode = gis.execute(args);
     }
-    gis.execute(args);
+    System.exit(exitCode);
   }
 
 }
