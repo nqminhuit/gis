@@ -39,6 +39,7 @@ jobs:
       run: |
         native-image -march=compatibility -cp target/gis-*.jar "org.nqm.Gis" --no-fallback --initialize-at-run-time=io.netty.handler.ssl.BouncyCastleAlpnSslUtils
         ./org.nqm.gis --version
+        du -sh org.nqm.gis
 
     # Optional: Uploads the full dependency graph to GitHub to improve the quality of Dependabot alerts this repository can receive
     - name: Update dependency graph
