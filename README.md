@@ -36,6 +36,12 @@ For more details, just run:
 ./gis --help
 ```
 
+Generate completion:
+```
+./gis generate-completion
+```
+we can now press `<TAB>` for autocomplete
+
 # Comparison
 
 notes:

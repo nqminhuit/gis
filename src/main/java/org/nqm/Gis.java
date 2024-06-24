@@ -3,15 +3,17 @@ package org.nqm;
 import org.nqm.command.GitCommand;
 import org.nqm.config.GisLog;
 import picocli.CommandLine;
+import picocli.AutoComplete.GenerateCompletion;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.ScopeType;
 
 @Command(
-  name = "gis",
-  description = "Git extension wrapper which supports submodules",
-  mixinStandardHelpOptions = true,
-  version = "2.0.0-dev")
+    name = "gis",
+    subcommands = GenerateCompletion.class,
+    description = "Git extension wrapper which supports submodules",
+    mixinStandardHelpOptions = true,
+    version = "2.0.0-dev")
 public class Gis extends GitCommand {
 
   @Option(names = "-v", description = "Show more details information.", scope = ScopeType.INHERIT)
@@ -21,6 +23,11 @@ public class Gis extends GitCommand {
 
   public static void main(String[] args) {
     var gis = new CommandLine(new Gis());
+    gis.getSubcommands()
+        .get("generate-completion")
+        .getCommandSpec()
+        .usageMessage()
+        .hidden(true);
     int exitCode;
     if (args.length == 0) {
       exitCode = gis.execute(GIT_STATUS, "--one-line");
@@ -29,5 +36,4 @@ public class Gis extends GitCommand {
     }
     System.exit(exitCode);
   }
-
 }
