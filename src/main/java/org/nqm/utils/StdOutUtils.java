@@ -8,6 +8,7 @@ import java.util.Optional;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.nqm.config.GisConfig;
 
 public class StdOutUtils {
 
@@ -51,14 +52,11 @@ public class StdOutUtils {
   }
 
   private static String coloringBranch(String branch) {
-    if (branch.contains("develop")
-      || "master".equalsIgnoreCase(branch)
-      || "beta".equalsIgnoreCase(branch)
-      || "main".equalsIgnoreCase(branch)) {
+    if (Stream.of(GisConfig.getDefaultBranches()).anyMatch(branch::equals)) {
       return coloringWord(branch, CL_RED);
     }
 
-    if (branch.toLowerCase().startsWith("feature/")) {
+    if (Stream.of(GisConfig.getFeatureBranchPrefixes()).anyMatch(branch::startsWith)) {
       return coloringWord(branch, CL_YELLOW);
     }
 

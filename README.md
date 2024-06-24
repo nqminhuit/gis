@@ -36,6 +36,38 @@ For more details, just run:
 ./gis --help
 ```
 
+# Config
+
+Gis will read config from file at `~/.config/gis.config`
+
+Supported configs:
+```
+| key                     | description                                             | default value       |
+|-------------------------+---------------------------------------------------------+---------------------|
+| default_branches        | comma separated values indicate default branch values   | master,main,develop |
+| feature_branch_prefixes | comma separated values indicate feature branch prefixes | feature/            |
+```
+
+Note: do NOT insert space into value part.
+don't:
+```
+master, main, develop
+```
+
+do:
+```
+master,main,develop
+```
+
+example:
+```
+default_branches=master,main,develop
+feature_branch_prefixes=feature/
+```
+
+The reason that value parsing is not that smart is because that we use default Java core package `java.util.Properties` to parse values. We prefer Java's core over extra dependencies.
+
+
 # Comparison
 
 notes:
