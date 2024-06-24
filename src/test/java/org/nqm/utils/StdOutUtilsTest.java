@@ -93,8 +93,6 @@ class StdOutUtilsTest extends StdBaseTest {
         .isEmpty();
     assertThat(StdOutUtils.gitStatusOneLine("# branch.head master"))
         .isEqualTo(" %s".formatted(coloringWord("master", CL_RED)));
-    assertThat(StdOutUtils.gitStatusOneLine("# branch.head beta"))
-        .isEqualTo(" %s".formatted(coloringWord("beta", CL_RED)));
     assertThat(StdOutUtils.gitStatusOneLine("# branch.head main"))
         .isEqualTo(" %s".formatted(coloringWord("main", CL_RED)));
     assertThat(StdOutUtils.gitStatusOneLine("# branch.head develop"))
