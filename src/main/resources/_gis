@@ -1,0 +1,60 @@
+#compdef gis
+compdef _gis gis
+
+function _gis {
+  local line
+  _arguments -C\
+             "1: :(checkout co \
+checkout-branch cb \
+fetch fe \
+fetch-origin fo \
+files \
+init \
+branches \
+local-prune prune \
+pull pu \
+push pus \
+rebase-current-origin ru \
+rebase-origin re \
+remote-prune-origin rpo \
+remove-branch rm \
+stash \
+status st)" \
+             "--help[print help]" \
+             "--version[print gis version]" \
+             "*::arg:->args"
+  case $line[1] in
+    checkout | co | fetch-origin | fo | local-prune | prune | push | pus | rebase-origin | re | remove-branch | rm)
+      _suggest_branches
+      ;;
+    branches)
+      _gis_branches_suggest
+      ;;
+    stash)
+      _gis_stash_suggest
+      ;;
+    status | st)
+      _gis_status_suggest
+      ;;
+  esac
+}
+
+function get_branches {
+  [ -d .git ] && git for-each-ref --format="%(refname:short)" refs/heads refs/remotes
+}
+
+function _suggest_branches {
+  _arguments "1: :($(get_branches))"
+}
+
+function _gis_branches_suggest {
+  _arguments "-nn[do not print module name]"
+}
+
+function _gis_status_suggest {
+  _arguments "--one-line[print result in one line]"
+}
+
+function _gis_stash_suggest {
+  _arguments "-pp[pop first stashed changes]"
+}
