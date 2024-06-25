@@ -2,6 +2,7 @@ package org.nqm.command;
 
 import static org.nqm.command.Wrapper.forEachModuleDo;
 import static org.nqm.command.Wrapper.forEachModuleWith;
+import static org.nqm.config.GisConfig.currentDir;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -13,12 +14,14 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.nqm.config.GisConfig;
 import org.nqm.config.GisLog;
 import org.nqm.exception.GisException;
+import org.nqm.utils.GisProcessUtils;
 import org.nqm.utils.GisStringUtils;
 import org.nqm.utils.StdOutUtils;
 import picocli.CommandLine.Command;
@@ -30,8 +33,7 @@ public class GitCommand {
   private static final String CHECKOUT = "checkout";
   private static final String FETCHED_AT = "(fetched at: %s)";
   private static final String ORIGIN = "origin";
-  private static final Path TMP_FILE =
-      Path.of("/", "tmp", "gis_fetch" + GisConfig.CURRENT_DIR.replace("/", "_"));
+  private static final Path TMP_FILE = Path.of("/", "tmp", "gis_fetch" + currentDir().replace("/", "_"));
 
   public static final String GIT_STATUS = "status";
   public static final String HOOKS_OPTION = "--hooks";
@@ -102,18 +104,28 @@ public class GitCommand {
       forEachModuleDo(CHECKOUT, "-b", newBranch);
       return;
     }
+    var currentDir = currentDir();
+    var currentPath = Optional.of(Path.of(currentDir))
+        .map(p -> p.subpath(p.getNameCount() - 1, p.getNameCount()))
+        .map(Path::toString)
+        .orElse(null);
     var specifiedPaths = streamOf(modules)
-        .distinct()
         .filter(Predicate.not(String::isBlank))
-        .filter(module -> Path.of(module).toFile().exists())
-        .map(Path::of)
+        .map(module -> {
+          if (module.equals(currentPath)) {
+            return Path.of(currentDir);
+          }
+          return Path.of(currentDir, module);
+        })
+        .filter(p -> p.toFile().exists())
         .toList();
     forEachModuleWith(specifiedPaths::contains, CHECKOUT, "-b", newBranch);
   }
 
   @Command(name = "remove-branch", aliases = "rm")
   void removeBranch(@Parameters(index = "0", paramLabel = "<branch name>") String branch,
-          @Option(names = "-f", description = "force to delete branch without interactive prompt") boolean isForce) {
+      @Option(names = "-f",
+          description = "force to delete branch without interactive prompt") boolean isForce) {
     if (isForce || isConfirmed("Sure you want to remove branch '%s' ? [Y/n]".formatted(branch))) {
       forEachModuleDo("branch", "-d", branch);
     }
@@ -190,16 +202,8 @@ public class GitCommand {
   }
 
   private String getCurrentBranchUnderPath(Path path) {
-    try (BufferedReader currentBranch = new BufferedReader(
-        new InputStreamReader(new ProcessBuilder(GisConfig.GIT_HOME_DIR, "branch", "--show-current")
-            .directory(path.toFile())
-            .start()
-            .getInputStream()))) {
-      return currentBranch.readLine();
-    } catch (IOException e) {
-      GisLog.debug(e);
-      return "";
-    }
+    var result = GisProcessUtils.quickRun(path.toFile(), GisConfig.GIT_HOME_DIR, "branch", "--show-current");
+    return result.output();
   }
 
   private boolean isSameBranchUnderPath(String branch, Path path) {

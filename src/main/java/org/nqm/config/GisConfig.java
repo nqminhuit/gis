@@ -32,7 +32,7 @@ public class GisConfig {
   private static final String FEATURE_BRANCH_PREFIXES_KEY = "feature_branch_prefixes";
   private static final String[] FEATURE_BRANCH_PREFIX_VALS = new String[] {"feature/"};
 
-  public static final String CURRENT_DIR = "" + Path.of("").toAbsolutePath();
+  private static final String CURRENT_DIR = "" + Path.of("").toAbsolutePath();
   public static final String GIT_HOME_DIR = "/usr/bin/git";
 
   private static Function<String, String[]> splitValue = val -> val.split(",");
@@ -50,5 +50,9 @@ public class GisConfig {
         .map(String::toLowerCase)
         .map(splitValue)
         .orElse(FEATURE_BRANCH_PREFIX_VALS);
+  }
+
+  public static String currentDir() {
+    return CURRENT_DIR;
   }
 }
