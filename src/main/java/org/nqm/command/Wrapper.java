@@ -42,7 +42,7 @@ public final class Wrapper {
     return gitModulesFilePath;
   }
 
-  public static void forEachModuleWith(Predicate<Path> pred, String... args) {
+  public static void forEachModuleWith(Predicate<Path> pred, String... args) throws IOException {
     var gitModulesFilePath = getFileMarker();
     var currentDir = currentDir();
     try (var exe = Executors.newVirtualThreadPerTaskExecutor()) {
@@ -63,12 +63,10 @@ public final class Wrapper {
           })
           .filter(pred)
           .forEach(dir -> exe.submit(() -> CommandVerticle.execute(dir, args)));
-    } catch (IOException e) {
-      StdOutUtils.errln("failed to read file '.gis-modules' or '.gitmodules'");
     }
   }
 
-  public static void forEachModuleDo(String... args) {
+  public static void forEachModuleDo(String... args) throws IOException {
     forEachModuleWith(p -> true, args);
   }
 }

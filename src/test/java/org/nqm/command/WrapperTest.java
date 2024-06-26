@@ -66,7 +66,7 @@ class WrapperTest extends StdBaseTest {
   }
 
   @Test
-  void forEachModuleWith_OK() {
+  void forEachModuleWith_OK() throws IOException {
     // given:
     ExecutorsMock.mockVirtualThreadCallable(exe);
     ExecutorsMock.mockVirtualThreadRunnable(exe);

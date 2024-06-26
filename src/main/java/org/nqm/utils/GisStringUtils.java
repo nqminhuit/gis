@@ -1,10 +1,7 @@
 package org.nqm.utils;
 
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
-import org.nqm.config.GisLog;
 
 public class GisStringUtils {
 
@@ -16,15 +13,6 @@ public class GisStringUtils {
 
   public static boolean isBlank(String s) {
     return !isNotBlank(s);
-  }
-
-  public static String fromInputStream(InputStream stream) {
-    try {
-      return new String(stream.readAllBytes());
-    } catch (IOException e) {
-      GisLog.debug(e);
-      return "";
-    }
   }
 
   public static InputStreamReader toInputStreamReader(String s) {
