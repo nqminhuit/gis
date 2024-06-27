@@ -27,7 +27,7 @@ public class Gis extends GitCommand {
   };
 
   @Option(names = "-v", description = "Show more details information.", scope = ScopeType.INHERIT)
-  public void setVerbose(boolean verbose) {
+  public static void setVerbose(boolean verbose) {
     GisLog.setIsDebugEnabled(verbose);
   }
 

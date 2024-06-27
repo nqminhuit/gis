@@ -7,15 +7,10 @@ import org.nqm.helper.StdBaseTest;
 
 class GisTest extends StdBaseTest {
 
-  private Gis gis;
-
   @Test
   void setVerbose_OK() {
-    // given:
-    gis = new Gis();
-
     // when:
-    gis.setVerbose(true);
+    Gis.setVerbose(true);
     GisLog.debug("eee");
 
     // then:
