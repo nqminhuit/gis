@@ -1,3 +1,5 @@
+[![Java CI with Maven](https://github.com/nqminhuit/gis/actions/workflows/maven.yml/badge.svg?branch=master&style=flat-square)](https://github.com/nqminhuit/gis/actions/workflows/maven.yml)
+
 # Introduction
 - Features: extension for `git` to manage multiple [repositories](https://github.com/nqminhuit/gis/issues/14) or git submodules.
 - Blazing-fast command line application written in `Java` and built on top of latest technologies:

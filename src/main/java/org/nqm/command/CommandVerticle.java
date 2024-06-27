@@ -2,7 +2,6 @@ package org.nqm.command;
 
 import static org.nqm.command.GitCommand.HOOKS_OPTION;
 import static org.nqm.utils.GisStringUtils.isNotBlank;
-import static org.nqm.utils.StdOutUtils.errln;
 import static org.nqm.utils.StdOutUtils.gitStatus;
 import static org.nqm.utils.StdOutUtils.gitStatusOneLine;
 import static org.nqm.utils.StdOutUtils.infof;
@@ -20,30 +19,24 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.nqm.config.GisConfig;
 import org.nqm.config.GisLog;
+import org.nqm.exception.GisException;
+import org.nqm.model.GisProcessDto;
+import org.nqm.utils.GisProcessUtils;
 import org.nqm.utils.GisStringUtils;
 import org.nqm.utils.StdOutUtils;
 
 public class CommandVerticle {
 
+  private CommandVerticle() {}
+
   private static final String WARN_MSG_FMT = "Could not perform on module: '%s'";
   private static final String EXIT_WITH_CODE_MSG_FMT = "exit with code: '%s'";
   private static final String OPTION_PREFIX = "--gis";
-  private final String[] commandWithArgs;
-  private String[] gisOptions;
-  private final String commandHook;
-  private final Path path;
-
-  public CommandVerticle(Path path, String... args) {
-    this.path = path;
-    this.commandHook = extractHookCommand(args);
-    this.commandWithArgs = buildCommandWithArgs(args);
-    GisLog.debug("executing command '%s' under module '%s'", commandWithArgs, path.getFileName());
-  }
 
   /**
    * Hooks should be placed at the end of command for optimize
    */
-  private String extractHookCommand(String... args) {
+  private static String extractHookCommand(String... args) {
     var predicate = Predicate.not(HOOKS_OPTION::equals);
     return Stream.of(args)
         .dropWhile(predicate)
@@ -54,121 +47,94 @@ public class CommandVerticle {
   /**
    * For optimal hooks and options should be placed at the end of command
    */
-  private String[] buildCommandWithArgs(String... args) {
-    this.gisOptions = Stream.of(args)
-        .filter(arg -> arg.startsWith(OPTION_PREFIX))
-        .toArray(String[]::new);
-
+  private static String[] buildCommandWithArgs(String... args) {
     return Stream.concat(
         Stream.of(GisConfig.GIT_HOME_DIR),
         Stream.of(args).takeWhile(arg -> !arg.startsWith(OPTION_PREFIX) && !HOOKS_OPTION.equals(arg)))
         .toArray(String[]::new);
   }
 
-  public void execute() {
+  public static void execute(Path path, String... args) {
     if (path == null) {
       return;
     }
-    Process res;
+    var commandHook = extractHookCommand(args);
+    var commandWithArgs = buildCommandWithArgs(args);
+    var gisOptions = Stream.of(args)
+        .filter(arg -> arg.startsWith(OPTION_PREFIX))
+        .toArray(String[]::new);
+
+    GisLog.debug("executing command '%s' under module '%s'", commandWithArgs, path);
+
     try {
-      res = new ProcessBuilder(commandWithArgs).directory(path.toFile()).start();
+      var result = GisProcessUtils.run(path.toFile(), commandWithArgs);
+      if (GisStringUtils.isNotBlank(commandHook)) {
+        gisExecuteCommand(path, GisStringUtils.toInputStreamReader(result.output()), commandHook)
+            .forEach(p -> infof("%s", p.output()));
+      } else if (Stream.of(gisOptions).anyMatch("--gis-no-print-modules-name"::equals)) {
+        safelyPrintWithoutModules(path, result);
+      } else if (Stream.of(gisOptions).anyMatch("--gis-concat-modules-name"::equals)) {
+        safelyConcatModuleNames(path, result);
+      } else {
+        safelyPrint(path, gisOptions, commandWithArgs, result);
+      }
     } catch (IOException e) {
       GisLog.debug(e);
-      return;
-    }
-
-    if (GisStringUtils.isNotBlank(this.commandHook)) {
-      gisExecuteCommand(res, this.commandHook)
-          .forEach(p -> {
-            try {
-              infof("%s", new String(p.getInputStream().readAllBytes()));
-            } catch (IOException e) {
-              errln(e.getMessage());
-              GisLog.debug(e);
-            }
-          });
-    } else if (Stream.of(gisOptions).anyMatch("--gis-no-print-modules-name"::equals)) {
-      safelyPrintWithoutModules(res);
-    } else if (Stream.of(gisOptions).anyMatch("--gis-concat-modules-name"::equals)) {
-      safelyConcatModuleNames(res);
-    } else {
-      safelyPrint(res);
+      throw new GisException(e.getMessage());
     }
   }
 
-  private void safelyPrint(Process pr) {
+  private static void safelyPrint(
+      Path path, String[] gisOptions, String[] commandWithArgs, GisProcessDto result) throws IOException {
     var line = "";
-    var input = new BufferedReader(new InputStreamReader(pr.getInputStream()));
+    var input = new BufferedReader(GisStringUtils.toInputStreamReader(result.output()));
     var sb = new StringBuilder(infof("%s", "" + path.getFileName()));
     var isOneLineOpt = Stream.of(gisOptions).anyMatch("--gis-one-line"::equals);
-    var isStatusCmd = commandWithArgs[1].equals(GitCommand.GIT_STATUS);
-    try {
-      while (isNotBlank(line = input.readLine())) {
-        if (isStatusCmd) {
-          sb.append(isOneLineOpt ? gitStatusOneLine(line) : gitStatus(line));
-        } else {
-          sb.append("%n  %s".formatted(line));
-        }
+    while (isNotBlank(line = input.readLine())) {
+      if (commandWithArgs[1].equals(GitCommand.GIT_STATUS)) {
+        sb.append(isOneLineOpt ? gitStatusOneLine(line) : gitStatus(line));
+      } else {
+        sb.append("%n  %s".formatted(line));
       }
-      StdOutUtils.println(sb.toString());
-      Optional.of(pr.waitFor())
-          .filter(exitCode -> exitCode != 0)
-          .ifPresent(exitCode -> {
-            GisLog.debug(EXIT_WITH_CODE_MSG_FMT.formatted(exitCode));
-            warnln(WARN_MSG_FMT.formatted(this.path.getFileName()));
-          });
-    } catch (IOException e) {
-      errln(e.getMessage());
-      GisLog.debug(e);
-    } catch (InterruptedException e) {
-      GisLog.debug(e);
-      Thread.currentThread().interrupt();
     }
+    StdOutUtils.println(sb.toString());
+    Optional.of(result.exitCode())
+        .filter(exitCode -> exitCode != 0)
+        .ifPresent(exitCode -> {
+          GisLog.debug(EXIT_WITH_CODE_MSG_FMT.formatted(exitCode));
+          warnln(WARN_MSG_FMT.formatted(path.getFileName()));
+        });
   }
 
-  private void safelyPrintWithoutModules(Process pr) {
-    var input = new BufferedReader(new InputStreamReader(pr.getInputStream()));
+  private static void safelyPrintWithoutModules(Path path, GisProcessDto result) throws IOException {
+    var input = new BufferedReader(GisStringUtils.toInputStreamReader(result.output()));
     var sb = new StringBuilder();
-    try {
-      var line = "";
-      while (isNotBlank(line = input.readLine())) {
-        sb.append("%s%n".formatted(line));
-      }
-      StdOutUtils.print(sb.toString());
-      Optional.of(pr.waitFor())
-          .filter(exitCode -> exitCode != 0)
-          .ifPresent(exitCode -> {
-            GisLog.debug(EXIT_WITH_CODE_MSG_FMT.formatted(exitCode));
-            warnln(WARN_MSG_FMT.formatted(this.path.getFileName()));
-          });
-    } catch (IOException e) {
-      errln(e.getMessage());
-      GisLog.debug(e);
-    } catch (InterruptedException e) {
-      GisLog.debug(e);
-      Thread.currentThread().interrupt();
+    var line = "";
+    while (isNotBlank(line = input.readLine())) {
+      sb.append("%s%n".formatted(line));
     }
+    StdOutUtils.print(sb.toString());
+    Optional.of(result.exitCode())
+        .filter(exitCode -> exitCode != 0)
+        .ifPresent(exitCode -> {
+          GisLog.debug(EXIT_WITH_CODE_MSG_FMT.formatted(exitCode));
+          warnln(WARN_MSG_FMT.formatted(path.getFileName()));
+        });
   }
 
-  private List<Process> gisExecuteCommand(Process pr, String cmd) {
-    var input = new BufferedReader(new InputStreamReader(pr.getInputStream()));
-    var futures = new ArrayList<Process>();
-    try {
-      var line = "";
-      while (isNotBlank(line = input.readLine())) {
-        futures.add(new ProcessBuilder(cmd.formatted(line).split(" "))
-            .directory(path.toFile())
-            .start());
-      }
-    } catch (IOException e) {
-      errln(e.getMessage());
-      GisLog.debug(e);
+  private static List<GisProcessDto> gisExecuteCommand(Path path, InputStreamReader stream, String cmd)
+      throws IOException {
+    var input = new BufferedReader(stream);
+    var futures = new ArrayList<GisProcessDto>();
+    var line = "";
+    while (isNotBlank(line = input.readLine())) {
+      futures.add(GisProcessUtils.run(path.toFile(), cmd.formatted(line).split(" ")));
     }
     return futures;
   }
 
-  private void safelyConcatModuleNames(Process pr) {
-    var input = new BufferedReader(new InputStreamReader(pr.getInputStream()));
+  private static void safelyConcatModuleNames(Path path, GisProcessDto result) throws IOException {
+    var input = new BufferedReader(GisStringUtils.toInputStreamReader(result.output()));
     var sb = new StringBuilder();
     var isRootModule = path.toFile()
         .listFiles((d, f) -> {
@@ -179,31 +145,23 @@ public class CommandVerticle {
     var line = "";
     var shortPath = path.getFileName();
 
-    try {
-      while (isNotBlank(line = input.readLine())) {
-        var f = "%s/%s".formatted(path, line);
-        if (!new File(f).isFile()) {
-          continue;
-        }
-        if (isRootModule) {
-          sb.append("./%s%n".formatted(line));
-        } else {
-          sb.append("%s/%s%n".formatted(shortPath, line));
-        }
+    while (isNotBlank(line = input.readLine())) {
+      var f = "%s/%s".formatted(path, line);
+      if (!new File(f).isFile()) {
+        continue;
       }
-      StdOutUtils.print(sb.toString());
-      Optional.of(pr.waitFor())
-          .filter(exitCode -> exitCode != 0)
-          .ifPresent(exitCode -> {
-            GisLog.debug(EXIT_WITH_CODE_MSG_FMT.formatted(exitCode));
-            warnln(WARN_MSG_FMT.formatted(this.path.getFileName()));
-          });
-    } catch (IOException e) {
-      errln(e.getMessage());
-      GisLog.debug(e);
-    } catch (InterruptedException e) {
-      GisLog.debug(e);
-      Thread.currentThread().interrupt();
+      if (isRootModule) {
+        sb.append("./%s%n".formatted(line));
+      } else {
+        sb.append("%s/%s%n".formatted(shortPath, line));
+      }
     }
+    StdOutUtils.print(sb.toString());
+    Optional.of(result.exitCode())
+        .filter(exitCode -> exitCode != 0)
+        .ifPresent(exitCode -> {
+          GisLog.debug(EXIT_WITH_CODE_MSG_FMT.formatted(exitCode));
+          warnln(WARN_MSG_FMT.formatted(path.getFileName()));
+        });
   }
 }

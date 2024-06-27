@@ -1,6 +1,6 @@
 package org.nqm.command;
 
-import static org.nqm.config.GisConfig.CURRENT_DIR;
+import static org.nqm.config.GisConfig.currentDir;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -25,9 +25,10 @@ public final class Wrapper {
 
   private static File getFileMarker() {
     File gitModulesFilePath;
-    try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
-      var f1 = executor.submit(() -> isFileExist(Path.of(".", ".gis-modules").toFile()));
-      var f2 = executor.submit(() -> isFileExist(Path.of(".", ".gitmodules").toFile()));
+    var currentDir = currentDir();
+    try (var exe = Executors.newVirtualThreadPerTaskExecutor()) {
+      var f1 = exe.submit(() -> isFileExist(Path.of(currentDir, ".gis-modules").toFile()));
+      var f2 = exe.submit(() -> isFileExist(Path.of(currentDir, ".gitmodules").toFile()));
       gitModulesFilePath = Stream.of(f1.get(), f2.get())
           .filter(Objects::nonNull)
           .findFirst()
@@ -41,17 +42,18 @@ public final class Wrapper {
     return gitModulesFilePath;
   }
 
-  public static void forEachModuleWith(Predicate<Path> pred, String... args) {
+  public static void forEachModuleWith(Predicate<Path> pred, String... args) throws IOException {
     var gitModulesFilePath = getFileMarker();
+    var currentDir = currentDir();
     try (var exe = Executors.newVirtualThreadPerTaskExecutor()) {
-      Optional.of(Path.of(CURRENT_DIR))
+      Optional.of(Path.of(currentDir))
           .filter(pred)
-          .ifPresent(root -> exe.submit(() -> new CommandVerticle(root, args).execute()));
+          .ifPresent(root -> exe.submit(() -> CommandVerticle.execute(root, args)));
       Files.readAllLines(gitModulesFilePath.toPath()).stream()
           .map(String::trim)
           .filter(s -> s.startsWith("path"))
           .map(s -> s.replace("path = ", ""))
-          .map(dir -> Path.of(CURRENT_DIR, dir))
+          .map(dir -> Path.of(currentDir, dir))
           .filter(dir -> {
             if (dir.toFile().exists()) {
               return true;
@@ -60,13 +62,11 @@ public final class Wrapper {
             return false;
           })
           .filter(pred)
-          .forEach(dir -> exe.submit(() -> new CommandVerticle(dir, args).execute()));
-    } catch (IOException e) {
-      StdOutUtils.errln("failed to read file '.gis-modules' or '.gitmodules'");
+          .forEach(dir -> exe.submit(() -> CommandVerticle.execute(dir, args)));
     }
   }
 
-  public static void forEachModuleDo(String... args) {
+  public static void forEachModuleDo(String... args) throws IOException {
     forEachModuleWith(p -> true, args);
   }
 }
