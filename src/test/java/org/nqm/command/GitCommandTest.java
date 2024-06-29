@@ -36,29 +36,37 @@ class GitCommandTest extends StdBaseTest {
   @Mock
   private ExecutorService exe;
 
-  @Override
-  protected void additionalSetup() throws IOException {
-    gis = new GitCommand();
+  void ignoreMarkerFile() throws IOException {
     markerFile = tempPath.resolve(".gis-modules");
     Files.createFile(markerFile);
-
     var gitIgnoreFile = tempPath.resolve(".gitignore");
     Files.createFile(gitIgnoreFile);
     Files.writeString(gitIgnoreFile, ".gis-modules");
+  }
 
-    GisProcessUtils.run(tempPath.toFile(), GIT_HOME_DIR, "init");
+  @Override
+  protected void additionalSetup() throws IOException {
+    gis = new GitCommand();
+    ignoreMarkerFile();
 
-    var path1 = tempPath.resolve("submodule1");
-    Files.createDirectories(path1);
-    GisProcessUtils.run(path1.toFile(), GIT_HOME_DIR, "init");
+    try {
+      GisProcessUtils.run(tempPath.toFile(), GIT_HOME_DIR, "init");
 
-    var path2 = tempPath.resolve("submodule2");
-    Files.createDirectories(path2);
-    GisProcessUtils.run(path2.toFile(), GIT_HOME_DIR, "init");
+      var path1 = tempPath.resolve("submodule1");
+      Files.createDirectories(path1);
+      GisProcessUtils.run(path1.toFile(), GIT_HOME_DIR, "init");
 
-    var path3 = tempPath.resolve("submodule3");
-    Files.createDirectories(path3);
-    GisProcessUtils.run(path3.toFile(), GIT_HOME_DIR, "init");
+      var path2 = tempPath.resolve("submodule2");
+      Files.createDirectories(path2);
+      GisProcessUtils.run(path2.toFile(), GIT_HOME_DIR, "init");
+
+      var path3 = tempPath.resolve("submodule3");
+      Files.createDirectories(path3);
+      GisProcessUtils.run(path3.toFile(), GIT_HOME_DIR, "init");
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new RuntimeException("GisProcessUtils#run failed to execute");
+    }
 
     Files.writeString(markerFile, """
         path = submodule1

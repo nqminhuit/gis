@@ -11,6 +11,20 @@ public class GisProcessUtilsMock {
 
   private static MockedStatic<GisProcessUtils> mock;
 
+  public static void mockRunThrowException(Throwable e, File directory, String... commands) {
+    if (mock == null || mock.isClosed()) {
+      mock = Mockito.mockStatic(GisProcessUtils.class);
+    }
+    mock.when(() -> GisProcessUtils.run(directory, commands)).thenThrow(e);
+  }
+
+  public static void mockQuickRunThrowException(Throwable e, File directory, String... commands) {
+    if (mock == null || mock.isClosed()) {
+      mock = Mockito.mockStatic(GisProcessUtils.class);
+    }
+    mock.when(() -> GisProcessUtils.quickRun(directory, commands)).thenThrow(e);
+  }
+
   public static void mockRun(GisProcessDto mockResult, File directory, String... commands) {
     if (mock == null || mock.isClosed()) {
       mock = Mockito.mockStatic(GisProcessUtils.class);

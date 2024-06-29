@@ -11,6 +11,7 @@ import static org.nqm.utils.StdOutUtils.CL_WHITE;
 import static org.nqm.utils.StdOutUtils.CL_YELLOW;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.PrintStream;
 import java.util.List;
 import java.util.function.Function;
@@ -23,8 +24,9 @@ public abstract class StdBaseTest {
 
   protected final PrintStream out = System.out;
   protected final PrintStream err = System.err;
-  protected final ByteArrayOutputStream outCaptor = new ByteArrayOutputStream();
-  protected final ByteArrayOutputStream errCaptor = new ByteArrayOutputStream();
+  protected final InputStream in = System.in;
+  protected ByteArrayOutputStream outCaptor = new ByteArrayOutputStream();
+  protected ByteArrayOutputStream errCaptor = new ByteArrayOutputStream();
 
   protected void additionalSetup() throws IOException {}
 
@@ -41,8 +43,14 @@ public abstract class StdBaseTest {
   protected void teardown() throws IOException {
     System.setOut(out);
     System.setErr(err);
+    System.setIn(in);
     GisLog.setIsDebugEnabled(false);
     additionalTeardown();
+  }
+
+  protected void resetOutputStreamTest() {
+    outCaptor = new ByteArrayOutputStream();
+    System.setOut(new PrintStream(outCaptor));
   }
 
   protected static Function<String, List<String>> stripColors =

@@ -81,6 +81,10 @@ public class CommandVerticle {
     } catch (IOException e) {
       GisLog.debug(e);
       throw new GisException(e.getMessage());
+    } catch (InterruptedException e) {
+      GisLog.debug(e);
+      Thread.currentThread().interrupt();
+      throw new GisException(e.getMessage());
     }
   }
 
@@ -123,7 +127,7 @@ public class CommandVerticle {
   }
 
   private static List<GisProcessDto> gisExecuteCommand(Path path, InputStreamReader stream, String cmd)
-      throws IOException {
+      throws IOException, InterruptedException {
     var input = new BufferedReader(stream);
     var futures = new ArrayList<GisProcessDto>();
     var line = "";

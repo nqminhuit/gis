@@ -1,6 +1,7 @@
 package org.nqm.command;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.nqm.config.GisConfig.GIT_HOME_DIR;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -8,6 +9,7 @@ import java.nio.file.Path;
 import java.util.function.UnaryOperator;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.nqm.exception.GisException;
 import org.nqm.helper.GisProcessUtilsMock;
 import org.nqm.helper.StdBaseTest;
 import org.nqm.model.GisProcessDto;
@@ -134,6 +136,30 @@ class CommandVerticleTest extends StdBaseTest {
     // then:
     assertThat(stripColorsToString.apply(outCaptor.toString())).isEqualTo(
         "%s%n  Already up to date.%n".formatted("" + tempPath.subpath(1, tempPath.getNameCount())));
+  }
+
+  @Test
+  void execute_withInterruptedException_NOK() {
+    // given:
+    GisProcessUtilsMock.mockRunThrowException(
+        new InterruptedException("youre hackedd!!!"), tempPath.toFile(), GIT_HOME_DIR, "pull");
+
+    // when:
+    assertThatThrownBy(() -> CommandVerticle.execute(tempPath, "pull"))
+        .isInstanceOf(GisException.class)
+        .hasMessage("youre hackedd!!!");
+  }
+
+  @Test
+  void execute_withIOException_NOK() {
+    // given:
+    GisProcessUtilsMock.mockRunThrowException(
+        new IOException("you be hacke"), tempPath.toFile(), GIT_HOME_DIR, "pull");
+
+    // when:
+    assertThatThrownBy(() -> CommandVerticle.execute(tempPath, "pull"))
+        .isInstanceOf(GisException.class)
+        .hasMessage("you be hacke");
   }
 
 }
