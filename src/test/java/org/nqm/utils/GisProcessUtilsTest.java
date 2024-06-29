@@ -13,7 +13,7 @@ class GisProcessUtilsTest {
   private Path tempPath;
 
   @Test
-  void run_OK() throws IOException {
+  void run_OK() throws IOException, InterruptedException {
     // when:
     var result = GisProcessUtils.run(tempPath.toFile(), "pwd");
 
