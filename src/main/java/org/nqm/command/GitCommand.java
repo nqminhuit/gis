@@ -8,7 +8,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -16,7 +15,6 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Optional;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.nqm.config.GisConfig;
 import org.nqm.config.GisLog;
@@ -180,13 +178,13 @@ public class GitCommand {
 
   @Command(name = "init", description = "init .gis-modules for current directory")
   void init() throws IOException {
-    try (var stream = Files.list(Path.of("."))) {
-      var data = stream.filter(Files::isDirectory)
+    var currentDir = Path.of(currentDir());
+    try (var stream = Files.list(currentDir)) {
+      var lines = stream.filter(Files::isDirectory)
           .map(Path::getFileName)
           .map("path = %s"::formatted)
-          .collect(Collectors.joining("\n"))
-          .getBytes();
-      Files.write(Paths.get(".gis-modules"), data);
+          .toList();
+      Files.write(currentDir.resolve(".gis-modules"), lines);
     }
   }
 
