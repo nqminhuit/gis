@@ -35,6 +35,16 @@ public class ExecutorsMock {
     }).when(exe).submit((Callable<?>) any());
   }
 
+  public static void mockVirtualThreadCallableThrowException(ExecutorService exe, Throwable e) {
+    mockVirtualThread(exe);
+    doAnswer(new Answer<Object>() {
+      @Override
+      public Object answer(InvocationOnMock invocation) throws Throwable {
+        throw (e);
+      }
+    }).when(exe).submit((Callable<?>) any());
+  }
+
   /**
    * This mock enables all virtual threads to run on the main thread
    */

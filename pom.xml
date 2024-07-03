@@ -17,6 +17,8 @@
     <junit.version>5.10.2</junit.version>
     <assertj.version>3.26.0</assertj.version>
     <mockito.version>5.12.0</mockito.version>
+    <testcontainers.version>1.19.8</testcontainers.version>
+    <slf4j.version>2.0.13</slf4j.version>
     <maven-surefire.version>3.3.0</maven-surefire.version>
     <compiler.plugin.version>3.12.1</compiler.plugin.version>
     <jar.plugin.version>3.3.0</jar.plugin.version>
@@ -28,6 +30,8 @@
       <artifactId>picocli</artifactId>
       <version>${picocli.version}</version>
     </dependency>
+
+    <!-- test dependencies -->
     <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter-api</artifactId>
@@ -50,6 +54,24 @@
       <groupId>org.mockito</groupId>
       <artifactId>mockito-junit-jupiter</artifactId>
       <version>${mockito.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>testcontainers</artifactId>
+      <version>${testcontainers.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+      <version>${slf4j.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-simple</artifactId>
+      <version>${slf4j.version}</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
