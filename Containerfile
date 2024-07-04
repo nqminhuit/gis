@@ -3,11 +3,9 @@ COPY pom.xml /app/gis/
 WORKDIR /app/gis
 RUN mvn -q verify clean --fail-never
 COPY . /app/gis
-RUN apk add --no-cache git
-
-# temporal skip tests because IntTests need containers to run,
-# and I don't know how to config them
-RUN mvn -B -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn clean package -DskipTests
+RUN mvn -B \
+    -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn \
+    clean package
 
 FROM quay.io/quarkus/ubi-quarkus-mandrel-builder-image:23.1-jdk-21
 USER root
