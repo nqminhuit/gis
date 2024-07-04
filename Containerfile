@@ -3,6 +3,7 @@ COPY pom.xml /app/gis/
 WORKDIR /app/gis
 RUN mvn -q verify clean --fail-never
 COPY . /app/gis
+RUN apk add --no-cache git
 RUN mvn -B \
     -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn \
     clean package
