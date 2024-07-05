@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.nqm.command.GitCommand.GIS_AUTOCOMPLETE_FILE;
 import static org.nqm.config.GisConfig.GIT_HOME_DIR;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -380,4 +381,51 @@ class GitCommandTest extends StdBaseTest {
       System.setIn(in);
     }
   }
+
+  @Test
+  void generateCompletionToConsole_OK() throws IOException {
+    // when:
+    gis.generateCompletion(null);
+
+    // then:
+    assertThat(outCaptor).hasToString("""
+        this is a completion
+        script for test gis
+        in zsh.
+        """);
+  }
+
+  @Test
+  void generateCompletionToFile_OK() throws IOException {
+    // when:
+    gis.generateCompletion(tempPath);
+
+    // then:
+    var content = Files.readString(tempPath.resolve(GIS_AUTOCOMPLETE_FILE));
+    assertThat(content).isEqualTo("""
+        this is a completion
+        script for test gis
+        in zsh.
+        """);
+  }
+
+  @Test
+  void generateCompletionToFile_withFileAlreadyExist_shouldOverwrite() throws IOException {
+    // given:
+    var file = tempPath.resolve(GIS_AUTOCOMPLETE_FILE);
+    Files.createFile(file);
+    Files.writeString(file, "this is some existing text");
+
+    // when:
+    gis.generateCompletion(tempPath);
+
+    // then:
+    var content = Files.readString(file);
+    assertThat(content).isEqualTo("""
+        this is a completion
+        script for test gis
+        in zsh.
+        """);
+  }
+
 }

@@ -27,7 +27,7 @@ After the steps above, an executable file named `gis` will be created under proj
 
 ```shell script
 cd gis
-mvn clean package
+mvn clean verify package
 ```
 The executable jar file will be created at `target/gis-<version>.jar`
 
@@ -37,6 +37,14 @@ For more details, just run:
 ```shell script
 ./gis --help
 ```
+
+Generate completion for zsh:
+```
+./gis completion --directory ${fpath[1]}
+```
+Reload your zsh session, we can now press `<TAB>` for autocomplete.
+
+Currently gis only support zsh for completion.
 
 # Config
 

@@ -4,6 +4,7 @@ import static org.nqm.command.Wrapper.forEachModuleDo;
 import static org.nqm.command.Wrapper.forEachModuleWith;
 import static org.nqm.config.GisConfig.currentDir;
 import java.io.BufferedReader;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.file.Files;
@@ -32,6 +33,8 @@ public class GitCommand {
   private static final String FETCHED_AT = "(fetched at: %s)";
   private static final String ORIGIN = "origin";
   private static final Path TMP_FILE = Path.of("/", "tmp", "gis_fetch" + currentDir().replace("/", "_"));
+
+  static final String GIS_AUTOCOMPLETE_FILE = "_gis";
 
   public static final String GIT_STATUS = "status";
   public static final String HOOKS_OPTION = "--hooks";
@@ -93,7 +96,8 @@ public class GitCommand {
       @Parameters(index = "0", paramLabel = "<new_branch_name>",
           description = "branch name") String newBranch,
       @Parameters(paramLabel = "<modules>",
-          description = "Specified modules. If empty, will create for all submodules and root.") String... modules) throws IOException {
+          description = "Specified modules. If empty, will create for all submodules and root.") String... modules)
+      throws IOException {
     if (null == modules || modules.length < 1) {
       forEachModuleDo(CHECKOUT, "-b", newBranch);
       return;
@@ -148,7 +152,8 @@ public class GitCommand {
   }
 
   @Command(name = "local-prune", aliases = "prune")
-  void localPrune(@Parameters(index = "0", paramLabel = "<default branch name>") String branch) throws IOException {
+  void localPrune(@Parameters(index = "0", paramLabel = "<default branch name>") String branch)
+      throws IOException {
     forEachModuleDo("for-each-ref",
         "--merged=%s".formatted(branch),
         "--format=%(refname:short)",
@@ -160,14 +165,16 @@ public class GitCommand {
   }
 
   @Command(name = "stash")
-  void stash(@Option(names = "-pp", description = "pop first stashed changes") boolean isPop) throws IOException {
+  void stash(@Option(names = "-pp", description = "pop first stashed changes") boolean isPop)
+      throws IOException {
     var args = isPop ? new String[] {"stash", "pop"} : new String[] {"stash"};
     forEachModuleDo(args);
   }
 
   @Command(name = "branches")
   void listBranches(
-      @Option(names = "-nn", description = "do not print module name") boolean noPrintModuleName) throws IOException {
+      @Option(names = "-nn", description = "do not print module name") boolean noPrintModuleName)
+      throws IOException {
     var sArgs = Stream.of("for-each-ref", "--format=%(refname:short)", "refs/heads/");
     if (noPrintModuleName) {
       sArgs = Stream.concat(sArgs, Stream.of("--gis-no-print-modules-name"));
@@ -191,6 +198,30 @@ public class GitCommand {
   @Command(name = "files", description = "show modified files of all submodules")
   void files() throws IOException {
     forEachModuleDo("diff", "--name-only", "--gis-concat-modules-name");
+  }
+
+  @Command(name = "completion", description = "generate an zsh auto completion script")
+  void generateCompletion(
+      @Option(names = "--directory",
+          description = "export completion zsh function to file at specified directory") Path dir)
+      throws IOException {
+    try (var stream = this.getClass().getClassLoader().getResourceAsStream(GIS_AUTOCOMPLETE_FILE)) {
+      var buffer = new BufferedReader(new InputStreamReader(stream));
+      String line = null;
+      if (dir != null) {
+        var file = dir.resolve(GIS_AUTOCOMPLETE_FILE);
+        try (var out = new FileOutputStream(file.toFile())) {
+          while ((line = buffer.readLine()) != null) {
+            out.write(line.getBytes());
+            out.write("%n".formatted().getBytes());
+          }
+        }
+        return;
+      }
+      while ((line = buffer.readLine()) != null) {
+        StdOutUtils.println(line);
+      }
+    }
   }
 
   private static Stream<String> streamOf(String[] input) {
