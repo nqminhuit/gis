@@ -173,9 +173,13 @@ public class GitCommand {
 
   @Command(name = "branches")
   void listBranches(
-      @Option(names = "-nn", description = "do not print module name") boolean noPrintModuleName)
+      @Option(names = "-nn", description = "do not print module name") boolean noPrintModuleName,
+      @Option(names = "--include-remotes", description = "include remote branches") boolean includeRemotes)
       throws IOException {
-    var sArgs = Stream.of("for-each-ref", "--format=%(refname:short)", "refs/heads/");
+    var sArgs = Stream.of("for-each-ref", "--format=%(refname:short)", "refs/heads");
+    if (includeRemotes) {
+      sArgs = Stream.concat(sArgs, Stream.of("refs/remotes"));
+    }
     if (noPrintModuleName) {
       sArgs = Stream.concat(sArgs, Stream.of("--gis-no-print-modules-name"));
     }

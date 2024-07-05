@@ -87,7 +87,7 @@ class GitCommandIntTest extends GitBaseTest {
     gis.init();
 
     // when:
-    gis.listBranches(false);
+    gis.listBranches(false, false);
 
     // then:
     assertThat(stripColors.apply(outCaptor.toString()))
@@ -105,7 +105,7 @@ class GitCommandIntTest extends GitBaseTest {
     resetOutputStreamTest();
 
     // when:
-    gis.listBranches(false);
+    gis.listBranches(false, false);
 
     // then:
     assertThat(stripColors.apply(outCaptor.toString()))
@@ -133,11 +133,51 @@ class GitCommandIntTest extends GitBaseTest {
     resetOutputStreamTest();
 
     // when:
-    gis.listBranches(true);
+    gis.listBranches(true, false);
 
     // then:
     assertThat(outCaptor.toString().split("%n".formatted())).containsExactlyInAnyOrder(
         "bb1", "master", "bb1", "master", "bb1", "master");
+  }
+
+  @Test
+  void listBranchesWithRemote_withoutModuleNames_OK() throws IOException {
+    // given:
+    var repos = create_clone_gitRepositories("opu_7_i", "opu_8_ii", "opu_9_iii");
+    commitFile(repos);
+    gis.init();
+    gis.checkoutNewBranch("bb1");
+    commitFile(repos);
+    System.setIn(new ByteArrayInputStream("y".getBytes()));
+    gis.push("bb1", true, true);
+
+    gis.checkoutNewBranch("bb2");
+    commitFile(repos);
+    System.setIn(new ByteArrayInputStream("ye".getBytes()));
+    gis.push("bb2", true, true);
+    resetOutputStreamTest();
+
+    // when:
+    gis.listBranches(true, true);
+
+    // then:
+    assertThat(outCaptor.toString().split("%n".formatted()))
+        .containsExactlyInAnyOrder(
+            "bb1",
+            "bb2",
+            "master",
+            "origin/bb1",
+            "origin/bb2",
+            "bb1",
+            "bb2",
+            "master",
+            "origin/bb1",
+            "origin/bb2",
+            "bb1",
+            "bb2",
+            "master",
+            "origin/bb1",
+            "origin/bb2");
   }
 
   @Test
