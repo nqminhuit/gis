@@ -9,7 +9,7 @@ import java.nio.file.Path;
 import java.util.function.UnaryOperator;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import org.nqm.exception.GisException;
+import org.nqm.GisException;
 import org.nqm.helper.GisProcessUtilsMock;
 import org.nqm.helper.StdBaseTest;
 import org.nqm.model.GisProcessDto;

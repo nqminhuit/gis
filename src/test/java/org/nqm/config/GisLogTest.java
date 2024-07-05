@@ -5,7 +5,7 @@ import static org.nqm.utils.StdOutUtils.CL_RESET;
 import static org.nqm.utils.StdOutUtils.CL_YELLOW;
 import java.nio.file.Path;
 import org.junit.jupiter.api.Test;
-import org.nqm.exception.GisException;
+import org.nqm.GisException;
 import org.nqm.helper.StdBaseTest;
 
 class GisLogTest extends StdBaseTest {
@@ -58,8 +58,7 @@ class GisLogTest extends StdBaseTest {
     GisLog.debug(e);
 
     // then:
-    assertThat(errCaptor.toString().trim())
-        .isEqualTo("org.nqm.exception.GisException: youre hacked!");
+    assertThat(errCaptor.toString().trim()).isEqualTo("org.nqm.GisException: youre hacked!");
   }
 
   @Test

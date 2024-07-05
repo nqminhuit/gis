@@ -79,7 +79,7 @@ class GisIntTest extends GitBaseTest {
 
     // then:
     assertThat(stripColorsToString.apply(errCaptor.toString())).contains(
-        "org.nqm.exception.GisException: Could not find '.gis-modules' or '.gitmodules' under this directory!");
+        "org.nqm.GisException: Could not find '.gis-modules' or '.gitmodules' under this directory!");
   }
 
   @Test

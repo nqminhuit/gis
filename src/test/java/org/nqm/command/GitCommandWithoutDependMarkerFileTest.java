@@ -2,7 +2,7 @@ package org.nqm.command;
 
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.nqm.exception.GisException;
+import org.nqm.GisException;
 import org.nqm.helper.StdBaseTest;
 
 class GitCommandWithoutDependMarkerFileTest extends StdBaseTest {

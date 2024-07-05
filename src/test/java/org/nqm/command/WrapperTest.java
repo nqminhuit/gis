@@ -16,7 +16,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.nqm.exception.GisException;
+import org.nqm.GisException;
 import org.nqm.helper.ExecutorsMock;
 import org.nqm.helper.GisConfigMock;
 import org.nqm.helper.GisProcessUtilsMock;

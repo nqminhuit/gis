@@ -12,7 +12,7 @@ import java.util.concurrent.Executors;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 import org.nqm.config.GisLog;
-import org.nqm.exception.GisException;
+import org.nqm.GisException;
 import org.nqm.utils.StdOutUtils;
 
 public final class Wrapper {

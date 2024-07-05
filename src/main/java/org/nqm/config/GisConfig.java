@@ -6,7 +6,7 @@ import java.nio.file.Path;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.function.Function;
-import org.nqm.exception.GisException;
+import org.nqm.GisException;
 
 public class GisConfig {
 

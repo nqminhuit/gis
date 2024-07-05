@@ -19,7 +19,7 @@ import java.util.function.Predicate;
 import java.util.stream.Stream;
 import org.nqm.config.GisConfig;
 import org.nqm.config.GisLog;
-import org.nqm.exception.GisException;
+import org.nqm.GisException;
 import org.nqm.utils.GisProcessUtils;
 import org.nqm.utils.GisStringUtils;
 import org.nqm.utils.StdOutUtils;

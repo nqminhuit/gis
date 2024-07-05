@@ -3,7 +3,6 @@ package org.nqm;
 import org.nqm.command.GisVersion;
 import org.nqm.command.GitCommand;
 import org.nqm.config.GisLog;
-import org.nqm.exception.GisException;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.IExecutionExceptionHandler;

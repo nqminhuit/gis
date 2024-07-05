@@ -13,7 +13,7 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
-import org.nqm.exception.GisException;
+import org.nqm.GisException;
 import org.nqm.helper.GisConfigMock;
 import org.nqm.helper.GisProcessUtilsMock;
 import org.nqm.helper.GitBaseTest;

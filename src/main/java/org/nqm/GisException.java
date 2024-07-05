@@ -1,4 +1,4 @@
-package org.nqm.exception;
+package org.nqm;
 
 public class GisException extends RuntimeException {
 
