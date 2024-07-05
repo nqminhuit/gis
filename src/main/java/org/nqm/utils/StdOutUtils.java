@@ -14,6 +14,8 @@ public class StdOutUtils {
 
   private StdOutUtils() {}
 
+  private static boolean muteOutput = false;
+
   public static final String CL_RESET  = "\u001B[0m";
   public static final String CL_BLACK  = "\u001B[30m";
   public static final String CL_RED    = "\u001B[31m";
@@ -27,11 +29,21 @@ public class StdOutUtils {
   private static final String UNTRACKED_SYM = "?";
   private static final String RENAME_SYM = "2";
 
+  public static void setMuteOutput(boolean b) {
+    muteOutput = b;
+  }
+
   public static void println(String msg) {
+    if (muteOutput) {
+      return;
+    }
     out.println(msg);
   }
 
   public static void print(String msg) {
+    if (muteOutput) {
+      return;
+    }
     out.print(msg);
   }
 

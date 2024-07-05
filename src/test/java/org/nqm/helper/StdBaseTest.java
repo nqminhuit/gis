@@ -19,6 +19,7 @@ import java.util.stream.Stream;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.nqm.config.GisLog;
+import org.nqm.utils.StdOutUtils;
 
 public abstract class StdBaseTest {
 
@@ -45,6 +46,7 @@ public abstract class StdBaseTest {
     System.setErr(err);
     System.setIn(in);
     GisLog.setIsDebugEnabled(false);
+    StdOutUtils.setMuteOutput(false);
     additionalTeardown();
   }
 
