@@ -135,6 +135,7 @@ class StdOutUtilsTest extends StdBaseTest {
         .isEqualTo("sysout print".getBytes())
         .containsExactly(115, 121, 115, 111, 117, 116, 32, 112, 114, 105, 110, 116);
   }
+
   @Test
   void println_OK() {
     // when:
@@ -144,5 +145,29 @@ class StdOutUtilsTest extends StdBaseTest {
     assertThat(outCaptor.toByteArray())
         .isEqualTo("sysout println\n".getBytes())
         .containsExactly(115, 121, 115, 111, 117, 116, 32, 112, 114, 105, 110, 116, 108, 110, 10);
+  }
+
+  @Test
+  void println_withMuted_NOK() {
+    // given:
+    StdOutUtils.setMuteOutput(true);
+
+    // when:
+    StdOutUtils.println("sysout println");
+
+    // then:
+    assertThat(outCaptor.toString()).isEmpty();
+  }
+
+  @Test
+    void print_withMuted_NOK() {
+    // given:
+    StdOutUtils.setMuteOutput(true);
+
+    // when:
+    StdOutUtils.print("eeeeaaaaaaa");
+
+    // then:
+    assertThat(outCaptor.toString()).isEmpty();
   }
 }

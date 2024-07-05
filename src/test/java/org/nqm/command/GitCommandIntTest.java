@@ -68,15 +68,16 @@ class GitCommandIntTest extends GitBaseTest {
     gis.init();
 
     // when:
-    gis.fetch();
+    gis.fetchStatus();
 
     // then:
     var timeFetch = LocalDateTime.ofInstant(Instant.now(), ZoneId.systemDefault())
         .format(DateTimeFormatter.ofPattern("HH:mm:ss dd/MM/yyyy"));
     assertThat(stripColors.apply(outCaptor.toString())).containsOnlyOnce(
-        "sub_4_w",
-        "sub_5_r",
-        "sub_6_p",
+        "" + tempPath.subpath(1, tempPath.getNameCount()),
+        "sub_4_w master",
+        "sub_5_r master",
+        "sub_6_p master",
         "(fetched at: %s)".formatted(timeFetch));
   }
 

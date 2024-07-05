@@ -59,14 +59,24 @@ public class GitCommand {
     }
   }
 
-  @Command(name = "fetch", aliases = "fe")
-  void fetch() throws IOException {
+  private void fetch() throws IOException {
     forEachModuleDo("fetch");
     var timeFetch = LocalDateTime.ofInstant(Instant.now(), ZoneId.systemDefault())
         .format(DateTimeFormatter.ofPattern("HH:mm:ss dd/MM/yyyy"));
 
     Files.write(TMP_FILE, timeFetch.getBytes(), StandardOpenOption.CREATE, StandardOpenOption.WRITE);
     StdOutUtils.println(FETCHED_AT.formatted(timeFetch));
+  }
+
+  @Command(name = "fetch", aliases = "fe")
+  void fetchStatus() throws IOException {
+    try {
+      StdOutUtils.setMuteOutput(true);
+      fetch();
+    } finally {
+      StdOutUtils.setMuteOutput(false);
+    }
+    status(true);
   }
 
   @Command(name = "rebase-current-origin", aliases = "ru")

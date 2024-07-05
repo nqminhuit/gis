@@ -139,11 +139,11 @@ class GitCommandTest extends StdBaseTest {
     ExecutorsMock.mockVirtualThreadRunnable(exe);
 
     // when:
-    gis.fetch();
+    gis.fetchStatus();
 
     // then:
-    verify(exe, times(2)).submit((Callable<?>) any());
-    verify(exe, times(4)).submit((Runnable) any());
+    verify(exe, times(4)).submit((Callable<?>) any());
+    verify(exe, times(8)).submit((Runnable) any());
   }
 
   @Test
