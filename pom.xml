@@ -5,12 +5,12 @@
   <groupId>org.nqm</groupId>
   <artifactId>gis</artifactId>
   <version>2.0.0-dev</version>
-  <packaging>${packaging}</packaging>
+  <packaging>jar</packaging>
 
   <properties>
+    <commit.hash>${git.commit.id.abbrev}</commit.hash>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-    <packaging>jar</packaging>
     <maven.compiler.target>21</maven.compiler.target>
     <maven.compiler.source>21</maven.compiler.source>
     <picocli.version>4.7.6</picocli.version>
@@ -22,6 +22,8 @@
     <maven-surefire.version>3.3.0</maven-surefire.version>
     <compiler.plugin.version>3.12.1</compiler.plugin.version>
     <jar.plugin.version>3.3.0</jar.plugin.version>
+    <jacoco.version>0.8.12</jacoco.version>
+    <commit.id.version>9.0.1</commit.id.version>
   </properties>
 
   <dependencies>
@@ -78,6 +80,12 @@
 
   <build>
     <defaultGoal>package</defaultGoal>
+    <resources>
+      <resource>
+        <directory>src/main/resources</directory>
+        <filtering>true</filtering>
+      </resource>
+    </resources>
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
@@ -153,10 +161,10 @@
       <plugin>
         <groupId>org.jacoco</groupId>
         <artifactId>jacoco-maven-plugin</artifactId>
-        <version>0.8.12</version>
+        <version>${jacoco.version}</version>
         <executions>
           <execution>
-            <id>prepare-agent</id>
+            <phase>test-compile</phase>
             <goals>
               <goal>prepare-agent</goal>
             </goals>
@@ -173,6 +181,25 @@
             </configuration>
           </execution>
         </executions>
+      </plugin>
+      <plugin>
+        <groupId>io.github.git-commit-id</groupId>
+        <artifactId>git-commit-id-maven-plugin</artifactId>
+        <version>${commit.id.version}</version>
+        <executions>
+          <execution>
+            <id>get-the-git-infos</id>
+            <goals>
+              <goal>revision</goal>
+            </goals>
+            <phase>process-sources</phase>
+          </execution>
+        </executions>
+        <configuration>
+          <includeOnlyProperties>
+            <includeOnlyProperty>^git.commit.id.abbrev$</includeOnlyProperty>
+          </includeOnlyProperties>
+        </configuration>
       </plugin>
     </plugins>
   </build>
