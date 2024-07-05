@@ -1,5 +1,6 @@
 package org.nqm;
 
+import org.nqm.command.GisVersion;
 import org.nqm.command.GitCommand;
 import org.nqm.config.GisLog;
 import org.nqm.exception.GisException;
@@ -14,7 +15,7 @@ import picocli.CommandLine.ScopeType;
     name = "gis",
     description = "Git extension wrapper which supports submodules",
     mixinStandardHelpOptions = true,
-    version = "2.0.0-dev")
+    versionProvider = GisVersion.class)
 public class Gis extends GitCommand {
 
   private static final IExecutionExceptionHandler GLOBAL_EXCEPTION_HANLER = new IExecutionExceptionHandler() {

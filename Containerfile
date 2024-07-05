@@ -13,7 +13,7 @@ USER root
 WORKDIR /app/gis
 COPY --from=build /app/gis/target/gis-*.jar target/
 COPY --from=build /app/gis/target/lib target/lib
-RUN native-image -march=compatibility -cp target/gis-*.jar "org.nqm.Gis" --no-fallback
+RUN native-image -march=compatibility -cp target/gis-*.jar "org.nqm.Gis" --no-fallback -H:IncludeResources=".properties"
 RUN mv org.nqm.gis gis
 RUN chmod +x gis
 RUN ./gis --version
