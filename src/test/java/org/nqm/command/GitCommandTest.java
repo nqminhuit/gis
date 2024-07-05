@@ -153,7 +153,7 @@ class GitCommandTest extends StdBaseTest {
     ExecutorsMock.mockVirtualThreadRunnable(exe);
 
     // when:
-    gis.listBranches(false);
+    gis.listBranches(false, false);
 
     // then:
     verify(exe, times(2)).submit((Callable<?>) any());
@@ -167,7 +167,7 @@ class GitCommandTest extends StdBaseTest {
     ExecutorsMock.mockVirtualThreadRunnable(exe);
 
     // when:
-    gis.listBranches(true);
+    gis.listBranches(true, false);
 
     // then:
     verify(exe, times(2)).submit((Callable<?>) any());
