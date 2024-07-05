@@ -19,6 +19,7 @@ class GisIntTest extends GitBaseTest {
   @Override
   protected void additionalTeardown() {
     GisConfigMock.close();
+    Gis.setDryRun(false);
   }
 
   @Test
@@ -53,18 +54,19 @@ class GisIntTest extends GitBaseTest {
     // then:
     var sPath = "" + tempPath;
     assertThat(stripColors.apply(outCaptor.toString())).contains(
-            "  [DEBUG] executing command '/usr/bin/git status -sb --ignore-submodules --porcelain=v2' under module '%s/rem1_i'"
-                .formatted(sPath),
-            "  [DEBUG] executing command '/usr/bin/git status -sb --ignore-submodules --porcelain=v2' under module '%s/rem2_j'"
-                .formatted(sPath),
-            "  [DEBUG] executing command '/usr/bin/git status -sb --ignore-submodules --porcelain=v2' under module '%s/rem3_k'"
-                .formatted(sPath),
-            "  [DEBUG] executing command '/usr/bin/git status -sb --ignore-submodules --porcelain=v2' under module '%s'"
-                .formatted(sPath),
-            "rem1_i master",
-            "rem2_j master",
-            "rem3_k master",
-            "%s master .gitignore rem1_i rem2_j rem3_k".formatted("" + tempPath.subpath(1, tempPath.getNameCount())));
+        "  [DEBUG] executing command '/usr/bin/git status -sb --ignore-submodules --porcelain=v2' under module '%s/rem1_i'"
+            .formatted(sPath),
+        "  [DEBUG] executing command '/usr/bin/git status -sb --ignore-submodules --porcelain=v2' under module '%s/rem2_j'"
+            .formatted(sPath),
+        "  [DEBUG] executing command '/usr/bin/git status -sb --ignore-submodules --porcelain=v2' under module '%s/rem3_k'"
+            .formatted(sPath),
+        "  [DEBUG] executing command '/usr/bin/git status -sb --ignore-submodules --porcelain=v2' under module '%s'"
+            .formatted(sPath),
+        "rem1_i master",
+        "rem2_j master",
+        "rem3_k master",
+        "%s master .gitignore rem1_i rem2_j rem3_k"
+            .formatted("" + tempPath.subpath(1, tempPath.getNameCount())));
   }
 
   @Test
@@ -96,5 +98,27 @@ class GisIntTest extends GitBaseTest {
     // then:
     assertThat(stripColors.apply(errCaptor.toString())).contains(
         "  ERROR: directory '%s/asdf' does not exist, will be ignored!".formatted("" + tempPath));
+  }
+
+  @Test
+  void gis_dryRun_OK() throws IOException {
+    // given:
+    create_clone_gitRepositories("rem4_i", "rem5_j", "rem6_k");
+    Gis.main("init");
+
+    // when:
+    Gis.setDryRun(true);
+    Gis.main("status", "--one-line");
+
+    // then:
+    assertThat(stripColors.apply(outCaptor.toString())).contains(
+        "/usr/bin/git status -sb --ignore-submodules --porcelain=v2",
+        "/usr/bin/git status -sb --ignore-submodules --porcelain=v2",
+        "/usr/bin/git status -sb --ignore-submodules --porcelain=v2",
+        "/usr/bin/git status -sb --ignore-submodules --porcelain=v2",
+        "rem5_j",
+        "rem6_k",
+        "rem4_i",
+        "" + tempPath.subpath(1, tempPath.getNameCount()));
   }
 }

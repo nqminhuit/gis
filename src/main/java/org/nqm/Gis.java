@@ -3,6 +3,7 @@ package org.nqm;
 import org.nqm.command.GisVersion;
 import org.nqm.command.GitCommand;
 import org.nqm.config.GisLog;
+import org.nqm.utils.GisProcessUtils;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.IExecutionExceptionHandler;
@@ -29,6 +30,11 @@ public class Gis extends GitCommand {
   @Option(names = "-v", description = "Show more details information.", scope = ScopeType.INHERIT)
   public static void setVerbose(boolean verbose) {
     GisLog.setIsDebugEnabled(verbose);
+  }
+
+  @Option(names = "--dry-run", description = "Show command output, do not execute.", scope = ScopeType.INHERIT)
+  public static void setDryRun(boolean dryRun) {
+    GisProcessUtils.isDryRunEnabled(dryRun);
   }
 
   public static void main(String... args) {

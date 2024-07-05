@@ -9,14 +9,11 @@ import org.nqm.utils.StdOutUtils;
 
 public class GisLog {
 
-  private static Boolean isDebugEnabled;
+  private static boolean isDebugEnabled;
 
   private GisLog() {}
 
   public static void setIsDebugEnabled(boolean b) {
-    if (isDebugEnabled == null) {
-      isDebugEnabled = false;
-    }
     isDebugEnabled = b;
   }
 
