@@ -14,6 +14,6 @@ class GisVersionTest {
     var version = gisVersion.getVersion();
 
     // then:
-    assertThat(version).containsExactly("gis 1.2.3-dev", "commit 44e3d50");
+    assertThat(version).containsExactly("gis 1.2.3-dev (commit 44e3d50)");
   }
 }

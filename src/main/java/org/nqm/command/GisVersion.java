@@ -15,6 +15,6 @@ public class GisVersion implements IVersionProvider {
             gisVersion = p.getProperty("gis.version");
             commitHash = p.getProperty("git.commit.hash");
         }
-        return new String[] {"gis " + gisVersion, "commit " + commitHash};
+        return new String[] {"gis %s (commit %s)".formatted(gisVersion, commitHash)};
     }
 }
