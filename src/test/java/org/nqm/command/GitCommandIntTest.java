@@ -150,12 +150,12 @@ class GitCommandIntTest extends GitBaseTest {
     gis.spinOff("bb1");
     commitFile(repos);
     System.setIn(new ByteArrayInputStream("y".getBytes()));
-    gis.push("bb1", true, true);
+    gis.push("bb1", true, true, false);
 
     gis.spinOff("bb2");
     commitFile(repos);
     System.setIn(new ByteArrayInputStream("yeS".getBytes()));
-    gis.push("bb2", true, true);
+    gis.push("bb2", true, true, false);
     resetOutputStreamTest();
 
     // when:
@@ -277,7 +277,7 @@ class GitCommandIntTest extends GitBaseTest {
 
     // when:
     System.setIn(new ByteArrayInputStream("YES".getBytes()));
-    gis.push("master", true, true);
+    gis.push("master", true, true, false);
 
     // then:
     var out = Optional.of(outCaptor.toString())
@@ -293,6 +293,27 @@ class GitCommandIntTest extends GitBaseTest {
   }
 
   @Test
+  void pushOrigin_withoutUserPrompt_OK() throws IOException {
+    // given:
+    var repos = create_clone_gitRepositories("hori_1_h", "hori_2_hh", "hori_3_hhh");
+    commitFile(repos);
+    gis.init();
+    resetOutputStreamTest();
+
+    // when:
+    gis.push("master", true, true, true);
+
+    // then:
+    assertThat(stripColors.apply(outCaptor.toString())).contains(
+        "hori_1_h",
+        "  branch 'master' set up to track 'origin/master'.",
+        "hori_2_hh",
+        "  branch 'master' set up to track 'origin/master'.",
+        "hori_3_hhh",
+        "  branch 'master' set up to track 'origin/master'.");
+  }
+
+  @Test
   void pushOrigin_withoutSettingRemote_OK() throws IOException {
     // given:
     var repos = create_clone_gitRepositories("xcom_1_h", "xcom_2_hh", "xcom_3_hhh");
@@ -302,7 +323,7 @@ class GitCommandIntTest extends GitBaseTest {
 
     // when:
     System.setIn(new ByteArrayInputStream("Yes".getBytes()));
-    gis.push("master", true, false);
+    gis.push("master", true, false, false);
 
     // then:
     var out = Optional.of(outCaptor.toString())
@@ -322,7 +343,7 @@ class GitCommandIntTest extends GitBaseTest {
 
     // when:
     System.setIn(new ByteArrayInputStream("y".getBytes()));
-    gis.push("batabranch", false, false);
+    gis.push("batabranch", false, false, false);
 
     // then:
     var out = Optional.of(outCaptor.toString())
@@ -347,7 +368,7 @@ class GitCommandIntTest extends GitBaseTest {
 
     // when + then:
     System.setIn(new ByteArrayInputStream("Y".getBytes()));
-    assertThatThrownBy(() -> gis.push("batabranch", false, false))
+    assertThatThrownBy(() -> gis.push("batabranch", false, false, false))
         .isInstanceOf(GisException.class)
         .hasMessage("nope!!,");
   }
@@ -383,7 +404,7 @@ class GitCommandIntTest extends GitBaseTest {
     gis.spinOff("batabranch");
     commitFile(repos);
     System.setIn(new ByteArrayInputStream("yes".getBytes()));
-    gis.push("batabranch", true, true);
+    gis.push("batabranch", true, true, false);
     gis.spinOff("master");
     commitFile(repos);
 
