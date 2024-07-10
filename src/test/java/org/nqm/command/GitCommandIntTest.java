@@ -17,15 +17,16 @@ import org.nqm.GisException;
 import org.nqm.helper.GisConfigMock;
 import org.nqm.helper.GisProcessUtilsMock;
 import org.nqm.helper.GitBaseTest;
+import org.nqm.utils.GisStringUtils;
 
 class GitCommandIntTest extends GitBaseTest {
 
-  private GitCommand gis;
+  private GisCommand gis;
 
   @Override
   protected void additionalSetup() {
     GisConfigMock.mockCurrentDirectory("" + tempPath);
-    gis = new GitCommand();
+    gis = new GisCommand();
   }
 
   @Override
@@ -137,7 +138,7 @@ class GitCommandIntTest extends GitBaseTest {
     gis.listBranches(true, false);
 
     // then:
-    assertThat(outCaptor.toString().split("%n".formatted())).containsExactlyInAnyOrder(
+    assertThat(outCaptor.toString().split(GisStringUtils.NEWLINE)).containsExactlyInAnyOrder(
         "bb1", "master", "bb1", "master", "bb1", "master");
   }
 
@@ -162,7 +163,7 @@ class GitCommandIntTest extends GitBaseTest {
     gis.listBranches(true, true);
 
     // then:
-    assertThat(outCaptor.toString().split("%n".formatted()))
+    assertThat(outCaptor.toString().split(GisStringUtils.NEWLINE))
         .containsExactlyInAnyOrder(
             "bb1",
             "bb2",
@@ -193,7 +194,7 @@ class GitCommandIntTest extends GitBaseTest {
     gis.files();
 
     // then:
-    assertThat(outCaptor.toString().split("%n".formatted())).containsExactlyInAnyOrder(
+    assertThat(outCaptor.toString().split(GisStringUtils.NEWLINE)).containsExactlyInAnyOrder(
         "otq_1_a/filescramble1",
         "otq_3_c/filescramble1",
         "otq_2_b/filescramble1");

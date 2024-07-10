@@ -1,6 +1,7 @@
 package org.nqm.command;
 
 import static org.nqm.command.Wrapper.forEachModuleDo;
+import static org.nqm.command.Wrapper.forEachModuleStatus;
 import static org.nqm.command.Wrapper.forEachModuleWith;
 import static org.nqm.config.GisConfig.currentDir;
 import java.io.BufferedReader;
@@ -15,9 +16,13 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Optional;
+import java.util.TreeSet;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.eclipse.jgit.api.errors.GitAPIException;
 import org.nqm.GisException;
 import org.nqm.config.GisConfig;
 import org.nqm.config.GisLog;
@@ -28,7 +33,7 @@ import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
 
-public class GitCommand {
+public class GisCommand {
 
   private static final String CHECKOUT = "checkout";
   private static final String FETCHED_AT = "(fetched at: %s)";
@@ -47,12 +52,18 @@ public class GitCommand {
   }
 
   @Command(name = GIT_STATUS, aliases = "st", description = "Show the working trees status")
-  void status(@Option(names = "--one-line") boolean oneLineOpt) throws IOException {
-    if (oneLineOpt) {
-      forEachModuleDo(GIT_STATUS, "-sb", "--ignore-submodules", "--porcelain=v2", "--gis-one-line");
-    } else {
-      forEachModuleDo(GIT_STATUS, "-sb", "--ignore-submodules", "--porcelain=v2");
-    }
+  void status(@Option(names = "--one-line") boolean oneLiner) throws IOException {
+    var result = new ConcurrentLinkedQueue<String>();
+    forEachModuleStatus(f -> {
+      try {
+        result.add(GitStatusCommand.status(f, oneLiner));
+      } catch (IOException | GitAPIException e) {
+        GisLog.debug(e);
+      }
+    });
+    StdOutUtils.println(String.join(
+        GisStringUtils.NEWLINE,
+        result.stream().collect(Collectors.toCollection(TreeSet::new))));
     if (Files.exists(TMP_FILE)) {
       var lastFetched = Files.readString(TMP_FILE);
       if (GisStringUtils.isNotBlank(lastFetched)) {
@@ -235,7 +246,7 @@ public class GitCommand {
         try (var out = new FileOutputStream(file.toFile())) {
           while ((line = buffer.readLine()) != null) {
             out.write(line.getBytes());
-            out.write("%n".formatted().getBytes());
+            out.write(GisStringUtils.NEWLINE.getBytes());
           }
         }
         return;

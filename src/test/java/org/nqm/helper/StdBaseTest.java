@@ -19,6 +19,7 @@ import java.util.stream.Stream;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.nqm.config.GisLog;
+import org.nqm.utils.GisStringUtils;
 import org.nqm.utils.StdOutUtils;
 
 public abstract class StdBaseTest {
@@ -56,7 +57,7 @@ public abstract class StdBaseTest {
   }
 
   protected static Function<String, List<String>> stripColors =
-      str -> Stream.of(str.split("%n".formatted()))
+      str -> Stream.of(str.split(GisStringUtils.NEWLINE))
           .map(s -> s.replace(CL_RESET, ""))
           .map(s -> s.replace(CL_BLACK, ""))
           .map(s -> s.replace(CL_RED, ""))

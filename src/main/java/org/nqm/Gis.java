@@ -1,7 +1,7 @@
 package org.nqm;
 
+import org.nqm.command.GisCommand;
 import org.nqm.command.GisVersion;
-import org.nqm.command.GitCommand;
 import org.nqm.config.GisLog;
 import org.nqm.utils.GisProcessUtils;
 import picocli.CommandLine;
@@ -16,7 +16,7 @@ import picocli.CommandLine.ScopeType;
     description = "Git extension wrapper which supports submodules",
     mixinStandardHelpOptions = true,
     versionProvider = GisVersion.class)
-public class Gis extends GitCommand {
+public class Gis extends GisCommand {
 
   private static final IExecutionExceptionHandler GLOBAL_EXCEPTION_HANLER = new IExecutionExceptionHandler() {
     @Override
@@ -38,9 +38,14 @@ public class Gis extends GitCommand {
   }
 
   public static void main(String... args) {
+    // try {
+    //   System.out.println(GitStatusCommand.status(Path.of("/home/minh/projects/test/small-git-root-module/small-git-domain/.git"), false));
+    // } catch (NoWorkTreeException | IOException | GitAPIException e) {
+    //   e.printStackTrace();
+    // }
+
     var gis = new CommandLine(new Gis());
     gis.setExecutionExceptionHandler(GLOBAL_EXCEPTION_HANLER);
-
     gis.execute(args.length == 0
         ? new String[] {GIT_STATUS, "--one-line"}
         : args);

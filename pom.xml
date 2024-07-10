@@ -24,6 +24,7 @@
     <jar.plugin.version>3.3.0</jar.plugin.version>
     <jacoco.version>0.8.12</jacoco.version>
     <commit.id.version>9.0.1</commit.id.version>
+    <jgit.version>6.10.0.202406032230-r</jgit.version>
   </properties>
 
   <dependencies>
@@ -31,6 +32,23 @@
       <groupId>info.picocli</groupId>
       <artifactId>picocli</artifactId>
       <version>${picocli.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.eclipse.jgit</groupId>
+      <artifactId>org.eclipse.jgit</artifactId>
+      <version>${jgit.version}</version>
+    </dependency>
+
+    <!-- these 2 slf4j deps are required for jgit -->
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+      <version>${slf4j.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-simple</artifactId>
+      <version>${slf4j.version}</version>
     </dependency>
 
     <!-- test dependencies -->
@@ -62,18 +80,6 @@
       <groupId>org.testcontainers</groupId>
       <artifactId>testcontainers</artifactId>
       <version>${testcontainers.version}</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.slf4j</groupId>
-      <artifactId>slf4j-api</artifactId>
-      <version>${slf4j.version}</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.slf4j</groupId>
-      <artifactId>slf4j-simple</artifactId>
-      <version>${slf4j.version}</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
