@@ -279,7 +279,7 @@ class GitCommandTest extends StdBaseTest {
     ExecutorsMock.mockVirtualThreadRunnable(exe);
 
     // when:
-    gis.checkoutNewBranch("batabranch");
+    gis.spinOff("batabranch");
 
     // then:
     verify(exe, times(2)).submit((Callable<?>) any());
@@ -293,7 +293,7 @@ class GitCommandTest extends StdBaseTest {
     ExecutorsMock.mockVirtualThreadRunnable(exe);
 
     // when:
-    gis.checkoutNewBranch("batabranch", "submodule1", "submodule2");
+    gis.spinOff("batabranch", "submodule1", "submodule2");
 
     // then:
     verify(exe, times(2)).submit((Callable<?>) any());
@@ -307,7 +307,7 @@ class GitCommandTest extends StdBaseTest {
     ExecutorsMock.mockVirtualThreadRunnable(exe);
 
     // when:
-    gis.checkoutNewBranch(
+    gis.spinOff(
         "batabranch", "submodule1", "submodule2", "" + tempPath.subpath(1, tempPath.getNameCount()));
 
     // then:

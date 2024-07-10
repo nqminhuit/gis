@@ -101,7 +101,7 @@ class GitCommandIntTest extends GitBaseTest {
     var repos = create_clone_gitRepositories("ype_7_i", "ype_8_ii", "ype_9_iii");
     commitFile(repos);
     gis.init();
-    gis.checkoutNewBranch("bb1");
+    gis.spinOff("bb1");
     commitFile(repos);
     resetOutputStreamTest();
 
@@ -129,7 +129,7 @@ class GitCommandIntTest extends GitBaseTest {
     var repos = create_clone_gitRepositories("opu_7_i", "opu_8_ii", "opu_9_iii");
     commitFile(repos);
     gis.init();
-    gis.checkoutNewBranch("bb1");
+    gis.spinOff("bb1");
     commitFile(repos);
     resetOutputStreamTest();
 
@@ -147,12 +147,12 @@ class GitCommandIntTest extends GitBaseTest {
     var repos = create_clone_gitRepositories("opu_7_i", "opu_8_ii", "opu_9_iii");
     commitFile(repos);
     gis.init();
-    gis.checkoutNewBranch("bb1");
+    gis.spinOff("bb1");
     commitFile(repos);
     System.setIn(new ByteArrayInputStream("y".getBytes()));
     gis.push("bb1", true, true);
 
-    gis.checkoutNewBranch("bb2");
+    gis.spinOff("bb2");
     commitFile(repos);
     System.setIn(new ByteArrayInputStream("ye".getBytes()));
     gis.push("bb2", true, true);
@@ -205,7 +205,7 @@ class GitCommandIntTest extends GitBaseTest {
     var repos = create_clone_gitRepositories("qqq_7_i", "qqq_8_ii", "qqq_9_iii");
     commitFile(repos);
     gis.init();
-    gis.checkoutNewBranch("new_master");
+    gis.spinOff("new_master");
     commitFile(repos);
     resetOutputStreamTest();
 
@@ -232,7 +232,7 @@ class GitCommandIntTest extends GitBaseTest {
     gis.init();
 
     // when:
-    gis.checkoutNewBranch("nwebra");
+    gis.spinOff("nwebra");
 
     // then:
     assertThat(stripColors.apply(outCaptor.toString())).contains("two_1_i", "two_2_ii", "two_3_iii");
@@ -245,7 +245,7 @@ class GitCommandIntTest extends GitBaseTest {
     gis.init();
 
     // when:
-    gis.checkoutNewBranch("batabranch", "two_2_yy", "two_3_yyy");
+    gis.spinOff("batabranch", "two_2_yy", "two_3_yyy");
 
     // then:
     assertThat(stripColors.apply(outCaptor.toString())).contains("two_2_yy", "two_3_yyy");
@@ -261,7 +261,7 @@ class GitCommandIntTest extends GitBaseTest {
 
     // when:
     var rootModule = "" + tempPath.subpath(1, tempPath.getNameCount());
-    gis.checkoutNewBranch("batabranch", "two_2_hh", rootModule);
+    gis.spinOff("batabranch", "two_2_hh", rootModule);
 
     // then:
     assertThat(stripColors.apply(outCaptor.toString())).contains("two_2_hh", rootModule);
@@ -316,7 +316,7 @@ class GitCommandIntTest extends GitBaseTest {
     // given:
     var repos = create_clone_gitRepositories("batpo_1_h", "batpo_2_hh", "batpo_3_hhh");
     gis.init();
-    gis.checkoutNewBranch("batabranch", "batpo_1_h", "batpo_3_hhh");
+    gis.spinOff("batabranch", "batpo_1_h", "batpo_3_hhh");
     commitFile(repos);
     resetOutputStreamTest();
 
@@ -339,7 +339,7 @@ class GitCommandIntTest extends GitBaseTest {
     // given:
     var repos = create_clone_gitRepositories("batpo_1_h", "batpo_2_hh", "batpo_3_hhh");
     gis.init();
-    gis.checkoutNewBranch("batabranch", "batpo_1_h", "batpo_3_hhh");
+    gis.spinOff("batabranch", "batpo_1_h", "batpo_3_hhh");
     commitFile(repos);
     resetOutputStreamTest();
     GisProcessUtilsMock.mockQuickRunThrowException(new IOException("nope!!,"), tempPath.toFile(),
@@ -357,9 +357,9 @@ class GitCommandIntTest extends GitBaseTest {
     // given:
     var repos = create_clone_gitRepositories("tppo_1_b", "tppo_2_bb", "tppo_3_bbb");
     gis.init();
-    gis.checkoutNewBranch("batabranch");
+    gis.spinOff("batabranch");
     commitFile(repos);
-    gis.checkoutNewBranch("master");
+    gis.spinOff("master");
     commitFile(repos);
 
     // when:
@@ -380,11 +380,11 @@ class GitCommandIntTest extends GitBaseTest {
     // given:
     var repos = create_clone_gitRepositories("po_1_z", "po_2_zz", "po_3_zzz");
     gis.init();
-    gis.checkoutNewBranch("batabranch");
+    gis.spinOff("batabranch");
     commitFile(repos);
     System.setIn(new ByteArrayInputStream("yes".getBytes()));
     gis.push("batabranch", true, true);
-    gis.checkoutNewBranch("master");
+    gis.spinOff("master");
     commitFile(repos);
 
     // when:
@@ -402,7 +402,7 @@ class GitCommandIntTest extends GitBaseTest {
     // given:
     var repos = create_clone_gitRepositories("pom_1_x", "pom_2_xx", "pom_3_xxx");
     gis.init();
-    gis.checkoutNewBranch("batabranch");
+    gis.spinOff("batabranch");
     commitFile(repos);
     scrambleFiles(repos);
     resetOutputStreamTest();
@@ -436,7 +436,7 @@ class GitCommandIntTest extends GitBaseTest {
     // given:
     var repos = create_clone_gitRepositories("pja_4_x", "pja_5_xx", "pja_6_xxx");
     gis.init();
-    gis.checkoutNewBranch("batabranch");
+    gis.spinOff("batabranch");
     commitFile(repos);
     scrambleFiles(repos);
     gis.stash(false);
