@@ -428,4 +428,42 @@ class GitCommandTest extends StdBaseTest {
         """);
   }
 
+  @Test
+  public void confirmYesPattern_false() throws Exception {
+    // given:
+    var pattern = GitCommand.CONFIRM_YES;
+
+    // then:
+    assertThat(pattern.matcher("Yey").matches()).isFalse();
+    assertThat(pattern.matcher("Yas").matches()).isFalse();
+    assertThat(pattern.matcher("yea").matches()).isFalse();
+    assertThat(pattern.matcher("Yse").matches()).isFalse();
+    assertThat(pattern.matcher("Ye!").matches()).isFalse();
+    assertThat(pattern.matcher("e").matches()).isFalse();
+    assertThat(pattern.matcher("E").matches()).isFalse();
+    assertThat(pattern.matcher("yE").matches()).isFalse();
+  }
+
+  @Test
+  public void confirmYesPattern_true() throws Exception {
+    // given:
+    var pattern = GitCommand.CONFIRM_YES;
+
+    // then:
+    assertThat(pattern.matcher("YES").matches()).isTrue();
+    assertThat(pattern.matcher("YEs").matches()).isTrue();
+    assertThat(pattern.matcher("YeS").matches()).isTrue();
+    assertThat(pattern.matcher("yES").matches()).isTrue();
+    assertThat(pattern.matcher("yeS").matches()).isTrue();
+    assertThat(pattern.matcher("yEs").matches()).isTrue();
+    assertThat(pattern.matcher("Yes").matches()).isTrue();
+    assertThat(pattern.matcher("yes").matches()).isTrue();
+    assertThat(pattern.matcher("Y").matches()).isTrue();
+    assertThat(pattern.matcher("y").matches()).isTrue();
+  }
+
+  @Test
+  public void gisAutocompleteFileName() throws Exception {
+    assertThat(GIS_AUTOCOMPLETE_FILE).isEqualTo("_gis");
+  }
 }

@@ -16,10 +16,11 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Optional;
 import java.util.function.Predicate;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
+import org.nqm.GisException;
 import org.nqm.config.GisConfig;
 import org.nqm.config.GisLog;
-import org.nqm.GisException;
 import org.nqm.utils.GisProcessUtils;
 import org.nqm.utils.GisStringUtils;
 import org.nqm.utils.StdOutUtils;
@@ -35,6 +36,7 @@ public class GitCommand {
   private static final Path TMP_FILE = Path.of("/", "tmp", "gis_fetch" + currentDir().replace("/", "_"));
 
   static final String GIS_AUTOCOMPLETE_FILE = "_gis";
+  static final Pattern CONFIRM_YES = Pattern.compile("[Yy]+([Ee][Ss])*");
 
   public static final String GIT_STATUS = "status";
   public static final String HOOKS_OPTION = "--hooks";
@@ -267,8 +269,7 @@ public class GitCommand {
   private boolean isConfirmed(String question) throws IOException {
     StdOutUtils.print(question + " ");
     try (var reader = new BufferedReader(new InputStreamReader(System.in))) {
-      var input = reader.readLine();
-      return Stream.of("y", "ye", "yes").anyMatch(s -> s.equalsIgnoreCase(input));
+      return CONFIRM_YES.matcher(reader.readLine()).matches();
     }
   }
 

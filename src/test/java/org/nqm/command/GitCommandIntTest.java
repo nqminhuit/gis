@@ -154,7 +154,7 @@ class GitCommandIntTest extends GitBaseTest {
 
     gis.spinOff("bb2");
     commitFile(repos);
-    System.setIn(new ByteArrayInputStream("ye".getBytes()));
+    System.setIn(new ByteArrayInputStream("yeS".getBytes()));
     gis.push("bb2", true, true);
     resetOutputStreamTest();
 
@@ -210,7 +210,7 @@ class GitCommandIntTest extends GitBaseTest {
     resetOutputStreamTest();
 
     // when:
-    System.setIn(new ByteArrayInputStream("ye".getBytes()));
+    System.setIn(new ByteArrayInputStream("Y".getBytes()));
     gis.removeBranch("master", true);
 
     // then:
@@ -276,7 +276,7 @@ class GitCommandIntTest extends GitBaseTest {
     resetOutputStreamTest();
 
     // when:
-    System.setIn(new ByteArrayInputStream("yes".getBytes()));
+    System.setIn(new ByteArrayInputStream("YES".getBytes()));
     gis.push("master", true, true);
 
     // then:
@@ -301,7 +301,7 @@ class GitCommandIntTest extends GitBaseTest {
     resetOutputStreamTest();
 
     // when:
-    System.setIn(new ByteArrayInputStream("yes".getBytes()));
+    System.setIn(new ByteArrayInputStream("Yes".getBytes()));
     gis.push("master", true, false);
 
     // then:
@@ -321,7 +321,7 @@ class GitCommandIntTest extends GitBaseTest {
     resetOutputStreamTest();
 
     // when:
-    System.setIn(new ByteArrayInputStream("yes".getBytes()));
+    System.setIn(new ByteArrayInputStream("y".getBytes()));
     gis.push("batabranch", false, false);
 
     // then:
@@ -346,7 +346,7 @@ class GitCommandIntTest extends GitBaseTest {
         GIT_HOME_DIR, "branch", "--show-current");
 
     // when + then:
-    System.setIn(new ByteArrayInputStream("yes".getBytes()));
+    System.setIn(new ByteArrayInputStream("Y".getBytes()));
     assertThatThrownBy(() -> gis.push("batabranch", false, false))
         .isInstanceOf(GisException.class)
         .hasMessage("nope!!,");
