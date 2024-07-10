@@ -5,7 +5,7 @@ function _gis {
   local line
   _arguments -C\
              "1: :(checkout co \
-checkout-branch cb \
+spin-off cb \
 fetch fe \
 fetch-origin fo \
 files \

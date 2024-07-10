@@ -16,10 +16,11 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Optional;
 import java.util.function.Predicate;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
+import org.nqm.GisException;
 import org.nqm.config.GisConfig;
 import org.nqm.config.GisLog;
-import org.nqm.GisException;
 import org.nqm.utils.GisProcessUtils;
 import org.nqm.utils.GisStringUtils;
 import org.nqm.utils.StdOutUtils;
@@ -35,16 +36,17 @@ public class GitCommand {
   private static final Path TMP_FILE = Path.of("/", "tmp", "gis_fetch" + currentDir().replace("/", "_"));
 
   static final String GIS_AUTOCOMPLETE_FILE = "_gis";
+  static final Pattern CONFIRM_YES = Pattern.compile("[Yy]+([Ee][Ss])*");
 
   public static final String GIT_STATUS = "status";
   public static final String HOOKS_OPTION = "--hooks";
 
-  @Command(name = "pull", aliases = "pu")
+  @Command(name = "pull", aliases = "pu", description = "Fetch from and integrate with remote repositories")
   void pull() throws IOException {
     forEachModuleDo("pull");
   }
 
-  @Command(name = GIT_STATUS, aliases = "st")
+  @Command(name = GIT_STATUS, aliases = "st", description = "Show the working trees status")
   void status(@Option(names = "--one-line") boolean oneLineOpt) throws IOException {
     if (oneLineOpt) {
       forEachModuleDo(GIT_STATUS, "-sb", "--ignore-submodules", "--porcelain=v2", "--gis-one-line");
@@ -68,7 +70,7 @@ public class GitCommand {
     StdOutUtils.println(FETCHED_AT.formatted(timeFetch));
   }
 
-  @Command(name = "fetch", aliases = "fe")
+  @Command(name = "fetch", aliases = "fe", description = "Download objects and refs from other repositories")
   void fetchStatus() throws IOException {
     try {
       StdOutUtils.setMuteOutput(true);
@@ -79,30 +81,32 @@ public class GitCommand {
     status(true);
   }
 
-  @Command(name = "rebase-current-origin", aliases = "ru")
+  @Command(name = "rebase-current-origin", aliases = "ru",
+      description = "Reapply commits on top of current repositories' origin")
   void rebaseCurrentOrigin() {
     throw new GisException("this function is in progress");
   }
 
-  @Command(name = "rebase-origin", aliases = "re")
+  @Command(name = "rebase-origin", aliases = "re", description = "Reapply commits on top of other base tip")
   void rebaseOrigin(@Parameters(index = "0", paramLabel = "<branch name>") String branch) throws IOException {
     forEachModuleDo("rebase", "%s/%s".formatted(ORIGIN, branch));
   }
 
-  @Command(name = "fetch-origin", aliases = "fo")
+  @Command(name = "fetch-origin", aliases = "fo",
+      description = "Download objects and refs specified by branch name from other repositories")
   void fetchOrigin(@Parameters(index = "0", paramLabel = "<branch name>") String branch) throws IOException {
     forEachModuleDo("fetch", ORIGIN, "%s:%s".formatted(branch, branch));
   }
 
-  @Command(name = CHECKOUT, aliases = "co")
+  @Command(name = CHECKOUT, aliases = "co", description = "Switch branches or restore working tree files")
   void checkout(@Parameters(index = "0", paramLabel = "<branch name>") String branch) throws IOException {
     forEachModuleDo(CHECKOUT, branch);
   }
 
-  @Command(name = "checkout-branch",
+  @Command(name = "spin-off",
       aliases = "cb",
       description = "Create (and checkout) a spin-off branch with <new_branch_name> for <modules>.")
-  void checkoutNewBranch(
+  void spinOff(
       @Parameters(index = "0", paramLabel = "<new_branch_name>",
           description = "branch name") String newBranch,
       @Parameters(paramLabel = "<modules>",
@@ -130,7 +134,8 @@ public class GitCommand {
     forEachModuleWith(specifiedPaths::contains, CHECKOUT, "-b", newBranch);
   }
 
-  @Command(name = "remove-branch", aliases = "rm")
+  @Command(name = "remove-branch", aliases = "rm",
+      description = "Delete specified branch from all repositories")
   void removeBranch(@Parameters(index = "0", paramLabel = "<branch name>") String branch,
       @Option(names = "-f",
           description = "force to delete branch without interactive prompt") boolean isForce)
@@ -140,7 +145,7 @@ public class GitCommand {
     }
   }
 
-  @Command(name = "push", aliases = "pus")
+  @Command(name = "push", aliases = "pus", description = "Update remotes refs along with associated objects")
   void push(@Parameters(index = "0", paramLabel = "<branch name>") String branch,
       @Option(names = "-f", description = "force to update remote origin branch") boolean isForce,
       @Option(names = "-r", description = "push to remote origin branch") boolean isNewRemoteBranch)
@@ -156,12 +161,14 @@ public class GitCommand {
     forEachModuleWith(path -> isSameBranchUnderPath(branch, path), args);
   }
 
-  @Command(name = "remote-prune-origin", aliases = "rpo")
+  @Command(name = "remote-prune-origin", aliases = "rpo",
+      description = "Deletes stale references associated with <branch>")
   void remotePruneOrigin() throws IOException {
     forEachModuleDo("remote", "prune", ORIGIN);
   }
 
-  @Command(name = "local-prune", aliases = "prune")
+  @Command(name = "local-prune", aliases = "prune",
+      description = "Deletes stale local references which already merged to <branch>")
   void localPrune(@Parameters(index = "0", paramLabel = "<default branch name>") String branch)
       throws IOException {
     forEachModuleDo("for-each-ref",
@@ -174,16 +181,16 @@ public class GitCommand {
         GisConfig.GIT_HOME_DIR + " branch -d %s");
   }
 
-  @Command(name = "stash")
-  void stash(@Option(names = "-pp", description = "pop first stashed changes") boolean isPop)
+  @Command(name = "stash", description = "Stash the changes in a dirty working directories away")
+  void stash(@Option(names = "--pop", description = "pop first stashed changes") boolean isPop)
       throws IOException {
     var args = isPop ? new String[] {"stash", "pop"} : new String[] {"stash"};
     forEachModuleDo(args);
   }
 
-  @Command(name = "branches")
+  @Command(name = "branches", description = "List branches from all submodules")
   void listBranches(
-      @Option(names = "-nn", description = "do not print module name") boolean noPrintModuleName,
+      @Option(names = "--no-module-name", description = "do not print module name") boolean noPrintModuleName,
       @Option(names = "--include-remotes", description = "include remote branches") boolean includeRemotes)
       throws IOException {
     var sArgs = Stream.of("for-each-ref", "--format=%(refname:short)", "refs/heads");
@@ -209,12 +216,12 @@ public class GitCommand {
     }
   }
 
-  @Command(name = "files", description = "show modified files of all submodules")
+  @Command(name = "files", description = "List all modified files from submodules")
   void files() throws IOException {
     forEachModuleDo("diff", "--name-only", "--gis-concat-modules-name");
   }
 
-  @Command(name = "completion", description = "generate an zsh auto completion script")
+  @Command(name = "completion", description = "Generate an zsh auto completion script")
   void generateCompletion(
       @Option(names = "--directory",
           description = "export completion zsh function to file at specified directory") Path dir)
@@ -262,8 +269,7 @@ public class GitCommand {
   private boolean isConfirmed(String question) throws IOException {
     StdOutUtils.print(question + " ");
     try (var reader = new BufferedReader(new InputStreamReader(System.in))) {
-      var input = reader.readLine();
-      return Stream.of("y", "ye", "yes").anyMatch(s -> s.equalsIgnoreCase(input));
+      return CONFIRM_YES.matcher(reader.readLine()).matches();
     }
   }
 
