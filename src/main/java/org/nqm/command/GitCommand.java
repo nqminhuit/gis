@@ -147,16 +147,17 @@ public class GitCommand {
 
   @Command(name = "push", aliases = "pus", description = "Update remotes refs along with associated objects")
   void push(@Parameters(index = "0", paramLabel = "<branch name>") String branch,
-      @Option(names = "-f", description = "force to update remote origin branch") boolean isForce,
-      @Option(names = "-r", description = "push to remote origin branch") boolean isNewRemoteBranch)
+      @Option(names = "-f", description = "force to update remote origin branch") boolean force,
+      @Option(names = "-r", description = "push to remote origin branch") boolean newRemoteBranch,
+      @Option(names = "--no-interactive", description = "do not prompt for user input") boolean noInteractive)
       throws IOException {
 
-    if (!isConfirmed("Sure you want to push to remote '%s' [Y/n]".formatted(branch))) {
+    if (!noInteractive && !isConfirmed("Sure you want to push to remote '%s' [Y/n]".formatted(branch))) {
       return;
     }
-    var args = isNewRemoteBranch
+    var args = newRemoteBranch
         ? new String[] {"push", "-u", ORIGIN, branch}
-        : shouldForcePush(isForce);
+        : shouldForcePush(force);
 
     forEachModuleWith(path -> isSameBranchUnderPath(branch, path), args);
   }

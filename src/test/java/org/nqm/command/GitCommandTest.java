@@ -351,7 +351,7 @@ class GitCommandTest extends StdBaseTest {
       System.setIn(new ByteArrayInputStream("yesn't".getBytes()));
 
       // when:
-      gis.push("batabranch", true, true);
+      gis.push("batabranch", true, true, false);
 
       // then:
       verify(exe, times(0)).submit((Callable<?>) any());
@@ -372,7 +372,7 @@ class GitCommandTest extends StdBaseTest {
       System.setIn(new ByteArrayInputStream("yes".getBytes()));
 
       // when:
-      gis.push("master", true, true);
+      gis.push("master", true, true, false);
 
       // then:
       verify(exe, times(2)).submit((Callable<?>) any());
@@ -429,7 +429,7 @@ class GitCommandTest extends StdBaseTest {
   }
 
   @Test
-  public void confirmYesPattern_false() throws Exception {
+  void confirmYesPattern_false() throws Exception {
     // given:
     var pattern = GitCommand.CONFIRM_YES;
 
@@ -445,7 +445,7 @@ class GitCommandTest extends StdBaseTest {
   }
 
   @Test
-  public void confirmYesPattern_true() throws Exception {
+  void confirmYesPattern_true() throws Exception {
     // given:
     var pattern = GitCommand.CONFIRM_YES;
 
@@ -463,7 +463,7 @@ class GitCommandTest extends StdBaseTest {
   }
 
   @Test
-  public void gisAutocompleteFileName() throws Exception {
+  void gisAutocompleteFileName() throws Exception {
     assertThat(GIS_AUTOCOMPLETE_FILE).isEqualTo("_gis");
   }
 }
