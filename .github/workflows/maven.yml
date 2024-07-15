@@ -38,8 +38,7 @@ jobs:
         native-image-job-reports: 'true'
     - name: Build executable file
       run: |
-        native-image -march=compatibility -cp target/gis-*.jar "org.nqm.Gis" --no-fallback --initialize-at-run-time=io.netty.handler.ssl.BouncyCastleAlpnSslUtils
-        mv org.nqm.gis gis
+        docker build -f Containerfile -t gis . || return 1; docker create --name dkgis_ gis:latest; docker cp dkgis_:/app/gis/gis .; docker rm -f dkgis_
         ./gis --version
         du -sh gis
     - name: Upload artifact
