@@ -47,7 +47,6 @@ public class GisConfig {
   public static String[] getFeatureBranchPrefixes() {
     return Optional.of(props)
         .map(props -> props.getProperty(FEATURE_BRANCH_PREFIXES_KEY))
-        .map(String::toLowerCase)
         .map(splitValue)
         .orElse(FEATURE_BRANCH_PREFIX_VALS);
   }
