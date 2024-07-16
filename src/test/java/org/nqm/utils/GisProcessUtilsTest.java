@@ -19,7 +19,7 @@ class GisProcessUtilsTest {
 
     // then:
     assertThat(result.exitCode()).isZero();
-    assertThat(result.output()).isEqualTo("" + tempPath + "%n".formatted());
+    assertThat(result.output()).isEqualTo("" + tempPath + GisStringUtils.NEWLINE);
   }
 
   @Test
@@ -38,7 +38,7 @@ class GisProcessUtilsTest {
 
     // then:
     assertThat(result.exitCode()).isZero();
-    assertThat(result.output()).isEqualTo("" + tempPath + "%n".formatted());
+    assertThat(result.output()).isEqualTo("" + tempPath + GisStringUtils.NEWLINE);
   }
 
   @Test

@@ -1,6 +1,6 @@
 package org.nqm.command;
 
-import static org.nqm.command.GitCommand.HOOKS_OPTION;
+import static org.nqm.command.GisCommand.HOOKS_OPTION;
 import static org.nqm.utils.GisStringUtils.isNotBlank;
 import static org.nqm.utils.StdOutUtils.gitStatus;
 import static org.nqm.utils.StdOutUtils.gitStatusOneLine;
@@ -95,7 +95,7 @@ public class CommandVerticle {
     var sb = new StringBuilder(infof("%s", "" + path.getFileName()));
     var isOneLineOpt = Stream.of(gisOptions).anyMatch("--gis-one-line"::equals);
     while (isNotBlank(line = input.readLine())) {
-      if (commandWithArgs[1].equals(GitCommand.GIT_STATUS)) {
+      if (commandWithArgs[1].equals(GisCommand.GIT_STATUS)) {
         sb.append(isOneLineOpt ? gitStatusOneLine(line) : gitStatus(line));
       } else {
         sb.append("%n  %s".formatted(line));

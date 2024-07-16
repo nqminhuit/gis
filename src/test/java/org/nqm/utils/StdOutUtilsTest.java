@@ -7,9 +7,20 @@ import static org.nqm.utils.StdOutUtils.CL_RED;
 import static org.nqm.utils.StdOutUtils.CL_RESET;
 import static org.nqm.utils.StdOutUtils.CL_YELLOW;
 import org.junit.jupiter.api.Test;
+import org.nqm.helper.GisConfigMock;
 import org.nqm.helper.StdBaseTest;
 
 class StdOutUtilsTest extends StdBaseTest {
+
+  @Override
+  protected void additionalSetup() {
+    GisConfigMock.mockBranchesColorDefault();
+  }
+
+  @Override
+  protected void additionalTeardown() {
+    GisConfigMock.close();
+  }
 
   @Test
   void debugln_OK() {
@@ -123,6 +134,30 @@ class StdOutUtilsTest extends StdBaseTest {
     assertThat(StdOutUtils.gitStatusOneLine(
         "1 AM N... 000000 100644 100644 0000000000000000000000000000000000000000 266d4a9eb53eff40687ab923a152a879cd558ad6 src/test/java/org/nqm/utils/StdOutUtilsTest.java"))
             .isEqualTo(" StdOutUtilsTest.java");
+  }
+
+  @Test
+  void gitStatusOneLine_withConfigBranchPrefixes_shouldCompareCaseSensitive() {
+    // given:
+    GisConfigMock.mockBranchesColorDefault(new String[]{"Master", "MAIN"}, new String[]{"FEA-ture"});
+
+    // then:
+    assertThat(StdOutUtils.gitStatusOneLine("# branch.head Master"))
+        .isEqualTo(" %s".formatted(coloringWord("Master", CL_RED)));
+    assertThat(StdOutUtils.gitStatusOneLine("# branch.head masTer"))
+        .isEqualTo(" %s".formatted(coloringWord("masTer", CL_GREEN)));
+
+    assertThat(StdOutUtils.gitStatusOneLine("# branch.head MAIN"))
+        .isEqualTo(" %s".formatted(coloringWord("MAIN", CL_RED)));
+    assertThat(StdOutUtils.gitStatusOneLine("# branch.head main"))
+        .isEqualTo(" %s".formatted(coloringWord("main", CL_GREEN)));
+
+    assertThat(StdOutUtils.gitStatusOneLine("# branch.head FEA-ture/destroy-d-b"))
+        .isEqualTo(" %s".formatted(coloringWord("FEA-ture/destroy-d-b", CL_YELLOW)));
+    assertThat(StdOutUtils.gitStatusOneLine("# branch.head Fea-ture/destroy-d-b"))
+        .isEqualTo(" %s".formatted(coloringWord("Fea-ture/destroy-d-b", CL_GREEN)));
+    assertThat(StdOutUtils.gitStatusOneLine("# branch.head fea-ture/destroy-d-b"))
+        .isEqualTo(" %s".formatted(coloringWord("fea-ture/destroy-d-b", CL_GREEN)));
   }
 
   @Test

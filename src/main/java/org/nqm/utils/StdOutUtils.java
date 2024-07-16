@@ -59,11 +59,15 @@ public class StdOutUtils {
     out.println("  " + CL_YELLOW + "[DEBUG] " + msg + CL_RESET);
   }
 
-  public static String infof(String msgFormat, String word) {
+  public static String infof(String msgFormat, String word) { // TODO: remove this
     return msgFormat.formatted(CL_CYAN + word + CL_RESET);
   }
 
-  private static String coloringBranch(String branch) {
+  public static String infof(String word) {
+    return "%s".formatted(CL_CYAN + word + CL_RESET);
+  }
+
+  public static String coloringBranch(String branch) {
     if (Stream.of(GisConfig.getDefaultBranches()).anyMatch(branch::equals)) {
       return coloringWord(branch, CL_RED);
     }
@@ -75,7 +79,7 @@ public class StdOutUtils {
     return coloringWord(branch, CL_GREEN);
   }
 
-  private static String coloringWord(String word, String color) {
+  public static String coloringWord(String word, String color) {
     return color + word + CL_RESET;
   }
 
@@ -96,6 +100,26 @@ public class StdOutUtils {
       + " ";
   }
 
+  public static String buildAheadBehind(int a, int b) {
+    if (a == 0 && b == 0) {
+      return "";
+    }
+    var ahead = Optional.of(a)
+        .filter(x -> x > 0)
+        .map(x -> "" + x)
+        .map(s -> "ahead " + coloringWord(s, CL_GREEN))
+        .orElse("");
+    var behind = Optional.of(b)
+        .filter(x -> x > 0)
+        .map(x -> "" + x)
+        .map(s -> "behind " + coloringWord(s, CL_RED))
+        .orElse("");
+    return "[%s]".formatted(Stream.of(ahead, behind)
+      .filter(not(String::isBlank))
+      .collect(Collectors.joining(", ")));
+  }
+
+  @Deprecated(since = "2.0.0")
   private static String buildAheadBehind(String[] splitS) {
     var ahead = Optional.of(splitS[2])
       .map(s -> s.replace("+", ""))

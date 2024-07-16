@@ -9,10 +9,11 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
-import org.nqm.config.GisLog;
 import org.nqm.GisException;
+import org.nqm.config.GisLog;
 import org.nqm.utils.StdOutUtils;
 
 public final class Wrapper {
@@ -68,5 +69,27 @@ public final class Wrapper {
 
   public static void forEachModuleDo(String... args) throws IOException {
     forEachModuleWith(p -> true, args);
+  }
+
+  public static void forEachModuleStatus(Consumer<Path> gitStatus) throws IOException {
+    var gitModulesFilePath = getFileMarker();
+    var currentDir = currentDir();
+    try (var exe = Executors.newVirtualThreadPerTaskExecutor()) {
+      Optional.of(Path.of(currentDir))
+          .ifPresent(root -> exe.submit(() -> gitStatus.accept(root)));
+      Files.readAllLines(gitModulesFilePath.toPath()).stream()
+          .map(String::trim)
+          .filter(s -> s.startsWith("path"))
+          .map(s -> s.replace("path = ", ""))
+          .map(dir -> Path.of(currentDir, dir))
+          .filter(dir -> {
+            if (dir.toFile().exists()) {
+              return true;
+            }
+            StdOutUtils.errln("directory '%s' does not exist, will be ignored!".formatted("" + dir));
+            return false;
+          })
+          .forEach(dir -> exe.submit(() -> gitStatus.accept(dir)));
+    }
   }
 }

@@ -10,7 +10,7 @@ class GitCommandWithoutDependMarkerFileTest extends StdBaseTest {
   @Test
   void pull_withoutAnyMarkerFiles_NOK() {
     // given:
-    var gis = new GitCommand();
+    var gis = new GisCommand();
 
     // when then:
     Assertions.assertThatThrownBy(() -> gis.pull())

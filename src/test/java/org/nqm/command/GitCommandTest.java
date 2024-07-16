@@ -5,7 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.nqm.command.GitCommand.GIS_AUTOCOMPLETE_FILE;
+import static org.nqm.command.GisCommand.GIS_AUTOCOMPLETE_FILE;
 import static org.nqm.config.GisConfig.GIT_HOME_DIR;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -27,7 +27,7 @@ import org.nqm.utils.GisProcessUtils;
 @ExtendWith(MockitoExtension.class)
 class GitCommandTest extends StdBaseTest {
 
-  private GitCommand gis;
+  private GisCommand gis;
 
   @TempDir
   private Path tempPath;
@@ -47,7 +47,7 @@ class GitCommandTest extends StdBaseTest {
 
   @Override
   protected void additionalSetup() throws IOException {
-    gis = new GitCommand();
+    gis = new GisCommand();
     ignoreMarkerFile();
 
     try {
@@ -431,7 +431,7 @@ class GitCommandTest extends StdBaseTest {
   @Test
   void confirmYesPattern_false() throws Exception {
     // given:
-    var pattern = GitCommand.CONFIRM_YES;
+    var pattern = GisCommand.CONFIRM_YES;
 
     // then:
     assertThat(pattern.matcher("Yey").matches()).isFalse();
@@ -447,7 +447,7 @@ class GitCommandTest extends StdBaseTest {
   @Test
   void confirmYesPattern_true() throws Exception {
     // given:
-    var pattern = GitCommand.CONFIRM_YES;
+    var pattern = GisCommand.CONFIRM_YES;
 
     // then:
     assertThat(pattern.matcher("YES").matches()).isTrue();
