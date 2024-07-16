@@ -7,6 +7,8 @@ public class GisStringUtils {
 
   private GisStringUtils() {}
 
+  public static final String NEWLINE = "%n".formatted();
+
   public static boolean isNotBlank(String s) {
     return s != null && !s.isBlank();
   }

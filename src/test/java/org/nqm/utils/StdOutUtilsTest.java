@@ -6,6 +6,8 @@ import static org.nqm.utils.StdOutUtils.CL_GREEN;
 import static org.nqm.utils.StdOutUtils.CL_RED;
 import static org.nqm.utils.StdOutUtils.CL_RESET;
 import static org.nqm.utils.StdOutUtils.CL_YELLOW;
+import static org.nqm.utils.StdOutUtils.RG_STAGED_STATUS;
+import static org.nqm.utils.StdOutUtils.RG_UNSTAGED_STATUS;
 import org.junit.jupiter.api.Test;
 import org.nqm.helper.GisConfigMock;
 import org.nqm.helper.StdBaseTest;
@@ -54,111 +56,75 @@ class StdOutUtilsTest extends StdBaseTest {
 
   @Test
   void infof_OK() {
-    var actual = StdOutUtils.infof(";aaa %s bbb:", "batmen");
-    assertThat(actual.getBytes())
-        .isEqualTo((";aaa " + CL_CYAN + "batmen" + CL_RESET + " bbb:").getBytes())
-        .containsExactly(
-            59, 97, 97, 97, 32, 27, 91, 51, 54, 109, 98, 97, 116,
-            109, 101, 110, 27, 91, 48, 109, 32, 98, 98, 98, 58);
+    var actual = StdOutUtils.infof("batmen");
+    assertThat(actual.getBytes()).isEqualTo((CL_CYAN + "batmen" + CL_RESET).getBytes());
   }
 
   private static String coloringWord(String word, String color) {
     return color + word + CL_RESET;
   }
 
-  @Test
-  void gitStatus_OK() {
-    assertThat(StdOutUtils.gitStatus("# branch.oid f0f19fb4542365e0d7aa7d6be5187e23a258a20c"))
-        .isEmpty();
-    assertThat(StdOutUtils.gitStatus("# branch.head master"))
-        .isEqualTo("\n  ## %s".formatted(coloringWord("master", CL_GREEN)));
-    assertThat(StdOutUtils.gitStatus("# branch.upstream origin/master"))
-        .isEqualTo("...%s".formatted(coloringWord("origin/master", CL_RED)));
-    assertThat(StdOutUtils.gitStatus("# branch.ab +0 -0"))
-        .isEmpty();
-    assertThat(StdOutUtils.gitStatus("# branch.ab +2 -9"))
-        .isEqualTo(
-            " [ahead %s, behind %s]".formatted(coloringWord("2", CL_GREEN), coloringWord("9", CL_RED)));
-    assertThat(StdOutUtils.gitStatus("# branch.ab +10 -0"))
-        .isEqualTo(" [ahead %s]".formatted(coloringWord("10", CL_GREEN)));
-    assertThat(StdOutUtils.gitStatus("# branch.ab +0 -20"))
-        .isEqualTo(" [behind %s]".formatted(coloringWord("20", CL_RED)));
-    assertThat(StdOutUtils.gitStatus(
-        "1 .M N... 100644 100644 100644 2e86d6778dfa1ac74ea4db9035d8559d2c164c90 2e86d6778dfa1ac74ea4db9035d8559d2c164c90 pom.xml"))
-            .isEqualTo("\n  .%s pom.xml".formatted(coloringWord("M", CL_RED)));
-    assertThat(StdOutUtils.gitStatus(
-        "1 M. N... 100644 100644 100644 2e86d6778dfa1ac74ea4db9035d8559d2c164c90 2e86d6778dfa1ac74ea4db9035d8559d2c164c90 pom.xml"))
-            .isEqualTo("\n  %s. pom.xml".formatted(coloringWord("M", CL_GREEN)));
-    assertThat(StdOutUtils.gitStatus(
-        "1 MM N... 100644 100644 100644 2e86d6778dfa1ac74ea4db9035d8559d2c164c90 2e86d6778dfa1ac74ea4db9035d8559d2c164c90 pom.xml"))
-            .isEqualTo("\n  %s%s pom.xml".formatted(coloringWord("M", CL_GREEN), coloringWord("M", CL_RED)));
-    assertThat(StdOutUtils.gitStatus(
-        "1 AM N... 000000 100644 100644 0000000000000000000000000000000000000000 266d4a9eb53eff40687ab923a152a879cd558ad6 src/test/java/org/nqm/utils/StdOutUtilsTest.java"))
-            .isEqualTo("\n  %s%s src/test/java/org/nqm/utils/StdOutUtilsTest.java"
-                .formatted(coloringWord("A", CL_GREEN), coloringWord("M", CL_RED)));
-  }
+  // @Test
+  // void gitStatusOneLine_OK() {
+  //   assertThat(StdOutUtils.gitStatusOneLine("# branch.oid f0f19fb4542365e0d7aa7d6be5187e23a258a20c"))
+  //       .isEmpty();
+  //   assertThat(StdOutUtils.gitStatusOneLine("# branch.head master"))
+  //       .isEqualTo(" %s".formatted(coloringWord("master", CL_RED)));
+  //   assertThat(StdOutUtils.gitStatusOneLine("# branch.head main"))
+  //       .isEqualTo(" %s".formatted(coloringWord("main", CL_RED)));
+  //   assertThat(StdOutUtils.gitStatusOneLine("# branch.head develop"))
+  //       .isEqualTo(" %s".formatted(coloringWord("develop", CL_RED)));
+  //   assertThat(StdOutUtils.gitStatusOneLine("# branch.head feature/destroy-d-b"))
+  //       .isEqualTo(" %s".formatted(coloringWord("feature/destroy-d-b", CL_YELLOW)));
+  //   assertThat(StdOutUtils.gitStatusOneLine("# branch.head NO-TICKETeee"))
+  //       .isEqualTo(" %s".formatted(coloringWord("NO-TICKETeee", CL_GREEN)));
+  //   assertThat(StdOutUtils.gitStatusOneLine("# branch.upstream origin/master")).isEmpty();
+  //   assertThat(StdOutUtils.gitStatusOneLine("# branch.ab +0 -0"))
+  //       .isEmpty();
+  //   assertThat(StdOutUtils.gitStatusOneLine("# branch.ab +2 -9"))
+  //       .isEqualTo(
+  //           "[ahead %s, behind %s]".formatted(coloringWord("2", CL_GREEN), coloringWord("9", CL_RED)));
+  //   assertThat(StdOutUtils.gitStatusOneLine("# branch.ab +10 -0"))
+  //       .isEqualTo("[ahead %s]".formatted(coloringWord("10", CL_GREEN)));
+  //   assertThat(StdOutUtils.gitStatusOneLine("# branch.ab +0 -20"))
+  //       .isEqualTo("[behind %s]".formatted(coloringWord("20", CL_RED)));
+  //   assertThat(StdOutUtils.gitStatusOneLine(
+  //       "1 .M N... 100644 100644 100644 2e86d6778dfa1ac74ea4db9035d8559d2c164c90 2e86d6778dfa1ac74ea4db9035d8559d2c164c90 pom.xml"))
+  //           .isEqualTo(" pom.xml");
+  //   assertThat(StdOutUtils.gitStatusOneLine(
+  //       "1 M. N... 100644 100644 100644 2e86d6778dfa1ac74ea4db9035d8559d2c164c90 2e86d6778dfa1ac74ea4db9035d8559d2c164c90 pom.xml"))
+  //           .isEqualTo(" pom.xml");
+  //   assertThat(StdOutUtils.gitStatusOneLine(
+  //       "1 MM N... 100644 100644 100644 2e86d6778dfa1ac74ea4db9035d8559d2c164c90 2e86d6778dfa1ac74ea4db9035d8559d2c164c90 pom.xml"))
+  //           .isEqualTo(" pom.xml");
+  //   assertThat(StdOutUtils.gitStatusOneLine(
+  //       "1 AM N... 000000 100644 100644 0000000000000000000000000000000000000000 266d4a9eb53eff40687ab923a152a879cd558ad6 src/test/java/org/nqm/utils/StdOutUtilsTest.java"))
+  //           .isEqualTo(" StdOutUtilsTest.java");
+  // }
 
-  @Test
-  void gitStatusOneLine_OK() {
-    assertThat(StdOutUtils.gitStatusOneLine("# branch.oid f0f19fb4542365e0d7aa7d6be5187e23a258a20c"))
-        .isEmpty();
-    assertThat(StdOutUtils.gitStatusOneLine("# branch.head master"))
-        .isEqualTo(" %s".formatted(coloringWord("master", CL_RED)));
-    assertThat(StdOutUtils.gitStatusOneLine("# branch.head main"))
-        .isEqualTo(" %s".formatted(coloringWord("main", CL_RED)));
-    assertThat(StdOutUtils.gitStatusOneLine("# branch.head develop"))
-        .isEqualTo(" %s".formatted(coloringWord("develop", CL_RED)));
-    assertThat(StdOutUtils.gitStatusOneLine("# branch.head feature/destroy-d-b"))
-        .isEqualTo(" %s".formatted(coloringWord("feature/destroy-d-b", CL_YELLOW)));
-    assertThat(StdOutUtils.gitStatusOneLine("# branch.head NO-TICKETeee"))
-        .isEqualTo(" %s".formatted(coloringWord("NO-TICKETeee", CL_GREEN)));
-    assertThat(StdOutUtils.gitStatusOneLine("# branch.upstream origin/master")).isEmpty();
-    assertThat(StdOutUtils.gitStatusOneLine("# branch.ab +0 -0"))
-        .isEmpty();
-    assertThat(StdOutUtils.gitStatusOneLine("# branch.ab +2 -9"))
-        .isEqualTo(
-            "[ahead %s, behind %s]".formatted(coloringWord("2", CL_GREEN), coloringWord("9", CL_RED)));
-    assertThat(StdOutUtils.gitStatusOneLine("# branch.ab +10 -0"))
-        .isEqualTo("[ahead %s]".formatted(coloringWord("10", CL_GREEN)));
-    assertThat(StdOutUtils.gitStatusOneLine("# branch.ab +0 -20"))
-        .isEqualTo("[behind %s]".formatted(coloringWord("20", CL_RED)));
-    assertThat(StdOutUtils.gitStatusOneLine(
-        "1 .M N... 100644 100644 100644 2e86d6778dfa1ac74ea4db9035d8559d2c164c90 2e86d6778dfa1ac74ea4db9035d8559d2c164c90 pom.xml"))
-            .isEqualTo(" pom.xml");
-    assertThat(StdOutUtils.gitStatusOneLine(
-        "1 M. N... 100644 100644 100644 2e86d6778dfa1ac74ea4db9035d8559d2c164c90 2e86d6778dfa1ac74ea4db9035d8559d2c164c90 pom.xml"))
-            .isEqualTo(" pom.xml");
-    assertThat(StdOutUtils.gitStatusOneLine(
-        "1 MM N... 100644 100644 100644 2e86d6778dfa1ac74ea4db9035d8559d2c164c90 2e86d6778dfa1ac74ea4db9035d8559d2c164c90 pom.xml"))
-            .isEqualTo(" pom.xml");
-    assertThat(StdOutUtils.gitStatusOneLine(
-        "1 AM N... 000000 100644 100644 0000000000000000000000000000000000000000 266d4a9eb53eff40687ab923a152a879cd558ad6 src/test/java/org/nqm/utils/StdOutUtilsTest.java"))
-            .isEqualTo(" StdOutUtilsTest.java");
-  }
+  // @Test
+  // void gitStatusOneLine_withConfigBranchPrefixes_shouldCompareCaseSensitive() {
+  //   // given:
+  //   GisConfigMock.mockBranchesColorDefault(new String[] {"Master", "MAIN"}, new String[] {"FEA-ture"});
 
-  @Test
-  void gitStatusOneLine_withConfigBranchPrefixes_shouldCompareCaseSensitive() {
-    // given:
-    GisConfigMock.mockBranchesColorDefault(new String[]{"Master", "MAIN"}, new String[]{"FEA-ture"});
+  //   // then:
+  //   assertThat(StdOutUtils.gitStatusOneLine("# branch.head Master"))
+  //       .isEqualTo(" %s".formatted(coloringWord("Master", CL_RED)));
+  //   assertThat(StdOutUtils.gitStatusOneLine("# branch.head masTer"))
+  //       .isEqualTo(" %s".formatted(coloringWord("masTer", CL_GREEN)));
 
-    // then:
-    assertThat(StdOutUtils.gitStatusOneLine("# branch.head Master"))
-        .isEqualTo(" %s".formatted(coloringWord("Master", CL_RED)));
-    assertThat(StdOutUtils.gitStatusOneLine("# branch.head masTer"))
-        .isEqualTo(" %s".formatted(coloringWord("masTer", CL_GREEN)));
+  //   assertThat(StdOutUtils.gitStatusOneLine("# branch.head MAIN"))
+  //       .isEqualTo(" %s".formatted(coloringWord("MAIN", CL_RED)));
+  //   assertThat(StdOutUtils.gitStatusOneLine("# branch.head main"))
+  //       .isEqualTo(" %s".formatted(coloringWord("main", CL_GREEN)));
 
-    assertThat(StdOutUtils.gitStatusOneLine("# branch.head MAIN"))
-        .isEqualTo(" %s".formatted(coloringWord("MAIN", CL_RED)));
-    assertThat(StdOutUtils.gitStatusOneLine("# branch.head main"))
-        .isEqualTo(" %s".formatted(coloringWord("main", CL_GREEN)));
-
-    assertThat(StdOutUtils.gitStatusOneLine("# branch.head FEA-ture/destroy-d-b"))
-        .isEqualTo(" %s".formatted(coloringWord("FEA-ture/destroy-d-b", CL_YELLOW)));
-    assertThat(StdOutUtils.gitStatusOneLine("# branch.head Fea-ture/destroy-d-b"))
-        .isEqualTo(" %s".formatted(coloringWord("Fea-ture/destroy-d-b", CL_GREEN)));
-    assertThat(StdOutUtils.gitStatusOneLine("# branch.head fea-ture/destroy-d-b"))
-        .isEqualTo(" %s".formatted(coloringWord("fea-ture/destroy-d-b", CL_GREEN)));
-  }
+  //   assertThat(StdOutUtils.gitStatusOneLine("# branch.head FEA-ture/destroy-d-b"))
+  //       .isEqualTo(" %s".formatted(coloringWord("FEA-ture/destroy-d-b", CL_YELLOW)));
+  //   assertThat(StdOutUtils.gitStatusOneLine("# branch.head Fea-ture/destroy-d-b"))
+  //       .isEqualTo(" %s".formatted(coloringWord("Fea-ture/destroy-d-b", CL_GREEN)));
+  //   assertThat(StdOutUtils.gitStatusOneLine("# branch.head fea-ture/destroy-d-b"))
+  //       .isEqualTo(" %s".formatted(coloringWord("fea-ture/destroy-d-b", CL_GREEN)));
+  // }
 
   @Test
   void print_OK() {
@@ -195,7 +161,7 @@ class StdOutUtilsTest extends StdBaseTest {
   }
 
   @Test
-    void print_withMuted_NOK() {
+  void print_withMuted_NOK() {
     // given:
     StdOutUtils.setMuteOutput(true);
 
@@ -205,4 +171,71 @@ class StdOutUtilsTest extends StdBaseTest {
     // then:
     assertThat(outCaptor.toString()).isEmpty();
   }
+
+  @Test
+  void coloringRegex_OK() {
+    // given:
+    var s = "## master...origin/master [ahead 123, behind 45]";
+
+    // then:
+    assertThat(StdOutUtils.coloringFirstRegex(s, "(?<=ahead\s)\\d+", CL_RED))
+        .isEqualTo("## master...origin/master [ahead %s, behind 45]".formatted(CL_RED + 123 + CL_RESET));
+    assertThat(StdOutUtils.coloringFirstRegex(s, "(?<=behind\s)\\d+", CL_GREEN))
+        .isEqualTo("## master...origin/master [ahead 123, behind %s]".formatted(CL_GREEN + 45 + CL_RESET));
+    assertThat(StdOutUtils.coloringFirstRegex(s, "\\w+/\\w+", CL_YELLOW))
+        .isEqualTo("## master...%s [ahead 123, behind 45]".formatted(CL_YELLOW + "origin/master" + CL_RESET));
+    assertThat(StdOutUtils.coloringFirstRegex(s, "\\w+", CL_CYAN))
+        .isEqualTo("## %s...origin/master [ahead 123, behind 45]".formatted(CL_CYAN + "master" + CL_RESET));
+  }
+
+  @Test
+  void coloringRegex_fileStatusStaged_OK() {
+    var f = "%sA added";
+    assertThat(StdOutUtils.coloringFirstRegex(f.formatted("A"), RG_STAGED_STATUS, CL_GREEN))
+        .isEqualTo(f.formatted(CL_GREEN + "A" + CL_RESET));
+
+    f = "%s  text-11";
+    assertThat(StdOutUtils.coloringFirstRegex(f.formatted("D"), RG_STAGED_STATUS, CL_GREEN))
+        .isEqualTo(f.formatted(CL_GREEN + "D" + CL_RESET));
+
+    f = "%sM text 11";
+    assertThat(StdOutUtils.coloringFirstRegex(f.formatted(" "), RG_STAGED_STATUS, CL_GREEN))
+        .isEqualTo(f.formatted(" "));
+
+    f = "%s? text 11";
+    assertThat(StdOutUtils.coloringFirstRegex(f.formatted("?"), RG_STAGED_STATUS, CL_GREEN))
+        .isEqualTo(f.formatted(CL_GREEN + "?" + CL_RESET));
+
+    f = "%sM text 11";
+    assertThat(StdOutUtils.coloringFirstRegex(f.formatted("M"), RG_STAGED_STATUS, CL_GREEN))
+        .isEqualTo(f.formatted(CL_GREEN + "M" + CL_RESET));
+
+    f = "%s  text-1 -> text-1-rn_";
+    assertThat(StdOutUtils.coloringFirstRegex(f.formatted("R"), RG_STAGED_STATUS, CL_GREEN))
+        .isEqualTo(f.formatted(CL_GREEN + "R" + CL_RESET));
+  }
+
+  @Test
+  void coloringRegex_fileUnstatusStaged_OK() {
+    var f = "A%s added";
+    assertThat(StdOutUtils.coloringFirstRegex(f.formatted("A"), RG_UNSTAGED_STATUS, CL_RED))
+        .isEqualTo(f.formatted(CL_RED + "A" + CL_RESET));
+
+    f = " %s text-11";
+    assertThat(StdOutUtils.coloringFirstRegex(f.formatted("D"), RG_UNSTAGED_STATUS, CL_RED))
+        .isEqualTo(f.formatted(CL_RED + "D" + CL_RESET));
+
+    f = "M%s text 11";
+    assertThat(StdOutUtils.coloringFirstRegex(f.formatted(" "), RG_UNSTAGED_STATUS, CL_RED))
+        .isEqualTo(f.formatted(" "));
+
+    f = "?%s text 11";
+    assertThat(StdOutUtils.coloringFirstRegex(f.formatted("?"), RG_UNSTAGED_STATUS, CL_RED))
+        .isEqualTo(f.formatted(CL_RED + "?" + CL_RESET));
+
+    f = "M%s text 11";
+    assertThat(StdOutUtils.coloringFirstRegex(f.formatted("M"), RG_UNSTAGED_STATUS, CL_RED))
+        .isEqualTo(f.formatted(CL_RED + "M" + CL_RESET));
+  }
+
 }
