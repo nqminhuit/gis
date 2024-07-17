@@ -67,6 +67,8 @@ public record GisProcessDto(String output, int exitCode, String directory) {
     return colored;
   }
 
+  // TODO: ## No commits yet on master
+
   private static String buildStatusOneLiner(String s) {
     if (s.startsWith("##")) {
       var coloredBranch = coloringBranch(extractFirstRegexMatched(s, RG_LOCAL_BRANCH));
