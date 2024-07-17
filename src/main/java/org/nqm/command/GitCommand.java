@@ -15,8 +15,11 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Optional;
+import java.util.TreeSet;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.nqm.GisException;
 import org.nqm.config.GisConfig;
@@ -48,11 +51,15 @@ public class GitCommand {
 
   @Command(name = GIT_STATUS, aliases = "st", description = "Show the working trees status")
   void status(@Option(names = "--one-line") boolean oneLineOpt) throws IOException {
+    var output = new ConcurrentLinkedQueue<String>();
     if (oneLineOpt) {
-      forEachModuleDo(GIT_STATUS, "-sb", "--ignore-submodules", "--porcelain=v2", "--gis-one-line");
+      output = forEachModuleDo(GIT_STATUS, "-sb", "--ignore-submodules", "--gis-one-line");
     } else {
-      forEachModuleDo(GIT_STATUS, "-sb", "--ignore-submodules", "--porcelain=v2");
+      output = forEachModuleDo(GIT_STATUS, "-sb", "--ignore-submodules");
     }
+    StdOutUtils.println(String.join(
+        GisStringUtils.NEWLINE,
+        output.stream().collect(Collectors.toCollection(TreeSet::new))));
     if (Files.exists(TMP_FILE)) {
       var lastFetched = Files.readString(TMP_FILE);
       if (GisStringUtils.isNotBlank(lastFetched)) {

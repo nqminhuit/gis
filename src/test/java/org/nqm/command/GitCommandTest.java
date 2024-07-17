@@ -89,12 +89,10 @@ class GitCommandTest extends StdBaseTest {
   void pull_withMock_OK() {
     // given:
     ExecutorsMock.mockVirtualThreadCallable(exe);
-    ExecutorsMock.mockVirtualThreadRunnable(exe);
 
     // when:
     assertThatNoException().isThrownBy(gis::pull);
-    verify(exe, times(2)).submit((Callable<?>) any());
-    verify(exe, times(4)).submit((Runnable) any());
+    verify(exe, times(6)).submit((Callable<?>) any());
   }
 
   @Test
@@ -136,13 +134,12 @@ class GitCommandTest extends StdBaseTest {
   void fetch_OK() throws IOException {
     // given:
     ExecutorsMock.mockVirtualThreadCallable(exe);
-    ExecutorsMock.mockVirtualThreadRunnable(exe);
 
     // when:
     gis.fetchStatus();
 
     // then:
-    verify(exe, times(4)).submit((Callable<?>) any());
+    verify(exe, times(12)).submit((Callable<?>) any());
     verify(exe, times(8)).submit((Runnable) any());
   }
 
@@ -150,197 +147,169 @@ class GitCommandTest extends StdBaseTest {
   void listBranches_withModuleName_OK() throws IOException {
     // given:
     ExecutorsMock.mockVirtualThreadCallable(exe);
-    ExecutorsMock.mockVirtualThreadRunnable(exe);
 
     // when:
     gis.listBranches(false, false);
 
     // then:
-    verify(exe, times(2)).submit((Callable<?>) any());
-    verify(exe, times(4)).submit((Runnable) any());
+    verify(exe, times(6)).submit((Callable<?>) any());
   }
 
   @Test
   void listBranches_withoutModuleName_OK() throws IOException {
     // given:
     ExecutorsMock.mockVirtualThreadCallable(exe);
-    ExecutorsMock.mockVirtualThreadRunnable(exe);
 
     // when:
     gis.listBranches(true, false);
 
     // then:
-    verify(exe, times(2)).submit((Callable<?>) any());
-    verify(exe, times(4)).submit((Runnable) any());
+    verify(exe, times(6)).submit((Callable<?>) any());
   }
 
   @Test
   void listFilesChanged_OK() throws IOException {
     // given:
     ExecutorsMock.mockVirtualThreadCallable(exe);
-    ExecutorsMock.mockVirtualThreadRunnable(exe);
 
     // when:
     gis.files();
 
     // then:
-    verify(exe, times(2)).submit((Callable<?>) any());
-    verify(exe, times(4)).submit((Runnable) any());
+    verify(exe, times(6)).submit((Callable<?>) any());
   }
 
   @Test
   void remotePruneOrigin_OK() throws IOException {
     // given:
     ExecutorsMock.mockVirtualThreadCallable(exe);
-    ExecutorsMock.mockVirtualThreadRunnable(exe);
 
     // when:
     gis.remotePruneOrigin();
 
     // then:
-    verify(exe, times(2)).submit((Callable<?>) any());
-    verify(exe, times(4)).submit((Runnable) any());
+    verify(exe, times(6)).submit((Callable<?>) any());
   }
 
   @Test
   void localPrune_OK() throws IOException {
     // given:
     ExecutorsMock.mockVirtualThreadCallable(exe);
-    ExecutorsMock.mockVirtualThreadRunnable(exe);
 
     // when:
     gis.localPrune("master");
 
     // then:
-    verify(exe, times(2)).submit((Callable<?>) any());
-    verify(exe, times(4)).submit((Runnable) any());
+    verify(exe, times(6)).submit((Callable<?>) any());
   }
 
   @Test
   void removeBranch_OK() throws IOException {
     // given:
     ExecutorsMock.mockVirtualThreadCallable(exe);
-    ExecutorsMock.mockVirtualThreadRunnable(exe);
 
     // when:
     gis.removeBranch("mastereeeee", true);
 
     // then:
-    verify(exe, times(2)).submit((Callable<?>) any());
-    verify(exe, times(4)).submit((Runnable) any());
+    verify(exe, times(6)).submit((Callable<?>) any());
   }
 
   @Test
   void stash_OK() throws IOException {
     // given:
     ExecutorsMock.mockVirtualThreadCallable(exe);
-    ExecutorsMock.mockVirtualThreadRunnable(exe);
 
     // when:
     gis.stash(false);
 
     // then:
-    verify(exe, times(2)).submit((Callable<?>) any());
-    verify(exe, times(4)).submit((Runnable) any());
+    verify(exe, times(6)).submit((Callable<?>) any());
   }
 
   @Test
   void stashPop_OK() throws IOException {
     // given:
     ExecutorsMock.mockVirtualThreadCallable(exe);
-    ExecutorsMock.mockVirtualThreadRunnable(exe);
 
     // when:
     gis.stash(true);
 
     // then:
-    verify(exe, times(2)).submit((Callable<?>) any());
-    verify(exe, times(4)).submit((Runnable) any());
+    verify(exe, times(6)).submit((Callable<?>) any());
   }
 
   @Test
   void checkout_OK() throws IOException {
     // given:
     ExecutorsMock.mockVirtualThreadCallable(exe);
-    ExecutorsMock.mockVirtualThreadRunnable(exe);
 
     // when:
     gis.checkout("batabranch");
 
     // then:
-    verify(exe, times(2)).submit((Callable<?>) any());
-    verify(exe, times(4)).submit((Runnable) any());
+    verify(exe, times(6)).submit((Callable<?>) any());
   }
 
   @Test
   void checkoutNewBranch_OK() throws IOException {
     // given:
     ExecutorsMock.mockVirtualThreadCallable(exe);
-    ExecutorsMock.mockVirtualThreadRunnable(exe);
 
     // when:
     gis.spinOff("batabranch");
 
     // then:
-    verify(exe, times(2)).submit((Callable<?>) any());
-    verify(exe, times(4)).submit((Runnable) any());
+    verify(exe, times(6)).submit((Callable<?>) any());
   }
 
   @Test
   void checkoutNewBranch_withSpecifiedModules_OK() throws IOException {
     // given:
     ExecutorsMock.mockVirtualThreadCallable(exe);
-    ExecutorsMock.mockVirtualThreadRunnable(exe);
 
     // when:
     gis.spinOff("batabranch", "submodule1", "submodule2");
 
     // then:
-    verify(exe, times(2)).submit((Callable<?>) any());
-    verify(exe, times(2)).submit((Runnable) any());
+    verify(exe, times(4)).submit((Callable<?>) any());
   }
 
   @Test
   void checkoutNewBranch_withSpecifiedModulesAndRoot_OK() throws IOException {
     // given:
     ExecutorsMock.mockVirtualThreadCallable(exe);
-    ExecutorsMock.mockVirtualThreadRunnable(exe);
 
     // when:
     gis.spinOff(
         "batabranch", "submodule1", "submodule2", "" + tempPath.subpath(1, tempPath.getNameCount()));
 
     // then:
-    verify(exe, times(2)).submit((Callable<?>) any());
-    verify(exe, times(3)).submit((Runnable) any());
+    verify(exe, times(5)).submit((Callable<?>) any());
   }
 
   @Test
   void rebaseOrigin_OK() throws IOException {
     // given:
     ExecutorsMock.mockVirtualThreadCallable(exe);
-    ExecutorsMock.mockVirtualThreadRunnable(exe);
 
     // when:
     gis.rebaseOrigin("batabranch");
 
     // then:
-    verify(exe, times(2)).submit((Callable<?>) any());
-    verify(exe, times(4)).submit((Runnable) any());
+    verify(exe, times(6)).submit((Callable<?>) any());
   }
 
   @Test
   void fetchOrigin_OK() throws IOException {
     // given:
     ExecutorsMock.mockVirtualThreadCallable(exe);
-    ExecutorsMock.mockVirtualThreadRunnable(exe);
 
     // when:
     gis.fetchOrigin("batabranch");
 
     // then:
-    verify(exe, times(2)).submit((Callable<?>) any());
-    verify(exe, times(4)).submit((Runnable) any());
+    verify(exe, times(6)).submit((Callable<?>) any());
   }
 
   @Test
@@ -365,7 +334,6 @@ class GitCommandTest extends StdBaseTest {
   void pushOrigin_OK() throws IOException {
     // given:
     ExecutorsMock.mockVirtualThreadCallable(exe);
-    ExecutorsMock.mockVirtualThreadRunnable(exe);
 
     final var in = System.in;
     try {
@@ -375,8 +343,7 @@ class GitCommandTest extends StdBaseTest {
       gis.push("master", true, true, false);
 
       // then:
-      verify(exe, times(2)).submit((Callable<?>) any());
-      verify(exe, times(4)).submit((Runnable) any());
+      verify(exe, times(6)).submit((Callable<?>) any());
     } finally {
       System.setIn(in);
     }

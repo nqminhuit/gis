@@ -77,14 +77,12 @@ class WrapperTest extends StdBaseTest {
   void forEachModuleWith_OK() throws IOException {
     // given:
     ExecutorsMock.mockVirtualThreadCallable(exe);
-    ExecutorsMock.mockVirtualThreadRunnable(exe);
 
     // when:
     Wrapper.forEachModuleWith(p -> true, "pull");
 
     // then:
-    verify(exe, times(2)).submit((Callable<?>) any());
-    verify(exe, times(4)).submit((Runnable) any());
+    verify(exe, times(6)).submit((Callable<?>) any());
   }
 
   @Test
