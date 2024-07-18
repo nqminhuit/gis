@@ -1,5 +1,7 @@
 package org.nqm.command;
 
+import static org.nqm.command.CommandVerticle.GIS_CONCAT_MODULES_NAME_OPT;
+import static org.nqm.command.CommandVerticle.GIS_NO_PRINT_MODULES_NAME_OPT;
 import static org.nqm.command.Wrapper.forEachModuleDo;
 import static org.nqm.command.Wrapper.forEachModuleWith;
 import static org.nqm.config.GisConfig.currentDir;
@@ -14,7 +16,9 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.Collection;
 import java.util.Optional;
+import java.util.Queue;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -24,6 +28,7 @@ import org.nqm.config.GisLog;
 import org.nqm.utils.GisProcessUtils;
 import org.nqm.utils.GisStringUtils;
 import org.nqm.utils.StdOutUtils;
+import org.nqm.model.GisSort;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
@@ -41,18 +46,34 @@ public class GitCommand {
   public static final String GIT_STATUS = "status";
   public static final String HOOKS_OPTION = "--hooks";
 
+  private static void printOutput(Collection<String> output) {
+    output.stream().filter(GisStringUtils::isNotBlank).forEach(StdOutUtils::println);
+  }
+
   @Command(name = "pull", aliases = "pu", description = "Fetch from and integrate with remote repositories")
   void pull() throws IOException {
-    forEachModuleDo("pull");
+    printOutput(forEachModuleDo("pull"));
   }
 
   @Command(name = GIT_STATUS, aliases = "st", description = "Show the working trees status")
-  void status(@Option(names = "--one-line") boolean oneLineOpt) throws IOException {
+  void status(
+      @Option(names = "--one-line") boolean oneLineOpt,
+      @Option(names = "--sort",
+          description = "Valid values: ${COMPLETION-CANDIDATES}. "
+              + "Default value is 'module_name'. "
+              + "Note that the root module will always be on top no matter the sort") GisSort sort)
+      throws IOException {
+    Queue<String> output;
     if (oneLineOpt) {
-      forEachModuleDo(GIT_STATUS, "-sb", "--ignore-submodules", "--porcelain=v2", "--gis-one-line");
+      output = forEachModuleDo(GIT_STATUS, "-sb", "--ignore-submodules", "--porcelain=v2", "--gis-one-line");
     } else {
-      forEachModuleDo(GIT_STATUS, "-sb", "--ignore-submodules", "--porcelain=v2");
+      output = forEachModuleDo(GIT_STATUS, "-sb", "--ignore-submodules", "--porcelain=v2");
     }
+    var currentDirName = StdOutUtils.infof("%s", GisStringUtils.getDirName(currentDir()));
+    var sorted = output.stream()
+        .sorted((a, b) -> sort(oneLineOpt, sort, currentDirName, a, b))
+        .toList();
+    printOutput(sorted);
     if (Files.exists(TMP_FILE)) {
       var lastFetched = Files.readString(TMP_FILE);
       if (GisStringUtils.isNotBlank(lastFetched)) {
@@ -61,24 +82,50 @@ public class GitCommand {
     }
   }
 
+  private static int sort(boolean oneLineOpt, GisSort sort, String currentDirName, String a, String b) {
+    if (a.startsWith(currentDirName)) {
+      return Integer.MIN_VALUE;
+    }
+    if (b.startsWith(currentDirName)) {
+      return Integer.MAX_VALUE;
+    }
+    if (sort == null || GisSort.module_name.equals(sort)) {
+      return a.compareTo(b);
+    }
+    if (GisSort.branch_name.equals(sort)) {
+      var branchA = "";
+      var branchB = "";
+      if (oneLineOpt) {
+        branchA = a.split("\s")[1];
+        branchB = b.split("\s")[1];
+      } else {
+        branchA = a.split("\s")[3];
+        branchB = b.split("\s")[3];
+      }
+      return branchA.compareTo(branchB);
+    }
+    // GisSort.tracking_status == sort:
+    var changesA = a.split("\s").length;
+    var changesB = b.split("\s").length;
+    return changesB - changesA;
+  }
+
   private void fetch() throws IOException {
     forEachModuleDo("fetch");
     var timeFetch = LocalDateTime.ofInstant(Instant.now(), ZoneId.systemDefault())
         .format(DateTimeFormatter.ofPattern("HH:mm:ss dd/MM/yyyy"));
 
     Files.write(TMP_FILE, timeFetch.getBytes(), StandardOpenOption.CREATE, StandardOpenOption.WRITE);
-    StdOutUtils.println(FETCHED_AT.formatted(timeFetch));
   }
 
   @Command(name = "fetch", aliases = "fe", description = "Download objects and refs from other repositories")
-  void fetchStatus() throws IOException {
-    try {
-      StdOutUtils.setMuteOutput(true);
-      fetch();
-    } finally {
-      StdOutUtils.setMuteOutput(false);
-    }
-    status(true);
+  void fetchStatus(@Option(names = "--sort",
+      description = "Valid values: ${COMPLETION-CANDIDATES}. "
+          + "Default value is 'module_name'. "
+          + "Note that the root module will always be on top no matter the sort") GisSort sort)
+      throws IOException {
+    fetch();
+    status(true, sort);
   }
 
   @Command(name = "rebase-current-origin", aliases = "ru",
@@ -89,18 +136,18 @@ public class GitCommand {
 
   @Command(name = "rebase-origin", aliases = "re", description = "Reapply commits on top of other base tip")
   void rebaseOrigin(@Parameters(index = "0", paramLabel = "<branch name>") String branch) throws IOException {
-    forEachModuleDo("rebase", "%s/%s".formatted(ORIGIN, branch));
+    printOutput(forEachModuleDo("rebase", "%s/%s".formatted(ORIGIN, branch)));
   }
 
   @Command(name = "fetch-origin", aliases = "fo",
       description = "Download objects and refs specified by branch name from other repositories")
   void fetchOrigin(@Parameters(index = "0", paramLabel = "<branch name>") String branch) throws IOException {
-    forEachModuleDo("fetch", ORIGIN, "%s:%s".formatted(branch, branch));
+    printOutput(forEachModuleDo("fetch", ORIGIN, "%s:%s".formatted(branch, branch)));
   }
 
   @Command(name = CHECKOUT, aliases = "co", description = "Switch branches or restore working tree files")
   void checkout(@Parameters(index = "0", paramLabel = "<branch name>") String branch) throws IOException {
-    forEachModuleDo(CHECKOUT, branch);
+    printOutput(forEachModuleDo(CHECKOUT, branch));
   }
 
   @Command(name = "spin-off",
@@ -113,7 +160,7 @@ public class GitCommand {
           description = "Specified modules. If empty, will create for all submodules and root.") String... modules)
       throws IOException {
     if (null == modules || modules.length < 1) {
-      forEachModuleDo(CHECKOUT, "-b", newBranch);
+      printOutput(forEachModuleDo(CHECKOUT, "-b", newBranch));
       return;
     }
     var currentDir = currentDir();
@@ -131,7 +178,7 @@ public class GitCommand {
         })
         .filter(p -> p.toFile().exists())
         .toList();
-    forEachModuleWith(specifiedPaths::contains, CHECKOUT, "-b", newBranch);
+    printOutput(forEachModuleWith(specifiedPaths::contains, CHECKOUT, "-b", newBranch));
   }
 
   @Command(name = "remove-branch", aliases = "rm",
@@ -141,7 +188,7 @@ public class GitCommand {
           description = "force to delete branch without interactive prompt") boolean isForce)
       throws IOException {
     if (isForce || isConfirmed("Sure you want to remove branch '%s' ? [Y/n]".formatted(branch))) {
-      forEachModuleDo("branch", "-d", branch);
+      printOutput(forEachModuleDo("branch", "-d", branch));
     }
   }
 
@@ -159,34 +206,35 @@ public class GitCommand {
         ? new String[] {"push", "-u", ORIGIN, branch}
         : shouldForcePush(force);
 
-    forEachModuleWith(path -> isSameBranchUnderPath(branch, path), args);
+    printOutput(forEachModuleWith(path -> isSameBranchUnderPath(branch, path), args));
   }
 
   @Command(name = "remote-prune-origin", aliases = "rpo",
       description = "Deletes stale references associated with <branch>")
   void remotePruneOrigin() throws IOException {
-    forEachModuleDo("remote", "prune", ORIGIN);
+    printOutput(forEachModuleDo("remote", "prune", ORIGIN));
   }
 
   @Command(name = "local-prune", aliases = "prune",
       description = "Deletes stale local references which already merged to <branch>")
   void localPrune(@Parameters(index = "0", paramLabel = "<default branch name>") String branch)
       throws IOException {
-    forEachModuleDo("for-each-ref",
+    // TODO: rework this function to remove HOOKS
+    printOutput(forEachModuleDo("for-each-ref",
         "--merged=%s".formatted(branch),
         "--format=%(refname:short)",
         "refs/heads/",
         "--no-contains",
         branch,
         HOOKS_OPTION,
-        GisConfig.GIT_HOME_DIR + " branch -d %s");
+        GisConfig.GIT_HOME_DIR + " branch -d %s"));
   }
 
   @Command(name = "stash", description = "Stash the changes in a dirty working directories away")
   void stash(@Option(names = "--pop", description = "pop first stashed changes") boolean isPop)
       throws IOException {
     var args = isPop ? new String[] {"stash", "pop"} : new String[] {"stash"};
-    forEachModuleDo(args);
+    printOutput(forEachModuleDo(args));
   }
 
   @Command(name = "branches", description = "List branches from all submodules")
@@ -199,10 +247,10 @@ public class GitCommand {
       sArgs = Stream.concat(sArgs, Stream.of("refs/remotes"));
     }
     if (noPrintModuleName) {
-      sArgs = Stream.concat(sArgs, Stream.of("--gis-no-print-modules-name"));
+      sArgs = Stream.concat(sArgs, Stream.of(GIS_NO_PRINT_MODULES_NAME_OPT));
     }
     final var args = sArgs.toArray(String[]::new);
-    forEachModuleDo(args);
+    printOutput(forEachModuleDo(args));
   }
 
   @Command(name = "init", description = "init .gis-modules for current directory")
@@ -219,7 +267,7 @@ public class GitCommand {
 
   @Command(name = "files", description = "List all modified files from submodules")
   void files() throws IOException {
-    forEachModuleDo("diff", "--name-only", "--gis-concat-modules-name");
+    printOutput(forEachModuleDo("diff", "--name-only", GIS_CONCAT_MODULES_NAME_OPT));
   }
 
   @Command(name = "completion", description = "Generate an zsh auto completion script")

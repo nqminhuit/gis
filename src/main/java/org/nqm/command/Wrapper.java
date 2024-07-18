@@ -7,12 +7,14 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
-import org.nqm.config.GisLog;
 import org.nqm.GisException;
+import org.nqm.config.GisLog;
 import org.nqm.utils.StdOutUtils;
 
 public final class Wrapper {
@@ -42,13 +44,15 @@ public final class Wrapper {
     return gitModulesFilePath;
   }
 
-  public static void forEachModuleWith(Predicate<Path> pred, String... args) throws IOException {
+  public static Queue<String> forEachModuleWith(Predicate<Path> pred, String... args)
+      throws IOException {
     var gitModulesFilePath = getFileMarker();
     var currentDir = currentDir();
+    var output = new ConcurrentLinkedQueue<String>();
     try (var exe = Executors.newVirtualThreadPerTaskExecutor()) {
       Optional.of(Path.of(currentDir))
           .filter(pred)
-          .ifPresent(root -> exe.submit(() -> CommandVerticle.execute(root, args)));
+          .ifPresent(root -> exe.submit(() -> output.add(CommandVerticle.execute(root, args))));
       Files.readAllLines(gitModulesFilePath.toPath()).stream()
           .map(String::trim)
           .filter(s -> s.startsWith("path"))
@@ -62,11 +66,12 @@ public final class Wrapper {
             return false;
           })
           .filter(pred)
-          .forEach(dir -> exe.submit(() -> CommandVerticle.execute(dir, args)));
+          .forEach(dir -> exe.submit(() -> output.add(CommandVerticle.execute(dir, args))));
     }
+    return output;
   }
 
-  public static void forEachModuleDo(String... args) throws IOException {
-    forEachModuleWith(p -> true, args);
+  public static Queue<String> forEachModuleDo(String... args) throws IOException {
+    return forEachModuleWith(p -> true, args);
   }
 }

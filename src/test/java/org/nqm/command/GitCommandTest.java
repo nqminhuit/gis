@@ -22,6 +22,7 @@ import org.nqm.helper.ExecutorsMock;
 import org.nqm.helper.GisConfigMock;
 import org.nqm.helper.GisProcessUtilsMock;
 import org.nqm.helper.StdBaseTest;
+import org.nqm.model.GisSort;
 import org.nqm.utils.GisProcessUtils;
 
 @ExtendWith(MockitoExtension.class)
@@ -79,7 +80,9 @@ class GitCommandTest extends StdBaseTest {
   }
 
   @Override
-  protected void additionalTeardown() {
+  protected void additionalTeardown() throws IOException {
+    var fetchTmp = Path.of("/", "tmp", "gis_fetch" + ("" + Path.of("").toAbsolutePath()).replace("/", "_"));
+    Files.deleteIfExists(fetchTmp);
     GisConfigMock.close();
     GisProcessUtilsMock.close();
     ExecutorsMock.close();
@@ -89,38 +92,188 @@ class GitCommandTest extends StdBaseTest {
   void pull_withMock_OK() {
     // given:
     ExecutorsMock.mockVirtualThreadCallable(exe);
-    ExecutorsMock.mockVirtualThreadRunnable(exe);
 
     // when:
     assertThatNoException().isThrownBy(gis::pull);
-    verify(exe, times(2)).submit((Callable<?>) any());
-    verify(exe, times(4)).submit((Runnable) any());
+    verify(exe, times(6)).submit((Callable<?>) any());
   }
 
   @Test
-  void status_withFullOutput_OK() throws IOException {
+  void statusShort_withDefaultSort_OK() throws IOException {
     // when:
-    gis.status(false);
+    gis.status(true, null);
 
     // then:
-    assertThat(stripColors.apply(outCaptor.toString())).contains(
+    assertThat(stripColors.apply(outCaptor.toString())).containsExactly(
+        tempPath.getFileName() + " master .gitignore submodule1 submodule2 submodule3",
+        "submodule1 master",
+        "submodule2 master",
+        "submodule3 master");
+  }
+
+  @Test
+  void statusShort_withModuleNameSort_OK() throws IOException {
+    // when:
+    gis.status(true, null);
+
+    // then:
+    assertThat(stripColors.apply(outCaptor.toString())).containsExactly(
+        tempPath.getFileName() + " master .gitignore submodule1 submodule2 submodule3",
+        "submodule1 master",
+        "submodule2 master",
+        "submodule3 master");
+  }
+
+  @Test
+  void statusFull_withDefaultSort_OK() throws IOException {
+    // when:
+    gis.status(false, null);
+
+    // then:
+    assertThat(stripColors.apply(outCaptor.toString())).containsExactly(
+        "" + tempPath.getFileName(),
+        "  ## master",
+        "   ? .gitignore",
+        "   ? submodule1/",
+        "   ? submodule2/",
+        "   ? submodule3/",
         "submodule1",
         "  ## master",
         "submodule2",
         "  ## master",
         "submodule3",
+        "  ## master");
+  }
+
+  @Test
+  void statusFull_withSortedByModuleName_OK() throws IOException {
+    // when:
+    gis.status(false, GisSort.module_name);
+
+    // then:
+    assertThat(stripColors.apply(outCaptor.toString())).containsExactly(
+        "" + tempPath.getFileName(),
         "  ## master",
-        "%s".formatted(tempPath.subpath(1, tempPath.getNameCount())),
-        "  ## master",
+        "   ? .gitignore",
         "   ? submodule1/",
         "   ? submodule2/",
-        "   ? submodule3/");
+        "   ? submodule3/",
+        "submodule1",
+        "  ## master",
+        "submodule2",
+        "  ## master",
+        "submodule3",
+        "  ## master");
+  }
+
+  @Test
+  void statusFull_withSortedByBranchName_OK() throws IOException {
+    // given:
+    gis.spinOff("aaa", "submodule3");
+    gis.spinOff("bbb", "submodule2");
+    gis.spinOff("ccc", "submodule1");
+    resetOutputStreamTest();
+
+    // when:
+    gis.status(false, GisSort.branch_name);
+
+    // then:
+    assertThat(stripColors.apply(outCaptor.toString())).containsExactly(
+        "" + tempPath.getFileName(),
+        "  ## master",
+        "   ? .gitignore",
+        "   ? submodule1/",
+        "   ? submodule2/",
+        "   ? submodule3/",
+        "submodule3",
+        "  ## aaa",
+        "submodule2",
+        "  ## bbb",
+        "submodule1",
+        "  ## ccc");
+  }
+
+  @Test
+  void statusShort_withSortedByBranchName_OK() throws IOException {
+    // given:
+    gis.spinOff("aaa", "submodule3");
+    gis.spinOff("bbb", "submodule1");
+    gis.spinOff("ccc", "submodule2");
+    resetOutputStreamTest();
+
+    // when:
+    gis.status(true, GisSort.branch_name);
+
+    // then:
+    assertThat(stripColors.apply(outCaptor.toString())).containsExactly(
+        tempPath.getFileName() + " master .gitignore submodule1 submodule2 submodule3",
+        "submodule3 aaa",
+        "submodule1 bbb",
+        "submodule2 ccc");
+  }
+
+  @Test
+  void statusFull_withSortedByTrackingStatus_OK() throws IOException {
+    // given:
+    Files.createFile(tempPath.resolve("submodule2").resolve("aa1.log"));
+    Files.createFile(tempPath.resolve("submodule2").resolve("aa2.log"));
+    Files.createFile(tempPath.resolve("submodule2").resolve("aa3.log"));
+    Files.createFile(tempPath.resolve("submodule3").resolve("aa4.log"));
+    Files.createFile(tempPath.resolve("submodule1").resolve("aa5.log"));
+    Files.createFile(tempPath.resolve("submodule1").resolve("aa6.log"));
+
+    // when:
+    resetOutputStreamTest();
+    gis.status(false, GisSort.tracking_status);
+
+    // then:
+    assertThat(stripColors.apply(outCaptor.toString())).containsExactly(
+        "" + tempPath.getFileName(),
+        "  ## master",
+        "   ? .gitignore",
+        "   ? submodule1/",
+        "   ? submodule2/",
+        "   ? submodule3/",
+        "submodule2",
+        "  ## master",
+        "   ? aa1.log",
+        "   ? aa2.log",
+        "   ? aa3.log",
+        "submodule1",
+        "  ## master",
+        "   ? aa5.log",
+        "   ? aa6.log",
+        "submodule3",
+        "  ## master",
+        "   ? aa4.log");
+  }
+
+  @Test
+  void statusShort_withSortedByTrackingStatus_OK() throws IOException {
+    // given:
+    Files.createFile(tempPath.resolve("submodule2").resolve("aa1.log"));
+    Files.createFile(tempPath.resolve("submodule2").resolve("aa2.log"));
+    Files.createFile(tempPath.resolve("submodule2").resolve("aa3.log"));
+    Files.createFile(tempPath.resolve("submodule3").resolve("aa4.log"));
+    Files.createFile(tempPath.resolve("submodule1").resolve("aa5.log"));
+    Files.createFile(tempPath.resolve("submodule1").resolve("aa6.log"));
+
+    // when:
+    resetOutputStreamTest();
+    gis.status(true, GisSort.tracking_status);
+
+    // then:
+    assertThat(stripColors.apply(outCaptor.toString())).containsExactly(
+        tempPath.getFileName() + " master .gitignore submodule1 submodule2 submodule3",
+        "submodule2 master aa1.log aa2.log aa3.log",
+        "submodule1 master aa5.log aa6.log",
+        "submodule3 master aa4.log");
   }
 
   @Test
   void status_withOneLiner_OK() throws IOException {
     // when:
-    gis.status(true);
+    gis.status(true, GisSort.module_name);
 
     // then:
     assertThat(stripColors.apply(outCaptor.toString()))
@@ -136,211 +289,181 @@ class GitCommandTest extends StdBaseTest {
   void fetch_OK() throws IOException {
     // given:
     ExecutorsMock.mockVirtualThreadCallable(exe);
-    ExecutorsMock.mockVirtualThreadRunnable(exe);
 
     // when:
-    gis.fetchStatus();
+    gis.fetchStatus(null);
 
     // then:
-    verify(exe, times(4)).submit((Callable<?>) any());
-    verify(exe, times(8)).submit((Runnable) any());
+    verify(exe, times(12)).submit((Callable<?>) any());
   }
 
   @Test
   void listBranches_withModuleName_OK() throws IOException {
     // given:
     ExecutorsMock.mockVirtualThreadCallable(exe);
-    ExecutorsMock.mockVirtualThreadRunnable(exe);
 
     // when:
     gis.listBranches(false, false);
 
     // then:
-    verify(exe, times(2)).submit((Callable<?>) any());
-    verify(exe, times(4)).submit((Runnable) any());
+    verify(exe, times(6)).submit((Callable<?>) any());
   }
 
   @Test
   void listBranches_withoutModuleName_OK() throws IOException {
     // given:
     ExecutorsMock.mockVirtualThreadCallable(exe);
-    ExecutorsMock.mockVirtualThreadRunnable(exe);
 
     // when:
     gis.listBranches(true, false);
 
     // then:
-    verify(exe, times(2)).submit((Callable<?>) any());
-    verify(exe, times(4)).submit((Runnable) any());
+    verify(exe, times(6)).submit((Callable<?>) any());
   }
 
   @Test
   void listFilesChanged_OK() throws IOException {
     // given:
     ExecutorsMock.mockVirtualThreadCallable(exe);
-    ExecutorsMock.mockVirtualThreadRunnable(exe);
 
     // when:
     gis.files();
 
     // then:
-    verify(exe, times(2)).submit((Callable<?>) any());
-    verify(exe, times(4)).submit((Runnable) any());
+    verify(exe, times(6)).submit((Callable<?>) any());
   }
 
   @Test
   void remotePruneOrigin_OK() throws IOException {
     // given:
     ExecutorsMock.mockVirtualThreadCallable(exe);
-    ExecutorsMock.mockVirtualThreadRunnable(exe);
 
     // when:
     gis.remotePruneOrigin();
 
     // then:
-    verify(exe, times(2)).submit((Callable<?>) any());
-    verify(exe, times(4)).submit((Runnable) any());
+    verify(exe, times(6)).submit((Callable<?>) any());
   }
 
   @Test
   void localPrune_OK() throws IOException {
     // given:
     ExecutorsMock.mockVirtualThreadCallable(exe);
-    ExecutorsMock.mockVirtualThreadRunnable(exe);
 
     // when:
     gis.localPrune("master");
 
     // then:
-    verify(exe, times(2)).submit((Callable<?>) any());
-    verify(exe, times(4)).submit((Runnable) any());
+    verify(exe, times(6)).submit((Callable<?>) any());
   }
 
   @Test
   void removeBranch_OK() throws IOException {
     // given:
     ExecutorsMock.mockVirtualThreadCallable(exe);
-    ExecutorsMock.mockVirtualThreadRunnable(exe);
 
     // when:
     gis.removeBranch("mastereeeee", true);
 
     // then:
-    verify(exe, times(2)).submit((Callable<?>) any());
-    verify(exe, times(4)).submit((Runnable) any());
+    verify(exe, times(6)).submit((Callable<?>) any());
   }
 
   @Test
   void stash_OK() throws IOException {
     // given:
     ExecutorsMock.mockVirtualThreadCallable(exe);
-    ExecutorsMock.mockVirtualThreadRunnable(exe);
 
     // when:
     gis.stash(false);
 
     // then:
-    verify(exe, times(2)).submit((Callable<?>) any());
-    verify(exe, times(4)).submit((Runnable) any());
+    verify(exe, times(6)).submit((Callable<?>) any());
   }
 
   @Test
   void stashPop_OK() throws IOException {
     // given:
     ExecutorsMock.mockVirtualThreadCallable(exe);
-    ExecutorsMock.mockVirtualThreadRunnable(exe);
 
     // when:
     gis.stash(true);
 
     // then:
-    verify(exe, times(2)).submit((Callable<?>) any());
-    verify(exe, times(4)).submit((Runnable) any());
+    verify(exe, times(6)).submit((Callable<?>) any());
   }
 
   @Test
   void checkout_OK() throws IOException {
     // given:
     ExecutorsMock.mockVirtualThreadCallable(exe);
-    ExecutorsMock.mockVirtualThreadRunnable(exe);
 
     // when:
     gis.checkout("batabranch");
 
     // then:
-    verify(exe, times(2)).submit((Callable<?>) any());
-    verify(exe, times(4)).submit((Runnable) any());
+    verify(exe, times(6)).submit((Callable<?>) any());
   }
 
   @Test
   void checkoutNewBranch_OK() throws IOException {
     // given:
     ExecutorsMock.mockVirtualThreadCallable(exe);
-    ExecutorsMock.mockVirtualThreadRunnable(exe);
 
     // when:
     gis.spinOff("batabranch");
 
     // then:
-    verify(exe, times(2)).submit((Callable<?>) any());
-    verify(exe, times(4)).submit((Runnable) any());
+    verify(exe, times(6)).submit((Callable<?>) any());
   }
 
   @Test
   void checkoutNewBranch_withSpecifiedModules_OK() throws IOException {
     // given:
     ExecutorsMock.mockVirtualThreadCallable(exe);
-    ExecutorsMock.mockVirtualThreadRunnable(exe);
 
     // when:
     gis.spinOff("batabranch", "submodule1", "submodule2");
 
     // then:
-    verify(exe, times(2)).submit((Callable<?>) any());
-    verify(exe, times(2)).submit((Runnable) any());
+    verify(exe, times(4)).submit((Callable<?>) any());
   }
 
   @Test
   void checkoutNewBranch_withSpecifiedModulesAndRoot_OK() throws IOException {
     // given:
     ExecutorsMock.mockVirtualThreadCallable(exe);
-    ExecutorsMock.mockVirtualThreadRunnable(exe);
 
     // when:
     gis.spinOff(
         "batabranch", "submodule1", "submodule2", "" + tempPath.subpath(1, tempPath.getNameCount()));
 
     // then:
-    verify(exe, times(2)).submit((Callable<?>) any());
-    verify(exe, times(3)).submit((Runnable) any());
+    verify(exe, times(5)).submit((Callable<?>) any());
   }
 
   @Test
   void rebaseOrigin_OK() throws IOException {
     // given:
     ExecutorsMock.mockVirtualThreadCallable(exe);
-    ExecutorsMock.mockVirtualThreadRunnable(exe);
 
     // when:
     gis.rebaseOrigin("batabranch");
 
     // then:
-    verify(exe, times(2)).submit((Callable<?>) any());
-    verify(exe, times(4)).submit((Runnable) any());
+    verify(exe, times(6)).submit((Callable<?>) any());
   }
 
   @Test
   void fetchOrigin_OK() throws IOException {
     // given:
     ExecutorsMock.mockVirtualThreadCallable(exe);
-    ExecutorsMock.mockVirtualThreadRunnable(exe);
 
     // when:
     gis.fetchOrigin("batabranch");
 
     // then:
-    verify(exe, times(2)).submit((Callable<?>) any());
-    verify(exe, times(4)).submit((Runnable) any());
+    verify(exe, times(6)).submit((Callable<?>) any());
   }
 
   @Test
@@ -365,7 +488,6 @@ class GitCommandTest extends StdBaseTest {
   void pushOrigin_OK() throws IOException {
     // given:
     ExecutorsMock.mockVirtualThreadCallable(exe);
-    ExecutorsMock.mockVirtualThreadRunnable(exe);
 
     final var in = System.in;
     try {
@@ -375,8 +497,7 @@ class GitCommandTest extends StdBaseTest {
       gis.push("master", true, true, false);
 
       // then:
-      verify(exe, times(2)).submit((Callable<?>) any());
-      verify(exe, times(4)).submit((Runnable) any());
+      verify(exe, times(6)).submit((Callable<?>) any());
     } finally {
       System.setIn(in);
     }

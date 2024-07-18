@@ -31,6 +31,12 @@ mvn clean verify package
 ```
 The executable jar file will be created at `target/gis-<version>.jar`
 
+## Debug
+
+```
+java -agentlib:jdwp=transport=dt_socket,address=9999,server=y,suspend=n -jar path/to/gis-<version>.jar
+```
+
 # Usage
 
 For more details, just run:
