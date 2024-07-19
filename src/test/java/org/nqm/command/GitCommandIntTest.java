@@ -4,6 +4,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.nqm.config.GisConfig.GIT_HOME_DIR;
+import static org.nqm.utils.GisStringUtils.NEWLINE;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -17,6 +18,7 @@ import org.nqm.GisException;
 import org.nqm.helper.GisConfigMock;
 import org.nqm.helper.GisProcessUtilsMock;
 import org.nqm.helper.GitBaseTest;
+import org.nqm.model.GisSort;
 
 class GitCommandIntTest extends GitBaseTest {
 
@@ -68,7 +70,7 @@ class GitCommandIntTest extends GitBaseTest {
     gis.init();
 
     // when:
-    gis.fetchStatus();
+    gis.fetchStatus(null);
 
     // then:
     var timeFetch = LocalDateTime.ofInstant(Instant.now(), ZoneId.systemDefault())
@@ -137,7 +139,7 @@ class GitCommandIntTest extends GitBaseTest {
     gis.listBranches(true, false);
 
     // then:
-    assertThat(outCaptor.toString().split("%n".formatted())).containsExactlyInAnyOrder(
+    assertThat(outCaptor.toString().trim().split(NEWLINE)).containsExactlyInAnyOrder(
         "bb1", "master", "bb1", "master", "bb1", "master");
   }
 
@@ -162,7 +164,7 @@ class GitCommandIntTest extends GitBaseTest {
     gis.listBranches(true, true);
 
     // then:
-    assertThat(outCaptor.toString().split("%n".formatted()))
+    assertThat(outCaptor.toString().trim().split(NEWLINE))
         .containsExactlyInAnyOrder(
             "bb1",
             "bb2",
@@ -193,7 +195,7 @@ class GitCommandIntTest extends GitBaseTest {
     gis.files();
 
     // then:
-    assertThat(outCaptor.toString().split("%n".formatted())).containsExactlyInAnyOrder(
+    assertThat(outCaptor.toString().trim().split(NEWLINE)).containsExactlyInAnyOrder(
         "otq_1_a/filescramble1",
         "otq_3_c/filescramble1",
         "otq_2_b/filescramble1");
@@ -388,7 +390,7 @@ class GitCommandIntTest extends GitBaseTest {
     resetOutputStreamTest();
 
     // then:
-    gis.status(true);
+    gis.status(true, GisSort.module_name);
     assertThat(stripColors.apply(outCaptor.toString())).contains(
         "tppo_1_b batabranch",
         "tppo_2_bb batabranch",
@@ -427,7 +429,7 @@ class GitCommandIntTest extends GitBaseTest {
     commitFile(repos);
     scrambleFiles(repos);
     resetOutputStreamTest();
-    gis.status(true);
+    gis.status(true, GisSort.module_name);
     assertThat(stripColors.apply(outCaptor.toString()))
         .contains(
             "" + tempPath.subpath(1, tempPath.getNameCount()),

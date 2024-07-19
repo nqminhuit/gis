@@ -14,16 +14,16 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.nqm.GisException;
 import org.nqm.config.GisConfig;
 import org.nqm.config.GisLog;
-import org.nqm.GisException;
 import org.nqm.model.GisProcessDto;
 import org.nqm.utils.GisProcessUtils;
 import org.nqm.utils.GisStringUtils;
-import org.nqm.utils.StdOutUtils;
 
 public class CommandVerticle {
 
@@ -32,6 +32,9 @@ public class CommandVerticle {
   private static final String WARN_MSG_FMT = "Could not perform on module: '%s'";
   private static final String EXIT_WITH_CODE_MSG_FMT = "exit with code: '%s'";
   private static final String OPTION_PREFIX = "--gis";
+
+  public static final String GIS_NO_PRINT_MODULES_NAME_OPT = "--gis-no-print-modules-name";
+  public static final String GIS_CONCAT_MODULES_NAME_OPT = "--gis-concat-modules-name";
 
   /**
    * Hooks should be placed at the end of command for optimize
@@ -54,9 +57,9 @@ public class CommandVerticle {
         .toArray(String[]::new);
   }
 
-  public static void execute(Path path, String... args) {
+  public static String execute(Path path, String... args) {
     if (path == null) {
-      return;
+      return "";
     }
     var commandHook = extractHookCommand(args);
     var commandWithArgs = buildCommandWithArgs(args);
@@ -69,14 +72,16 @@ public class CommandVerticle {
     try {
       var result = GisProcessUtils.run(path.toFile(), commandWithArgs);
       if (GisStringUtils.isNotBlank(commandHook)) {
+        var output = new ConcurrentLinkedQueue<String>();
         gisExecuteCommand(path, GisStringUtils.toInputStreamReader(result.output()), commandHook)
-            .forEach(p -> infof("%s", p.output()));
-      } else if (Stream.of(gisOptions).anyMatch("--gis-no-print-modules-name"::equals)) {
-        safelyPrintWithoutModules(path, result);
-      } else if (Stream.of(gisOptions).anyMatch("--gis-concat-modules-name"::equals)) {
-        safelyConcatModuleNames(path, result);
+            .forEach(p -> output.add(infof("%s", p.output())));
+        return String.join(GisStringUtils.NEWLINE, output);
+      } else if (Stream.of(gisOptions).anyMatch(GIS_NO_PRINT_MODULES_NAME_OPT::equals)) {
+        return safelyPrintWithoutModules(path, result);
+      } else if (Stream.of(gisOptions).anyMatch(GIS_CONCAT_MODULES_NAME_OPT::equals)) {
+        return safelyConcatModuleNames(path, result);
       } else {
-        safelyPrint(path, gisOptions, commandWithArgs, result);
+        return safelyPrint(path, gisOptions, commandWithArgs, result);
       }
     } catch (IOException e) {
       GisLog.debug(e);
@@ -88,7 +93,7 @@ public class CommandVerticle {
     }
   }
 
-  private static void safelyPrint(
+  private static String safelyPrint(
       Path path, String[] gisOptions, String[] commandWithArgs, GisProcessDto result) throws IOException {
     var line = "";
     var input = new BufferedReader(GisStringUtils.toInputStreamReader(result.output()));
@@ -101,29 +106,23 @@ public class CommandVerticle {
         sb.append("%n  %s".formatted(line));
       }
     }
-    StdOutUtils.println(sb.toString());
     Optional.of(result.exitCode())
         .filter(exitCode -> exitCode != 0)
         .ifPresent(exitCode -> {
           GisLog.debug(EXIT_WITH_CODE_MSG_FMT.formatted(exitCode));
           warnln(WARN_MSG_FMT.formatted(path.getFileName()));
         });
+    return sb.toString();
   }
 
-  private static void safelyPrintWithoutModules(Path path, GisProcessDto result) throws IOException {
-    var input = new BufferedReader(GisStringUtils.toInputStreamReader(result.output()));
-    var sb = new StringBuilder();
-    var line = "";
-    while (isNotBlank(line = input.readLine())) {
-      sb.append("%s%n".formatted(line));
-    }
-    StdOutUtils.print(sb.toString());
+  private static String safelyPrintWithoutModules(Path path, GisProcessDto result) {
     Optional.of(result.exitCode())
         .filter(exitCode -> exitCode != 0)
         .ifPresent(exitCode -> {
           GisLog.debug(EXIT_WITH_CODE_MSG_FMT.formatted(exitCode));
           warnln(WARN_MSG_FMT.formatted(path.getFileName()));
         });
+    return result.output().trim();
   }
 
   private static List<GisProcessDto> gisExecuteCommand(Path path, InputStreamReader stream, String cmd)
@@ -137,7 +136,10 @@ public class CommandVerticle {
     return futures;
   }
 
-  private static void safelyConcatModuleNames(Path path, GisProcessDto result) throws IOException {
+  private static String safelyConcatModuleNames(Path path, GisProcessDto result) throws IOException {
+    if (GisStringUtils.isBlank(result.output())) {
+      return "";
+    }
     var input = new BufferedReader(GisStringUtils.toInputStreamReader(result.output()));
     var sb = new StringBuilder();
     var isRootModule = path.toFile()
@@ -160,12 +162,12 @@ public class CommandVerticle {
         sb.append("%s/%s%n".formatted(shortPath, line));
       }
     }
-    StdOutUtils.print(sb.toString());
     Optional.of(result.exitCode())
         .filter(exitCode -> exitCode != 0)
         .ifPresent(exitCode -> {
           GisLog.debug(EXIT_WITH_CODE_MSG_FMT.formatted(exitCode));
           warnln(WARN_MSG_FMT.formatted(path.getFileName()));
         });
+    return sb.toString().trim();
   }
 }

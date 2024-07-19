@@ -2,6 +2,8 @@ package org.nqm.command;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.nqm.command.CommandVerticle.GIS_CONCAT_MODULES_NAME_OPT;
+import static org.nqm.command.CommandVerticle.GIS_NO_PRINT_MODULES_NAME_OPT;
 import static org.nqm.config.GisConfig.GIT_HOME_DIR;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -36,10 +38,10 @@ class CommandVerticleTest extends StdBaseTest {
         GIT_HOME_DIR, "status");
 
     // when:
-    CommandVerticle.execute(tempPath, "status");
+    var result = CommandVerticle.execute(tempPath, "status");
 
     // then:
-    assertThat(outCaptor.toByteArray())
+    assertThat(result.getBytes())
         .contains((StdOutUtils.infof("%s", "" + tempPath.getFileName()) + "\n  br master").getBytes());
   }
 
@@ -52,11 +54,10 @@ class CommandVerticleTest extends StdBaseTest {
         GIT_HOME_DIR, "status");
 
     // when:
-    CommandVerticle.execute(tempPath, "status", "--gis-no-print-modules-name");
+    var result = CommandVerticle.execute(tempPath, "status", GIS_NO_PRINT_MODULES_NAME_OPT);
 
     // then:
-    assertThat(outCaptor.toByteArray())
-        .contains(("On branch master").getBytes());
+    assertThat(result.getBytes()).contains(("On branch master").getBytes());
   }
 
   @Test
@@ -68,7 +69,7 @@ class CommandVerticleTest extends StdBaseTest {
         GIT_HOME_DIR, "status");
 
     // when:
-    CommandVerticle.execute(tempPath, "status", "--gis-no-print-modules-name");
+    CommandVerticle.execute(tempPath, "status", GIS_NO_PRINT_MODULES_NAME_OPT);
 
     // then:
     assertThat(errCaptor.toString().trim())
@@ -99,11 +100,11 @@ class CommandVerticleTest extends StdBaseTest {
         GIT_HOME_DIR, "diff", "--name-only");
 
     // when:
-    CommandVerticle.execute(tempPath, "diff", "--name-only", "--gis-concat-modules-name");
+    var result = CommandVerticle.execute(tempPath, "diff", "--name-only", GIS_CONCAT_MODULES_NAME_OPT);
 
     // then:
     var projectName = "" + tempPath.subpath(1, tempPath.getNameCount());
-    assertThat(outCaptor.toString().trim()).isEqualTo("""
+    assertThat(result).isEqualTo("""
         %s/%s
         %s/%s
         %s/%s"""
@@ -131,11 +132,11 @@ class CommandVerticleTest extends StdBaseTest {
         GIT_HOME_DIR, "pull");
 
     // when:
-    CommandVerticle.execute(tempPath, "pull");
+    var result = CommandVerticle.execute(tempPath, "pull");
 
     // then:
-    assertThat(stripColorsToString.apply(outCaptor.toString())).isEqualTo(
-        "%s%n  Already up to date.%n".formatted("" + tempPath.subpath(1, tempPath.getNameCount())));
+    assertThat(stripColorsToString.apply(result)).isEqualTo(
+        "%s%n  Already up to date.".formatted("" + tempPath.subpath(1, tempPath.getNameCount())));
   }
 
   @Test
