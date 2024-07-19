@@ -29,13 +29,6 @@ jobs:
         cache: maven
     - name: Compile and run tests
       run: mvn -B -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn clean verify package
-    - uses: graalvm/setup-graalvm@v1
-      name: Setup Graalvm (Java 21)
-      with:
-        java-version: '21'
-        distribution: 'graalvm'
-        github-token: ${{ secrets.GITHUB_TOKEN }}
-        native-image-job-reports: 'true'
     - name: Build executable file
       run: |
         docker build -f Containerfile -t gis . || return 1; docker create --name dkgis_ gis:latest; docker cp dkgis_:/app/gis/gis .; docker rm -f dkgis_
