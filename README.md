@@ -138,59 +138,7 @@ Then go to `http://localhost:9876`
 
 # Performance
 
-Measure by [hyperfine](https://github.com/sharkdp/hyperfine)
+Performed automatically at: https://github.com/nqminhuit/gis-stress-test when: 
 
-```
-| Command          | Mean [ms]       | Min [ms] | Max [ms] | Relative |
-|------------------+-----------------+----------+----------+----------|
-| gis              | 161.1 ± 28.2    |    129.2 |    216.0 |     1.00 |
-| gis branches -nn | 146.0 ± 29.7    |     81.8 |    230.3 |     1.00 |
-| gis branches     | 145.5 ± 27.1    |     68.0 |    183.4 |     1.00 |
-| gis co br_tst_1  | 1047.8 ± 69.1   |    981.4 |   1204.2 |     1.00 |
-| gis fetch        | 7043.6 ± 1983.0 |   3848.4 |  10246.1 |     1.00 |
-| gis files        | 3472.5 ± 70.4   |   3402.4 |   3663.2 |     1.00 |
-| gis status       | 152.5 ± 23.9    |    113.6 |    196.9 |     1.00 |
-```
-
-
-Performance is run with:
-- number of submodules: `100`
-- avg number of branch per submodules: `52.050`
-- avg number of files per submodules: `1002.000`
-- avg number of commit per submodules: `155.480`
-
-
-CPU info:
-```
-CPU NODE SOCKET CORE L1d:L1i:L2:L3 ONLINE    MAXMHZ   MINMHZ      MHZ
-  0    0      0    0 0:0:0:0          yes 4600.0000 800.0000 870.5860
-  1    0      0    0 0:0:0:0          yes 4600.0000 800.0000 869.3230
-  2    0      0    1 4:4:1:0          yes 4600.0000 800.0000 800.2880
-  3    0      0    1 4:4:1:0          yes 4600.0000 800.0000 800.4020
-  4    0      0    2 8:8:2:0          yes 4600.0000 800.0000 800.1200
-  5    0      0    2 8:8:2:0          yes 4600.0000 800.0000 800.0000
-  6    0      0    3 12:12:3:0        yes 4600.0000 800.0000 800.0340
-  7    0      0    3 12:12:3:0        yes 4600.0000 800.0000 800.0000
-  8    0      0    4 16:16:4:0        yes 4600.0000 800.0000 805.9600
-  9    0      0    4 16:16:4:0        yes 4600.0000 800.0000 800.7110
- 10    0      0    5 20:20:5:0        yes 4600.0000 800.0000 800.0000
- 11    0      0    5 20:20:5:0        yes 4600.0000 800.0000 802.9520
- 12    0      0    6 28:28:7:0        yes 3300.0000 800.0000 864.4740
- 13    0      0    7 29:29:7:0        yes 3300.0000 800.0000 800.0000
- 14    0      0    8 30:30:7:0        yes 3300.0000 800.0000 799.8320
- 15    0      0    9 31:31:7:0        yes 3300.0000 800.0000 800.0000
-```
-
-RAM info:
-```
-RANGE                                 SIZE  STATE REMOVABLE  BLOCK
-0x0000000000000000-0x000000007fffffff   2G online       yes   0-15
-0x0000000100000000-0x000000087fffffff  30G online       yes 32-271
-
-Memory block size:       128M
-Total online memory:      32G
-Total offline memory:      0B
-```
-
-
-gis version: `2.0.0-dev`
+1. any changes to gis **master** branch: will perform stress test on **small** dataset
+2. when gis publishes a new **release**: will perform stress test on both **small** and **large** dataset
