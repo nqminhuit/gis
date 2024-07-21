@@ -1,4 +1,4 @@
-[![Java CI with Maven](https://github.com/nqminhuit/gis/actions/workflows/maven.yml/badge.svg?branch=master&style=flat-square)](https://github.com/nqminhuit/gis/actions/workflows/maven.yml)
+[![Java CI with Maven](https://github.com/nqminhuit/gis/actions/workflows/maven.yml/badge.svg?branch=master)](https://github.com/nqminhuit/gis/actions/workflows/maven.yml)
 
 # Introduction
 - Features: extension for `git` to manage multiple [repositories](https://github.com/nqminhuit/gis/issues/14) or git submodules.
@@ -65,12 +65,13 @@ Supported configs:
 ```
 
 Note: do NOT insert space into value part.
-don't:
+
+Don't:
 ```
 master, main, develop
 ```
 
-do:
+Do:
 ```
 master,main,develop
 ```
