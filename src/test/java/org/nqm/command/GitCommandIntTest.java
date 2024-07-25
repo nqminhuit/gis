@@ -489,4 +489,75 @@ class GitCommandIntTest extends GitBaseTest {
             "(use \"git restore --staged <file>...\" to unstage)",
             "new file:   filescramble1");
   }
+
+  @Test
+  void rebaseCurrentOrigin() throws IOException {
+    // given:
+    var repos = create_clone_gitRepositories("ali_4_x", "ali_5_xx", "ali_6_xxx");
+    gis.init();
+    commitFile(repos);
+    commitFile(repos);
+    gis.push("master", true, true, true);
+    resetHead1(repos);
+    cleanUntrackedFiles(repos);
+    resetOutputStreamTest();
+
+    gis.status(true, null);
+    assertThat(stripColors.apply(outCaptor.toString())).containsOnly(
+        "" + tempPath.subpath(1, tempPath.getNameCount()),
+        "ali_4_x master[behind 1]",
+        "ali_5_xx master[behind 1]",
+        "ali_6_xxx master[behind 1]");
+
+    // when:
+    resetOutputStreamTest();
+    gis.rebaseCurrentOrigin();
+
+    // then:
+    gis.status(true, null);
+    assertThat(stripColors.apply(outCaptor.toString())).containsOnly(
+        "" + tempPath.subpath(1, tempPath.getNameCount()),
+        "ali_4_x master",
+        "ali_5_xx master",
+        "ali_6_xxx master");
+  }
+
+  @Test
+  void rebaseCurrentOrigin_withEachModuleHasDifferentBranch() throws IOException {
+    // given:
+    var repos = create_clone_gitRepositories("ali_4_x", "ali_5_xx", "ali_6_xxx");
+    gis.init();
+    commitFile(repos);
+    gis.push("master", true, true, true);
+    gis.spinOff("bbb4", "ali_4_x");
+    gis.spinOff("bbb5", "ali_5_xx");
+    gis.spinOff("bbb6", "ali_6_xxx");
+    commitFile(repos);
+    gis.push("bbb4", true, true, true);
+    gis.push("bbb5", true, true, true);
+    gis.push("bbb6", true, true, true);
+    resetHead1(repos);
+    cleanUntrackedFiles(repos);
+    resetOutputStreamTest();
+
+    gis.status(true, null);
+    assertThat(stripColors.apply(outCaptor.toString())).containsOnly(
+        "" + tempPath.subpath(1, tempPath.getNameCount()),
+        "ali_4_x bbb4[behind 1]",
+        "ali_5_xx bbb5[behind 1]",
+        "ali_6_xxx bbb6[behind 1]");
+
+    // when:
+    resetOutputStreamTest();
+    gis.rebaseCurrentOrigin();
+
+    // then:
+    gis.status(true, null);
+    assertThat(stripColors.apply(outCaptor.toString())).containsOnly(
+        "" + tempPath.subpath(1, tempPath.getNameCount()),
+        "ali_4_x bbb4",
+        "ali_5_xx bbb5",
+        "ali_6_xxx bbb6");
+  }
+
 }
