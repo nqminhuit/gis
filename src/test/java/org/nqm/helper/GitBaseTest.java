@@ -155,4 +155,17 @@ public abstract class GitBaseTest extends StdBaseTest {
       }
     });
   }
+
+  protected void resetHead1(List<Path> repos) {
+    repos.forEach(repo -> {
+      git(repo, "reset", "HEAD~1");
+    });
+  }
+
+  protected void cleanUntrackedFiles(List<Path> repos) {
+    repos.forEach(repo -> {
+      git(repo, "clean", "-fd");
+    });
+  }
+
 }

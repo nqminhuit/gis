@@ -2,8 +2,11 @@ package org.nqm.command;
 
 import static org.nqm.command.CommandVerticle.GIS_CONCAT_MODULES_NAME_OPT;
 import static org.nqm.command.CommandVerticle.GIS_NO_PRINT_MODULES_NAME_OPT;
+import static org.nqm.command.Wrapper.ORIGIN;
 import static org.nqm.command.Wrapper.forEachModuleDo;
+import static org.nqm.command.Wrapper.forEachModuleDoRebaseCurrent;
 import static org.nqm.command.Wrapper.forEachModuleWith;
+import static org.nqm.command.Wrapper.getCurrentBranchUnderPath;
 import static org.nqm.config.GisConfig.currentDir;
 import java.io.BufferedReader;
 import java.io.FileOutputStream;
@@ -22,13 +25,10 @@ import java.util.Queue;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
-import org.nqm.GisException;
 import org.nqm.config.GisConfig;
-import org.nqm.config.GisLog;
-import org.nqm.utils.GisProcessUtils;
+import org.nqm.model.GisSort;
 import org.nqm.utils.GisStringUtils;
 import org.nqm.utils.StdOutUtils;
-import org.nqm.model.GisSort;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
@@ -37,7 +37,6 @@ public class GitCommand {
 
   private static final String CHECKOUT = "checkout";
   private static final String FETCHED_AT = "(fetched at: %s)";
-  private static final String ORIGIN = "origin";
   private static final Path TMP_FILE = Path.of("/", "tmp", "gis_fetch" + currentDir().replace("/", "_"));
 
   static final String GIS_AUTOCOMPLETE_FILE = "_gis";
@@ -130,8 +129,8 @@ public class GitCommand {
 
   @Command(name = "rebase-current-origin", aliases = "ru",
       description = "Reapply commits on top of current repositories' origin")
-  void rebaseCurrentOrigin() {
-    throw new GisException("this function is in progress");
+  void rebaseCurrentOrigin() throws IOException {
+    forEachModuleDoRebaseCurrent();
   }
 
   @Command(name = "rebase-origin", aliases = "re", description = "Reapply commits on top of other base tip")
@@ -298,21 +297,11 @@ public class GitCommand {
     return Stream.of(input).map(String::trim).distinct();
   }
 
-  private String getCurrentBranchUnderPath(Path path) throws IOException {
-    var result = GisProcessUtils.quickRun(path.toFile(), GisConfig.GIT_HOME_DIR, "branch", "--show-current");
-    return result.output().trim();
-  }
-
   private boolean isSameBranchUnderPath(String branch, Path path) {
     if (GisStringUtils.isBlank(branch)) {
       return false;
     }
-    try {
-      return branch.equals(getCurrentBranchUnderPath(path));
-    } catch (IOException e) {
-      GisLog.debug(e);
-      throw new GisException(e.getMessage());
-    }
+    return branch.equals(getCurrentBranchUnderPath(path));
   }
 
   private boolean isConfirmed(String question) throws IOException {
