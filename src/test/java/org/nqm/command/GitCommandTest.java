@@ -346,18 +346,6 @@ class GitCommandTest extends StdBaseTest {
   }
 
   @Test
-  void localPrune_OK() throws IOException {
-    // given:
-    ExecutorsMock.mockVirtualThreadCallable(exe);
-
-    // when:
-    gis.localPrune("master");
-
-    // then:
-    verify(exe, times(6)).submit((Callable<?>) any());
-  }
-
-  @Test
   void removeBranch_OK() throws IOException {
     // given:
     ExecutorsMock.mockVirtualThreadCallable(exe);

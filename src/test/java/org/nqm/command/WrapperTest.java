@@ -1,5 +1,6 @@
 package org.nqm.command;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
@@ -17,6 +18,7 @@ import org.junit.jupiter.api.io.TempDir;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.nqm.GisException;
+import org.nqm.config.GisConfig;
 import org.nqm.helper.ExecutorsMock;
 import org.nqm.helper.GisConfigMock;
 import org.nqm.helper.GisProcessUtilsMock;
@@ -105,4 +107,19 @@ class WrapperTest extends StdBaseTest {
       .hasMessage("hehehe");
   }
 
+
+  @Test
+  void getCurrentBranchUnderPath_withNullResult_NOK() {
+    // given:
+    GisProcessUtilsMock.mockQuickRun(
+        null,
+        tempPath.toFile(),
+        GisConfig.GIT_HOME_DIR, "branch", "--show-current");
+
+    // when:
+    var result = Wrapper.getCurrentBranchUnderPath(tempPath);
+
+    // then:
+    assertThat(result).isEmpty();
+  }
 }

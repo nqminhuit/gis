@@ -3,15 +3,18 @@ package org.nqm.command;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.nqm.command.CommandVerticle.GIS_CONCAT_MODULES_NAME_OPT;
-import static org.nqm.command.CommandVerticle.GIS_NO_PRINT_MODULES_NAME_OPT;
 import static org.nqm.config.GisConfig.GIT_HOME_DIR;
+import static org.nqm.utils.StdOutUtils.CL_GREEN;
+import static org.nqm.utils.StdOutUtils.CL_RESET;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.function.UnaryOperator;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.nqm.GisException;
+import org.nqm.config.GisConfig;
 import org.nqm.helper.GisProcessUtilsMock;
 import org.nqm.helper.StdBaseTest;
 import org.nqm.model.GisProcessDto;
@@ -42,22 +45,28 @@ class CommandVerticleTest extends StdBaseTest {
 
     // then:
     assertThat(result.getBytes())
-        .contains((StdOutUtils.infof("%s", "" + tempPath.getFileName()) + "\n  br master").getBytes());
+        .contains((StdOutUtils.infof("" + tempPath.getFileName()) + "\n  br master").getBytes());
   }
 
   @Test
   void executeSimpleCommand_withGisOption1_OK() {
     // given:
     GisProcessUtilsMock.mockRun(
-        new GisProcessDto("On branch master", 0),
+        new GisProcessDto("""
+            # branch.oid 7ef404ae8ecee6a42a21aaf2ca4131cd02c84aec
+            # branch.head test-prune-local
+            """, 0),
         tempPath.toFile(),
         GIT_HOME_DIR, "status");
 
     // when:
-    var result = CommandVerticle.execute(tempPath, "status", GIS_NO_PRINT_MODULES_NAME_OPT);
+    var result = CommandVerticle.execute(tempPath, "status");
 
     // then:
-    assertThat(result.getBytes()).contains(("On branch master").getBytes());
+    var rootModule = "" + tempPath.getFileName();
+    assertThat(result).isEqualTo("""
+        %s
+          ## %s""".formatted(StdOutUtils.infof(rootModule), CL_GREEN + "test-prune-local" + CL_RESET));
   }
 
   @Test
@@ -69,7 +78,7 @@ class CommandVerticleTest extends StdBaseTest {
         GIT_HOME_DIR, "status");
 
     // when:
-    CommandVerticle.execute(tempPath, "status", GIS_NO_PRINT_MODULES_NAME_OPT);
+    CommandVerticle.execute(tempPath, "status");
 
     // then:
     assertThat(errCaptor.toString().trim())
@@ -116,11 +125,9 @@ class CommandVerticleTest extends StdBaseTest {
 
   @Test
   void execute_withNullPath_NOK() {
-    // when:
-    CommandVerticle.execute(null);
-
-    // then:
-    assertThat(outCaptor.toByteArray()).isEmpty();
+    Assertions.assertThatThrownBy(() -> CommandVerticle.execute(null))
+        .isInstanceOf(GisException.class)
+        .hasMessage("path must not be null");
   }
 
   @Test
@@ -163,4 +170,29 @@ class CommandVerticleTest extends StdBaseTest {
         .hasMessage("you be hacke");
   }
 
+
+  @Test
+  void executeForDto_OK() {
+    // when:
+    var result = CommandVerticle.executeForDto(null);
+
+    // then:
+    assertThat(result).isEqualTo(GisProcessDto.EMPTY);
+  }
+
+  @Test
+  void executeWithOptionConcatModulesName_NOK() {
+    // given:
+    GisProcessUtilsMock.mockRun(
+        new GisProcessDto("aaa", 128),
+        tempPath.toFile(),
+        GisConfig.GIT_HOME_DIR, "diff", "--name-only");
+
+    // when:
+    CommandVerticle.execute(tempPath, "diff", "--name-only", CommandVerticle.GIS_CONCAT_MODULES_NAME_OPT);
+
+    // then:
+    assertThat(errCaptor.toString().trim())
+      .contains("WARNING: Could not perform on module: '%s'".formatted(tempPath.getFileName()));
+  }
 }

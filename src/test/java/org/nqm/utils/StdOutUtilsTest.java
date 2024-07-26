@@ -54,12 +54,8 @@ class StdOutUtilsTest extends StdBaseTest {
 
   @Test
   void infof_OK() {
-    var actual = StdOutUtils.infof(";aaa %s bbb:", "batmen");
-    assertThat(actual.getBytes())
-        .isEqualTo((";aaa " + CL_CYAN + "batmen" + CL_RESET + " bbb:").getBytes())
-        .containsExactly(
-            59, 97, 97, 97, 32, 27, 91, 51, 54, 109, 98, 97, 116,
-            109, 101, 110, 27, 91, 48, 109, 32, 98, 98, 98, 58);
+    assertThat(StdOutUtils.infof("batmen").getBytes())
+        .isEqualTo((CL_CYAN + "batmen" + CL_RESET).getBytes());
   }
 
   private static String coloringWord(String word, String color) {
@@ -96,6 +92,9 @@ class StdOutUtilsTest extends StdBaseTest {
         "1 AM N... 000000 100644 100644 0000000000000000000000000000000000000000 266d4a9eb53eff40687ab923a152a879cd558ad6 src/test/java/org/nqm/utils/StdOutUtilsTest.java"))
             .isEqualTo("\n  %s%s src/test/java/org/nqm/utils/StdOutUtilsTest.java"
                 .formatted(coloringWord("A", CL_GREEN), coloringWord("M", CL_RED)));
+    assertThat(StdOutUtils.gitStatus(
+        "2 R. N... 100644 100644 100644 7acecdb0f896b00aa0caa46532e4c59389d8edc6 7acecdb0f896b00aa0caa46532e4c59389d8edc6 R100 text-0001\ttext-1"))
+            .isEqualTo("\n  %s. text-1 -> text-0001".formatted(coloringWord("R", CL_GREEN)));
   }
 
   @Test

@@ -59,8 +59,8 @@ public class StdOutUtils {
     out.println("  " + CL_YELLOW + "[DEBUG] " + msg + CL_RESET);
   }
 
-  public static String infof(String msgFormat, String word) {
-    return msgFormat.formatted(CL_CYAN + word + CL_RESET);
+  public static String infof(String word) {
+    return "%s".formatted(CL_CYAN + word + CL_RESET);
   }
 
   private static String coloringBranch(String branch) {
@@ -84,9 +84,6 @@ public class StdOutUtils {
   }
 
   private static String buildStaging(char[] chars) {
-    if (chars.length == 0) {
-      return "";
-    }
     return Optional.of(chars[0])
       .map(s -> s != '.' ? coloringWord(s, CL_GREEN) : s + "")
       .orElse("") +
@@ -153,9 +150,6 @@ public class StdOutUtils {
 
   private static String[] preProcessUntrackFile(String[] fileStats) {
     var length = fileStats.length;
-    if (length < 1) {
-      return new String[0];
-    }
     if (!UNTRACKED_SYM.equals(fileStats[0])) {
       return fileStats;
     }

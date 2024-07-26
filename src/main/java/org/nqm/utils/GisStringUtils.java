@@ -1,7 +1,5 @@
 package org.nqm.utils;
 
-import java.io.ByteArrayInputStream;
-import java.io.InputStreamReader;
 import java.nio.file.Path;
 
 public class GisStringUtils {
@@ -20,9 +18,5 @@ public class GisStringUtils {
 
   public static String getDirName(String dir) {
     return Path.of(dir).getFileName().toString();
-  }
-
-  public static InputStreamReader toInputStreamReader(String s) {
-    return new InputStreamReader(new ByteArrayInputStream(s.getBytes()));
   }
 }
