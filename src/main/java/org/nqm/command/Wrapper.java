@@ -10,8 +10,10 @@ import java.util.Optional;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 import org.nqm.GisException;
@@ -19,6 +21,7 @@ import org.nqm.config.GisConfig;
 import org.nqm.config.GisLog;
 import org.nqm.model.GisProcessDto;
 import org.nqm.utils.GisProcessUtils;
+import org.nqm.utils.GisStringUtils;
 import org.nqm.utils.StdOutUtils;
 
 public final class Wrapper {
@@ -55,13 +58,24 @@ public final class Wrapper {
   }
 
   public static Queue<String> forEachModuleWith(Predicate<Path> pred, String... args) throws IOException {
+    var output = new ConcurrentLinkedQueue<String>();
+    consumeAllModules(pred, exe -> path -> exe.submit(() -> output.add(CommandVerticle.execute(path, args))));
+    return output;
+  }
+
+  public static void forEachModuleDoRebaseCurrent() throws IOException {
+    consumeAllModules(p -> true, exe -> path -> exe.submit(() -> {
+      var args = new String[] {"rebase", "%s/%s".formatted(ORIGIN, getCurrentBranchUnderPath(path))};
+      CommandVerticle.execute(path, args);
+    }));
+  }
+
+  private static void consumeAllModules(Predicate<Path> pred, Function<ExecutorService, Consumer<Path>> f)
+      throws IOException {
     var gitModulesFilePath = getFileMarker();
     var currentDir = currentDir();
-    var output = new ConcurrentLinkedQueue<String>();
     try (var exe = Executors.newVirtualThreadPerTaskExecutor()) {
-      Consumer<Path> consume = path -> exe.submit(() -> output.add(CommandVerticle.execute(path, args)));
-      Optional.of(Path.of(currentDir)).filter(pred).ifPresent(consume);
-
+      Optional.of(Path.of(currentDir)).filter(pred).ifPresent(f.apply(exe));
       Files.readAllLines(gitModulesFilePath.toPath()).stream()
           .map(String::trim)
           .filter(s -> s.startsWith("path"))
@@ -75,37 +89,28 @@ public final class Wrapper {
             return false;
           })
           .filter(pred)
-          .forEach(consume);
+          .forEach(f.apply(exe));
     }
-    return output;
   }
 
-  public static void forEachModuleDoRebaseCurrent() throws IOException {
-    var gitModulesFilePath = getFileMarker();
-    var currentDir = currentDir();
-
-    try (var exe = Executors.newVirtualThreadPerTaskExecutor()) {
-      Consumer<Path> consume = path -> exe.submit(() -> {
-        var args = new String[] {"rebase", "%s/%s".formatted(ORIGIN, getCurrentBranchUnderPath(path))};
-        CommandVerticle.execute(path, args);
-      });
-
-      consume.accept(Path.of(currentDir));
-
-      Files.readAllLines(gitModulesFilePath.toPath()).stream()
-          .map(String::trim)
-          .filter(s -> s.startsWith("path"))
-          .map(s -> s.replace("path = ", ""))
-          .map(dir -> Path.of(currentDir, dir))
-          .filter(dir -> {
-            if (dir.toFile().exists()) {
-              return true;
-            }
-            StdOutUtils.errln("directory '%s' does not exist, will be ignored!".formatted("" + dir));
-            return false;
-          })
-          .forEach(consume);
-    }
+  public static void forEachModulePruneExcept(String mergedBranch) throws IOException {
+    var args = new String[] {
+        "for-each-ref",
+        "--merged=%s".formatted(mergedBranch),
+        "--format=%(refname:short)",
+        "refs/heads/",
+        "--no-contains",
+        mergedBranch
+    };
+    consumeAllModules(p -> true, exe -> path -> exe.submit(() -> {
+      var result = CommandVerticle.executeForDto(path, args).output();
+      if (GisStringUtils.isBlank(result)) {
+        return;
+      }
+      Stream.of(result.split(GisStringUtils.NEWLINE))
+          .filter(GisStringUtils::isNotBlank)
+          .forEach(branch -> CommandVerticle.execute(path, "branch", "-d", branch));
+    }));
   }
 
   public static String getCurrentBranchUnderPath(Path path) {

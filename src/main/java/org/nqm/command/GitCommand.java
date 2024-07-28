@@ -5,6 +5,7 @@ import static org.nqm.command.CommandVerticle.GIS_NO_PRINT_MODULES_NAME_OPT;
 import static org.nqm.command.Wrapper.ORIGIN;
 import static org.nqm.command.Wrapper.forEachModuleDo;
 import static org.nqm.command.Wrapper.forEachModuleDoRebaseCurrent;
+import static org.nqm.command.Wrapper.forEachModulePruneExcept;
 import static org.nqm.command.Wrapper.forEachModuleWith;
 import static org.nqm.command.Wrapper.getCurrentBranchUnderPath;
 import static org.nqm.config.GisConfig.currentDir;
@@ -25,7 +26,6 @@ import java.util.Queue;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
-import org.nqm.config.GisConfig;
 import org.nqm.model.GisSort;
 import org.nqm.utils.GisStringUtils;
 import org.nqm.utils.StdOutUtils;
@@ -43,7 +43,6 @@ public class GitCommand {
   static final Pattern CONFIRM_YES = Pattern.compile("[Yy]+([Ee][Ss])*");
 
   public static final String GIT_STATUS = "status";
-  public static final String HOOKS_OPTION = "--hooks";
 
   private static void printOutput(Collection<String> output) {
     output.stream().filter(GisStringUtils::isNotBlank).forEach(StdOutUtils::println);
@@ -68,7 +67,7 @@ public class GitCommand {
     } else {
       output = forEachModuleDo(GIT_STATUS, "-sb", "--ignore-submodules", "--porcelain=v2");
     }
-    var currentDirName = StdOutUtils.infof("%s", GisStringUtils.getDirName(currentDir()));
+    var currentDirName = StdOutUtils.infof(GisStringUtils.getDirName(currentDir()));
     var sorted = output.stream()
         .sorted((a, b) -> sort(oneLineOpt, sort, currentDirName, a, b))
         .toList();
@@ -205,7 +204,7 @@ public class GitCommand {
         ? new String[] {"push", "-u", ORIGIN, branch}
         : shouldForcePush(force);
 
-    printOutput(forEachModuleWith(path -> isSameBranchUnderPath(branch, path), args));
+    printOutput(forEachModuleWith(path -> branch.equals(getCurrentBranchUnderPath(path)), args));
   }
 
   @Command(name = "remote-prune-origin", aliases = "rpo",
@@ -218,15 +217,7 @@ public class GitCommand {
       description = "Deletes stale local references which already merged to <branch>")
   void localPrune(@Parameters(index = "0", paramLabel = "<default branch name>") String branch)
       throws IOException {
-    // TODO: rework this function to remove HOOKS
-    printOutput(forEachModuleDo("for-each-ref",
-        "--merged=%s".formatted(branch),
-        "--format=%(refname:short)",
-        "refs/heads/",
-        "--no-contains",
-        branch,
-        HOOKS_OPTION,
-        GisConfig.GIT_HOME_DIR + " branch -d %s"));
+    forEachModulePruneExcept(branch);
   }
 
   @Command(name = "stash", description = "Stash the changes in a dirty working directories away")
@@ -295,13 +286,6 @@ public class GitCommand {
 
   private static Stream<String> streamOf(String[] input) {
     return Stream.of(input).map(String::trim).distinct();
-  }
-
-  private boolean isSameBranchUnderPath(String branch, Path path) {
-    if (GisStringUtils.isBlank(branch)) {
-      return false;
-    }
-    return branch.equals(getCurrentBranchUnderPath(path));
   }
 
   private boolean isConfirmed(String question) throws IOException {
