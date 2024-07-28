@@ -1,4 +1,4 @@
-[![Java CI with Maven](https://github.com/nqminhuit/gis/actions/workflows/maven.yml/badge.svg?branch=master)](https://github.com/nqminhuit/gis/actions/workflows/ci.yml)
+[![Java CI with Maven](https://github.com/nqminhuit/gis/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/nqminhuit/gis/actions/workflows/ci.yml)
 
 # Introduction
 - Features: extension for `git` to manage multiple [repositories](https://github.com/nqminhuit/gis/issues/14) or git submodules.
