@@ -48,13 +48,17 @@ function _suggest_branches {
 }
 
 function _gis_branches_suggest {
-  _arguments "-nn[do not print module name]"
+  _arguments \
+    "--include-remotes[include remote branches]" \
+    "--no-module-name[do not print module name]"
 }
 
 function _gis_status_suggest {
-  _arguments "--one-line[print result in one line]"
+  _arguments \
+    "--one-line[print result in one line]" \
+    "--sort=[Valid values: module_name, branch_name, tracking_status]"
 }
 
 function _gis_stash_suggest {
-  _arguments "-pp[pop first stashed changes]"
+  _arguments "--pop[pop first stashed changes]"
 }
