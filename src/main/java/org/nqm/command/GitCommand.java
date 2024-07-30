@@ -21,8 +21,8 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
-import java.util.Queue;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -61,7 +61,7 @@ public class GitCommand {
               + "Default value is 'module_name'. "
               + "Note that the root module will always be on top no matter the sort") GisSort sort)
       throws IOException {
-    Queue<String> output;
+    List<String> output;
     if (oneLineOpt) {
       output = forEachModuleDo(GIT_STATUS, "-sb", "--ignore-submodules", "--porcelain=v2", "--gis-one-line");
     } else {

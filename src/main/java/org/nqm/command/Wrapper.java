@@ -5,10 +5,11 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -53,12 +54,12 @@ public final class Wrapper {
     return gitModulesFilePath;
   }
 
-  public static Queue<String> forEachModuleDo(String... args) throws IOException {
+  public static List<String> forEachModuleDo(String... args) throws IOException {
     return forEachModuleWith(p -> true, args);
   }
 
-  public static Queue<String> forEachModuleWith(Predicate<Path> pred, String... args) throws IOException {
-    var output = new ConcurrentLinkedQueue<String>();
+  public static List<String> forEachModuleWith(Predicate<Path> pred, String... args) throws IOException {
+    var output = Collections.synchronizedList(new ArrayList<String>());
     consumeAllModules(pred, exe -> path -> exe.submit(() -> output.add(CommandVerticle.execute(path, args))));
     return output;
   }
