@@ -8,10 +8,6 @@ import static org.nqm.utils.GisStringUtils.NEWLINE;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
 import java.util.Optional;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
@@ -74,14 +70,11 @@ class GitCommandIntTest extends GitBaseTest {
     gis.fetchStatus(null);
 
     // then:
-    var timeFetch = LocalDateTime.ofInstant(Instant.now(), ZoneId.systemDefault())
-        .format(DateTimeFormatter.ofPattern("HH:mm:ss dd/MM/yyyy"));
-    assertThat(stripColors.apply(outCaptor.toString())).containsOnlyOnce(
-        "" + tempPath.subpath(1, tempPath.getNameCount()),
+    assertThat(stripColors.apply(outCaptor.toString())).containsExactly(
+        "" + tempPath.getFileName(),
         "sub_4_w master",
         "sub_5_r master",
-        "sub_6_p master",
-        "(fetched at: %s)".formatted(timeFetch));
+        "sub_6_p master");
   }
 
   @Test
@@ -114,7 +107,7 @@ class GitCommandIntTest extends GitBaseTest {
     // then:
     assertThat(stripColors.apply(outCaptor.toString()))
         .containsExactlyInAnyOrder(
-            "" + tempPath.subpath(1, tempPath.getNameCount()),
+            "" + tempPath.getFileName(),
             "ype_9_iii",
             "  bb1",
             "  master",
@@ -456,7 +449,7 @@ class GitCommandIntTest extends GitBaseTest {
         "tppo_1_b batabranch",
         "tppo_2_bb batabranch",
         "tppo_3_bbb batabranch",
-        "" + tempPath.subpath(1, tempPath.getNameCount()));
+        "" + tempPath.getFileName());
   }
 
   @Test
@@ -478,7 +471,7 @@ class GitCommandIntTest extends GitBaseTest {
     // then:
     assertThat(stripColors.apply(outCaptor.toString()))
         .containsExactlyInAnyOrder("po_1_z", "po_2_zz", "po_3_zzz",
-            "" + tempPath.subpath(1, tempPath.getNameCount()));
+            "" + tempPath.getFileName());
   }
 
   @Test
@@ -493,7 +486,7 @@ class GitCommandIntTest extends GitBaseTest {
     gis.status(true, GisSort.module_name);
     assertThat(stripColors.apply(outCaptor.toString()))
         .contains(
-            "" + tempPath.subpath(1, tempPath.getNameCount()),
+            "" + tempPath.getFileName(),
             "pom_2_xx batabranch filescramble1",
             "pom_1_x batabranch filescramble1",
             "pom_3_xxx batabranch filescramble1");
@@ -506,7 +499,7 @@ class GitCommandIntTest extends GitBaseTest {
     assertThat(stripColors.apply(outCaptor.toString()))
         .map(s -> s.replaceFirst(":.*", ""))
         .containsExactlyInAnyOrder(
-            "" + tempPath.subpath(1, tempPath.getNameCount()),
+            "" + tempPath.getFileName(),
             "pom_3_xxx",
             "  Saved working directory and index state WIP on batabranch",
             "pom_2_xx",
@@ -533,7 +526,7 @@ class GitCommandIntTest extends GitBaseTest {
     assertThat(stripColors.apply(outCaptor.toString()))
         .map(String::trim)
         .contains(
-            "" + tempPath.subpath(1, tempPath.getNameCount()),
+            "" + tempPath.getFileName(),
             "pja_6_xxx",
             "On branch batabranch",
             "Changes to be committed:",
@@ -565,7 +558,7 @@ class GitCommandIntTest extends GitBaseTest {
 
     gis.status(true, null);
     assertThat(stripColors.apply(outCaptor.toString())).containsOnly(
-        "" + tempPath.subpath(1, tempPath.getNameCount()),
+        "" + tempPath.getFileName(),
         "ali_4_x master[behind 1]",
         "ali_5_xx master[behind 1]",
         "ali_6_xxx master[behind 1]");
@@ -577,7 +570,7 @@ class GitCommandIntTest extends GitBaseTest {
     // then:
     gis.status(true, null);
     assertThat(stripColors.apply(outCaptor.toString())).containsOnly(
-        "" + tempPath.subpath(1, tempPath.getNameCount()),
+        "" + tempPath.getFileName(),
         "ali_4_x master",
         "ali_5_xx master",
         "ali_6_xxx master");
@@ -603,7 +596,7 @@ class GitCommandIntTest extends GitBaseTest {
 
     gis.status(true, null);
     assertThat(stripColors.apply(outCaptor.toString())).containsOnly(
-        "" + tempPath.subpath(1, tempPath.getNameCount()),
+        "" + tempPath.getFileName(),
         "ali_4_x bbb4[behind 1]",
         "ali_5_xx bbb5[behind 1]",
         "ali_6_xxx bbb6[behind 1]");
@@ -615,7 +608,7 @@ class GitCommandIntTest extends GitBaseTest {
     // then:
     gis.status(true, null);
     assertThat(stripColors.apply(outCaptor.toString())).containsOnly(
-        "" + tempPath.subpath(1, tempPath.getNameCount()),
+        "" + tempPath.getFileName(),
         "ali_4_x bbb4",
         "ali_5_xx bbb5",
         "ali_6_xxx bbb6");
@@ -635,7 +628,7 @@ class GitCommandIntTest extends GitBaseTest {
     resetOutputStreamTest();
     gis.listBranches(false, true);
     assertThat(stripColors.apply(outCaptor.toString())).containsExactlyInAnyOrder(
-        "" + tempPath.subpath(1, tempPath.getNameCount()),
+        "" + tempPath.getFileName(),
         "pru_3_ne",
         "  master",
         "  prune-branch",
@@ -656,7 +649,7 @@ class GitCommandIntTest extends GitBaseTest {
     resetOutputStreamTest();
     gis.listBranches(false, true);
     assertThat(stripColors.apply(outCaptor.toString())).containsExactlyInAnyOrder(
-        "" + tempPath.subpath(1, tempPath.getNameCount()),
+        "" + tempPath.getFileName(),
         "pru_3_ne",
         "  master",
         "  origin/master",
@@ -683,7 +676,7 @@ class GitCommandIntTest extends GitBaseTest {
     resetOutputStreamTest();
     gis.listBranches(false, true);
     assertThat(stripColors.apply(outCaptor.toString())).containsExactlyInAnyOrder(
-        "" + tempPath.subpath(1, tempPath.getNameCount()),
+        "" + tempPath.getFileName(),
         "pru_4_ne",
         "  master",
         "  prune-branch",
@@ -707,7 +700,7 @@ class GitCommandIntTest extends GitBaseTest {
     resetOutputStreamTest();
     gis.listBranches(false, true);
     assertThat(stripColors.apply(outCaptor.toString())).containsExactlyInAnyOrder(
-        "" + tempPath.subpath(1, tempPath.getNameCount()),
+        "" + tempPath.getFileName(),
         "pru_4_ne",
         "  master",
         "  origin/master",

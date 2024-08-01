@@ -15,8 +15,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
-import java.time.Instant;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -26,6 +25,7 @@ import java.util.Queue;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
+import org.nqm.config.GisConfig;
 import org.nqm.model.GisSort;
 import org.nqm.utils.GisStringUtils;
 import org.nqm.utils.StdOutUtils;
@@ -37,7 +37,6 @@ public class GitCommand {
 
   private static final String CHECKOUT = "checkout";
   private static final String FETCHED_AT = "(fetched at: %s)";
-  private static final Path TMP_FILE = Path.of("/", "tmp", "gis_fetch" + currentDir().replace("/", "_"));
 
   static final String GIS_AUTOCOMPLETE_FILE = "_gis";
   static final Pattern CONFIRM_YES = Pattern.compile("[Yy]+([Ee][Ss])*");
@@ -72,11 +71,12 @@ public class GitCommand {
         .sorted((a, b) -> sort(oneLineOpt, sort, currentDirName, a, b))
         .toList();
     printOutput(sorted);
-    if (Files.exists(TMP_FILE)) {
-      var lastFetched = Files.readString(TMP_FILE);
-      if (GisStringUtils.isNotBlank(lastFetched)) {
-        StdOutUtils.println(FETCHED_AT.formatted(lastFetched));
-      }
+    var fetched = Path.of(GisConfig.currentDir(), ".git", "FETCH_HEAD");
+    if (Files.exists(fetched)) {
+      var lastFetched = Files.readAttributes(fetched, BasicFileAttributes.class).lastModifiedTime();
+      StdOutUtils.println(
+          FETCHED_AT.formatted(LocalDateTime.ofInstant(lastFetched.toInstant(), ZoneId.systemDefault())
+              .format(DateTimeFormatter.ofPattern("HH:mm:ss dd/MM/yyyy"))));
     }
   }
 
@@ -108,21 +108,13 @@ public class GitCommand {
     return changesB - changesA;
   }
 
-  private void fetch() throws IOException {
-    forEachModuleDo("fetch");
-    var timeFetch = LocalDateTime.ofInstant(Instant.now(), ZoneId.systemDefault())
-        .format(DateTimeFormatter.ofPattern("HH:mm:ss dd/MM/yyyy"));
-
-    Files.write(TMP_FILE, timeFetch.getBytes(), StandardOpenOption.CREATE, StandardOpenOption.WRITE);
-  }
-
   @Command(name = "fetch", aliases = "fe", description = "Download objects and refs from other repositories")
   void fetchStatus(@Option(names = "--sort",
       description = "Valid values: ${COMPLETION-CANDIDATES}. "
           + "Default value is 'module_name'. "
           + "Note that the root module will always be on top no matter the sort") GisSort sort)
       throws IOException {
-    fetch();
+    forEachModuleDo("fetch");
     status(true, sort);
   }
 
