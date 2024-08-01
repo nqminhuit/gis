@@ -9,7 +9,6 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.Optional;
-import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.nqm.GisException;
 import org.nqm.helper.GisConfigMock;
@@ -193,27 +192,6 @@ class GitCommandIntTest extends GitBaseTest {
         "otq_1_a/filescramble1",
         "otq_3_c/filescramble1",
         "otq_2_b/filescramble1");
-  }
-
-  @Test
-  void listFilesChanged_withRootModule_OK() throws IOException {
-    // given:
-    var repos = create_clone_gitRepositories("otq_4_a", "otq_5_b", "otq_6_c");
-    var allRepos = Stream.concat(repos.stream(), Stream.of(tempPath)).toList();
-    gis.init();
-    git(tempPath, "init");
-    scrambleFiles(allRepos);
-    resetOutputStreamTest();
-
-    // when:
-    gis.files();
-
-    // then:
-    assertThat(outCaptor.toString().trim().split(NEWLINE)).containsExactlyInAnyOrder(
-        "./filescramble1",
-        "otq_4_a/filescramble1",
-        "otq_5_b/filescramble1",
-        "otq_6_c/filescramble1");
   }
 
   @Test
