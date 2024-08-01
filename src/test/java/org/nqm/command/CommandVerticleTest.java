@@ -9,13 +9,15 @@ import static org.nqm.utils.StdOutUtils.CL_RESET;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.function.UnaryOperator;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.nqm.GisException;
-import org.nqm.config.GisConfig;
+import org.nqm.helper.GisConfigMock;
 import org.nqm.helper.GisProcessUtilsMock;
+import org.nqm.helper.GitBaseTest;
 import org.nqm.helper.StdBaseTest;
 import org.nqm.model.GisProcessDto;
 import org.nqm.utils.StdOutUtils;
@@ -28,8 +30,14 @@ class CommandVerticleTest extends StdBaseTest {
   private static UnaryOperator<Path> cutTmpRoot = p -> p.subpath(2, p.getNameCount());
 
   @Override
+  protected void additionalSetup() {
+    GisConfigMock.mockCurrentDirectory("" + tempPath);
+  }
+
+  @Override
   protected void additionalTeardown() {
     GisProcessUtilsMock.close();
+    GisConfigMock.close();
   }
 
   @Test
@@ -70,23 +78,6 @@ class CommandVerticleTest extends StdBaseTest {
   }
 
   @Test
-  void executeSimpleCommand_withExitCode1() {
-    // given:
-    GisProcessUtilsMock.mockRun(
-        new GisProcessDto("On branch master", 1),
-        tempPath.toFile(),
-        GIT_HOME_DIR, "status");
-
-    // when:
-    CommandVerticle.execute(tempPath, "status");
-
-    // then:
-    assertThat(errCaptor.toString().trim())
-        .contains("WARNING: Could not perform on module: '%s'"
-            .formatted("" + tempPath.subpath(1, tempPath.getNameCount())));
-  }
-
-  @Test
   void executeSimpleCommand_withGisOption2_OK() throws IOException {
     // given:
     var f1 = Files.createTempFile(tempPath, null, "a.json");
@@ -112,15 +103,14 @@ class CommandVerticleTest extends StdBaseTest {
     var result = CommandVerticle.execute(tempPath, "diff", "--name-only", GIS_CONCAT_MODULES_NAME_OPT);
 
     // then:
-    var projectName = "" + tempPath.subpath(1, tempPath.getNameCount());
     assertThat(result).isEqualTo("""
-        %s/%s
-        %s/%s
-        %s/%s"""
+        ./%s
+        ./%s
+        ./%s"""
         .formatted(
-            projectName, f3WithoutTmpAndRoot,
-            projectName, f2WithoutTmpAndRoot,
-            projectName, f1WithoutTmpAndProject));
+            f3WithoutTmpAndRoot,
+            f2WithoutTmpAndRoot,
+            f1WithoutTmpAndProject));
   }
 
   @Test
@@ -170,7 +160,6 @@ class CommandVerticleTest extends StdBaseTest {
         .hasMessage("you be hacke");
   }
 
-
   @Test
   void executeForDto_OK() {
     // when:
@@ -181,18 +170,18 @@ class CommandVerticleTest extends StdBaseTest {
   }
 
   @Test
-  void executeWithOptionConcatModulesName_NOK() {
+  void executeGisFiles_OK() throws IOException {
     // given:
-    GisProcessUtilsMock.mockRun(
-        new GisProcessDto("aaa", 128),
-        tempPath.toFile(),
-        GisConfig.GIT_HOME_DIR, "diff", "--name-only");
+    new GitCommand().init();
+    GitBaseTest.git(tempPath, "init");
+    GitBaseTest.scrambleFiles(List.of(tempPath));
+    resetOutputStreamTest();
 
     // when:
-    CommandVerticle.execute(tempPath, "diff", "--name-only", CommandVerticle.GIS_CONCAT_MODULES_NAME_OPT);
+    var result = CommandVerticle.execute(tempPath, "diff", "--name-only", GIS_CONCAT_MODULES_NAME_OPT);
 
     // then:
-    assertThat(errCaptor.toString().trim())
-      .contains("WARNING: Could not perform on module: '%s'".formatted(tempPath.getFileName()));
+    assertThat(result).isEqualTo("./filescramble1");
   }
+
 }

@@ -65,7 +65,7 @@ public abstract class GitBaseTest extends StdBaseTest {
     Files.writeString(gitIgnoreFile, ".gis-modules");
   }
 
-  protected void git(Path p, String... args) {
+  public static void git(Path p, String... args) {
     var commands = Stream.concat(Stream.of(GisConfig.GIT_HOME_DIR), Stream.of(args))
         .toArray(String[]::new);
     int exitCode = 0;
@@ -143,7 +143,7 @@ public abstract class GitBaseTest extends StdBaseTest {
     });
   }
 
-  protected void scrambleFiles(List<Path> repos) {
+  public static void scrambleFiles(List<Path> repos) {
     repos.forEach(repo -> {
       var file = repo.resolve("filescramble1");
       try {

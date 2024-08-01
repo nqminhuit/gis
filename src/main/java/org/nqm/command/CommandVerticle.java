@@ -3,11 +3,9 @@ package org.nqm.command;
 import static org.nqm.utils.StdOutUtils.gitStatus;
 import static org.nqm.utils.StdOutUtils.gitStatusOneLine;
 import static org.nqm.utils.StdOutUtils.infof;
-import static org.nqm.utils.StdOutUtils.warnln;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.Optional;
 import java.util.stream.Stream;
 import org.nqm.GisException;
 import org.nqm.config.GisConfig;
@@ -20,8 +18,6 @@ public class CommandVerticle {
 
   private CommandVerticle() {}
 
-  private static final String WARN_MSG_FMT = "Could not perform on module: '%s'";
-  private static final String EXIT_WITH_CODE_MSG_FMT = "exit with code: '%s'";
   private static final String OPTION_PREFIX = "--gis";
 
   public static final String GIS_NO_PRINT_MODULES_NAME_OPT = "--gis-no-print-modules-name";
@@ -67,7 +63,7 @@ public class CommandVerticle {
       return safelyPrintStatus(path, args, result);
     }
     if (Stream.of(gisOptions).anyMatch(GIS_NO_PRINT_MODULES_NAME_OPT::equals)) {
-      return safelyPrintWithoutModules(path, result);
+      return result.output().trim();
     }
     if (Stream.of(gisOptions).anyMatch(GIS_CONCAT_MODULES_NAME_OPT::equals)) {
       return safelyConcatModuleNames(path, result);
@@ -81,12 +77,6 @@ public class CommandVerticle {
     Stream.of(result.output().split(GisStringUtils.NEWLINE))
         .filter(GisStringUtils::isNotBlank)
         .forEach(line -> sb.append(isOneLineOpt ? gitStatusOneLine(line) : gitStatus(line)));
-    Optional.of(result.exitCode())
-        .filter(exitCode -> exitCode != 0)
-        .ifPresent(exitCode -> {
-          GisLog.debug(EXIT_WITH_CODE_MSG_FMT.formatted(exitCode));
-          warnln(WARN_MSG_FMT.formatted(path.getFileName()));
-        });
     return sb.toString();
   }
 
@@ -95,23 +85,7 @@ public class CommandVerticle {
     Stream.of(result.output().split(GisStringUtils.NEWLINE))
         .filter(GisStringUtils::isNotBlank)
         .forEach(line -> sb.append("%n  %s".formatted(line)));
-    Optional.of(result.exitCode())
-        .filter(exitCode -> exitCode != 0)
-        .ifPresent(exitCode -> {
-          GisLog.debug(EXIT_WITH_CODE_MSG_FMT.formatted(exitCode));
-          warnln(WARN_MSG_FMT.formatted(path.getFileName()));
-        });
     return sb.toString();
-  }
-
-  private static String safelyPrintWithoutModules(Path path, GisProcessDto result) {
-    Optional.of(result.exitCode())
-        .filter(exitCode -> exitCode != 0)
-        .ifPresent(exitCode -> {
-          GisLog.debug(EXIT_WITH_CODE_MSG_FMT.formatted(exitCode));
-          warnln(WARN_MSG_FMT.formatted(path.getFileName()));
-        });
-    return result.output().trim();
   }
 
   private static String safelyConcatModuleNames(Path path, GisProcessDto result) {
@@ -119,30 +93,17 @@ public class CommandVerticle {
       return "";
     }
     var sb = new StringBuilder();
-    var isRootModule = path.toFile().listFiles((d, f) -> {
-      var stringF = "" + f;
-      return ".gitmodules".equals(stringF) || ".gis-modules".equals(stringF);
-    }).length > 0;
-
+    var isRootModule = ("" + path).equals(GisConfig.currentDir());
     var shortPath = path.getFileName();
     Stream.of(result.output().split(GisStringUtils.NEWLINE))
         .filter(GisStringUtils::isNotBlank)
+        .filter(line -> new File("%s/%s".formatted(path, line)).isFile())
         .forEach(line -> {
-          var f = "%s/%s".formatted(path, line);
-          if (!new File(f).isFile()) {
-            return;
-          }
           if (isRootModule) {
             sb.append("./%s%n".formatted(line));
           } else {
             sb.append("%s/%s%n".formatted(shortPath, line));
           }
-        });
-    Optional.of(result.exitCode())
-        .filter(exitCode -> exitCode != 0)
-        .ifPresent(exitCode -> {
-          GisLog.debug(EXIT_WITH_CODE_MSG_FMT.formatted(exitCode));
-          warnln(WARN_MSG_FMT.formatted(path.getFileName()));
         });
     return sb.toString().trim();
   }
