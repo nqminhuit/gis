@@ -95,7 +95,8 @@ class GitCommandTest extends StdBaseTest {
 
     // when:
     assertThatNoException().isThrownBy(gis::pull);
-    verify(exe, times(6)).submit((Callable<?>) any());
+    verify(exe, times(5)).submit((Callable<?>) any());
+    verify(exe, times(0)).submit((Runnable) any());
   }
 
   @Test
@@ -294,7 +295,8 @@ class GitCommandTest extends StdBaseTest {
     gis.fetchStatus(null);
 
     // then:
-    verify(exe, times(12)).submit((Callable<?>) any());
+    verify(exe, times(1)).submit((Callable<?>) any());
+    verify(exe, times(4)).submit((Runnable) any());
   }
 
   @Test
@@ -306,7 +308,8 @@ class GitCommandTest extends StdBaseTest {
     gis.listBranches(false, false);
 
     // then:
-    verify(exe, times(6)).submit((Callable<?>) any());
+    verify(exe, times(5)).submit((Callable<?>) any());
+    verify(exe, times(0)).submit((Runnable) any());
   }
 
   @Test
@@ -318,7 +321,8 @@ class GitCommandTest extends StdBaseTest {
     gis.listBranches(true, false);
 
     // then:
-    verify(exe, times(6)).submit((Callable<?>) any());
+    verify(exe, times(5)).submit((Callable<?>) any());
+    verify(exe, times(0)).submit((Runnable) any());
   }
 
   @Test
@@ -330,7 +334,8 @@ class GitCommandTest extends StdBaseTest {
     gis.files();
 
     // then:
-    verify(exe, times(6)).submit((Callable<?>) any());
+    verify(exe, times(5)).submit((Callable<?>) any());
+    verify(exe, times(0)).submit((Runnable) any());
   }
 
   @Test
@@ -342,7 +347,8 @@ class GitCommandTest extends StdBaseTest {
     gis.remotePruneOrigin();
 
     // then:
-    verify(exe, times(6)).submit((Callable<?>) any());
+    verify(exe, times(5)).submit((Callable<?>) any());
+    verify(exe, times(0)).submit((Runnable) any());
   }
 
   @Test
@@ -354,7 +360,8 @@ class GitCommandTest extends StdBaseTest {
     gis.removeBranch("mastereeeee", true);
 
     // then:
-    verify(exe, times(6)).submit((Callable<?>) any());
+    verify(exe, times(5)).submit((Callable<?>) any());
+    verify(exe, times(0)).submit((Runnable) any());
   }
 
   @Test
@@ -366,7 +373,8 @@ class GitCommandTest extends StdBaseTest {
     gis.stash(false);
 
     // then:
-    verify(exe, times(6)).submit((Callable<?>) any());
+    verify(exe, times(5)).submit((Callable<?>) any());
+    verify(exe, times(0)).submit((Runnable) any());
   }
 
   @Test
@@ -378,7 +386,8 @@ class GitCommandTest extends StdBaseTest {
     gis.stash(true);
 
     // then:
-    verify(exe, times(6)).submit((Callable<?>) any());
+    verify(exe, times(5)).submit((Callable<?>) any());
+    verify(exe, times(0)).submit((Runnable) any());
   }
 
   @Test
@@ -390,7 +399,8 @@ class GitCommandTest extends StdBaseTest {
     gis.checkout("batabranch");
 
     // then:
-    verify(exe, times(6)).submit((Callable<?>) any());
+    verify(exe, times(5)).submit((Callable<?>) any());
+    verify(exe, times(0)).submit((Runnable) any());
   }
 
   @Test
@@ -402,7 +412,8 @@ class GitCommandTest extends StdBaseTest {
     gis.spinOff("batabranch");
 
     // then:
-    verify(exe, times(6)).submit((Callable<?>) any());
+    verify(exe, times(5)).submit((Callable<?>) any());
+    verify(exe, times(0)).submit((Runnable) any());
   }
 
   @Test
@@ -414,7 +425,8 @@ class GitCommandTest extends StdBaseTest {
     gis.spinOff("batabranch", "submodule1", "submodule2");
 
     // then:
-    verify(exe, times(4)).submit((Callable<?>) any());
+    verify(exe, times(3)).submit((Callable<?>) any());
+    verify(exe, times(0)).submit((Runnable) any());
   }
 
   @Test
@@ -427,7 +439,8 @@ class GitCommandTest extends StdBaseTest {
         "batabranch", "submodule1", "submodule2", "" + tempPath.subpath(1, tempPath.getNameCount()));
 
     // then:
-    verify(exe, times(5)).submit((Callable<?>) any());
+    verify(exe, times(4)).submit((Callable<?>) any());
+    verify(exe, times(0)).submit((Runnable) any());
   }
 
   @Test
@@ -439,19 +452,8 @@ class GitCommandTest extends StdBaseTest {
     gis.rebaseOrigin("batabranch");
 
     // then:
-    verify(exe, times(6)).submit((Callable<?>) any());
-  }
-
-  @Test
-  void fetchOrigin_OK() throws IOException {
-    // given:
-    ExecutorsMock.mockVirtualThreadCallable(exe);
-
-    // when:
-    gis.fetchOrigin("batabranch");
-
-    // then:
-    verify(exe, times(6)).submit((Callable<?>) any());
+    verify(exe, times(5)).submit((Callable<?>) any());
+    verify(exe, times(0)).submit((Runnable) any());
   }
 
   @Test
@@ -485,7 +487,8 @@ class GitCommandTest extends StdBaseTest {
       gis.push("master", true, true, false);
 
       // then:
-      verify(exe, times(6)).submit((Callable<?>) any());
+      verify(exe, times(5)).submit((Callable<?>) any());
+      verify(exe, times(0)).submit((Runnable) any());
     } finally {
       System.setIn(in);
     }

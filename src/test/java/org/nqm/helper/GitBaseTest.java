@@ -86,6 +86,37 @@ public abstract class GitBaseTest extends StdBaseTest {
     }
   }
 
+  protected List<Path> initGitSubmodules(String... repos) {
+    final var baseUrl = "http://root:root@localhost:%s/git/root".formatted(gitbucketPort);
+    git(tempPath, "init");
+    var result = Stream.of(repos)
+        .map(repo -> {
+          try {
+            createRemoteRepo(repo);
+            git(tempPath, "clone", baseUrl + "/" + repo + ".git");
+
+            var submodule = tempPath.resolve(repo);
+            var file = submodule.resolve("filenew1");
+            Files.createFile(file);
+            Files.write(file, "asdf".getBytes());
+            git(submodule, "config", "user.email", "Your@Name.Com");
+            git(submodule, "config", "user.name", "Your Name");
+            git(submodule, "add", "" + file);
+            git(submodule, "commit", "-m", "commit file");
+            git(submodule, "push");
+
+            git(tempPath, "submodule", "add", baseUrl + "/" + repo + ".git");
+            return tempPath.resolve(repo);
+          } catch (IOException | InterruptedException | URISyntaxException e) {
+            e.printStackTrace();
+            throw new RuntimeException("Could not prepare git repository");
+          }
+        })
+        .toList();
+    git(tempPath, "submodule", "update", "--init");
+    return result;
+  }
+
   protected List<Path> create_clone_gitRepositories(String... repos) {
     final var baseUrl = "http://root:root@localhost:%s/git/root".formatted(gitbucketPort);
     return Stream.of(repos)

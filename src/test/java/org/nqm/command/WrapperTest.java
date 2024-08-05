@@ -6,12 +6,16 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.nqm.config.GisConfig.GIT_HOME_DIR;
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
@@ -84,27 +88,82 @@ class WrapperTest extends StdBaseTest {
     Wrapper.forEachModuleWith(p -> true, "pull");
 
     // then:
-    verify(exe, times(6)).submit((Callable<?>) any());
+    verify(exe, times(5)).submit((Callable<?>) any());
+    verify(exe, times(0)).submit((Runnable) any());
   }
 
   @Test
   void forEachModuleWith_withInterruptedExceptionWhenGetFileMarker_NOK() throws IOException {
     // given:
-    ExecutorsMock.mockVirtualThreadCallableThrowException(exe, new InterruptedException("hehehe"));
+    ExecutorsMock.mockVirtualThreadCallable(exe, new Future<File>() {
+
+      @Override
+      public boolean cancel(boolean mayInterruptIfRunning) {
+        throw new UnsupportedOperationException("Unimplemented method 'cancel'");
+      }
+
+      @Override
+      public boolean isCancelled() {
+        throw new UnsupportedOperationException("Unimplemented method 'isCancelled'");
+      }
+
+      @Override
+      public boolean isDone() {
+        throw new UnsupportedOperationException("Unimplemented method 'isDone'");
+      }
+
+      @Override
+      public File get() throws InterruptedException, ExecutionException {
+        throw new InterruptedException("hehehe");
+      }
+
+      @Override
+      public File get(long timeout, TimeUnit unit)
+          throws InterruptedException, ExecutionException, TimeoutException {
+        throw new UnsupportedOperationException("Unimplemented method");
+      }
+    });
 
     assertThatThrownBy(() -> Wrapper.forEachModuleWith(p -> true, "pull"))
-      .isInstanceOf(GisException.class)
-      .hasMessage("hehehe");
+        .isInstanceOf(GisException.class)
+        .hasMessage("hehehe");
   }
 
   @Test
   void forEachModuleWith_withExecutionExceptionWhenGetFileMarker_NOK() throws IOException {
     // given:
-    ExecutorsMock.mockVirtualThreadCallableThrowException(exe, new ExecutionException("hehehe", null));
+    ExecutorsMock.mockVirtualThreadCallable(exe, new Future<File>() {
+
+      @Override
+      public boolean cancel(boolean mayInterruptIfRunning) {
+        throw new UnsupportedOperationException("Unimplemented method 'cancel'");
+      }
+
+      @Override
+      public boolean isCancelled() {
+        throw new UnsupportedOperationException("Unimplemented method 'isCancelled'");
+      }
+
+      @Override
+      public boolean isDone() {
+        throw new UnsupportedOperationException("Unimplemented method 'isDone'");
+      }
+
+      @Override
+      public File get() throws InterruptedException, ExecutionException {
+        throw new ExecutionException("hehehe", null);
+      }
+
+      @Override
+      public File get(long timeout, TimeUnit unit)
+          throws InterruptedException, ExecutionException, TimeoutException {
+        throw new UnsupportedOperationException("Unimplemented method 'get'");
+      }
+    });
 
     assertThatThrownBy(() -> Wrapper.forEachModuleWith(p -> true, "pull"))
-      .isInstanceOf(GisException.class)
-      .hasMessage("hehehe");
+        .isInstanceOf(GisException.class)
+        .hasMessage("hehehe");
   }
 
 

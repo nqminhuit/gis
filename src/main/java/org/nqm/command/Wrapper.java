@@ -5,13 +5,13 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -30,44 +30,30 @@ public final class Wrapper {
 
   public static final String ORIGIN = "origin";
 
-  private static File isFileExist(File f) {
-    return f.exists() ? f : null;
-  }
-
   private static File getFileMarker() {
-    File gitModulesFilePath;
     var currentDir = currentDir();
+    Future<File> gitModulesFilePath;
     try (var exe = Executors.newVirtualThreadPerTaskExecutor()) {
-      var f1 = exe.submit(() -> isFileExist(Path.of(currentDir, ".gis-modules").toFile()));
-      var f2 = exe.submit(() -> isFileExist(Path.of(currentDir, ".gitmodules").toFile()));
-      gitModulesFilePath = Stream.of(f1.get(), f2.get())
-          .filter(Objects::nonNull)
-          .findFirst()
-          .orElseThrow(
-              () -> new GisException("Could not find '.gis-modules' or '.gitmodules' under this directory!"));
+      gitModulesFilePath = exe.submit(() -> {
+        var gitModules = Path.of(currentDir, ".gitmodules").toFile();
+        if (gitModules.exists()) {
+          return gitModules;
+        }
+        var gisModules = Path.of(currentDir, ".gis-modules").toFile();
+        if (gisModules.exists()) {
+          return gisModules;
+        }
+        return null;
+      });
+    }
+    try {
+      return Optional.ofNullable(gitModulesFilePath.get()).orElseThrow(
+          () -> new GisException("Could not find '.gis-modules' or '.gitmodules' under this directory!"));
     } catch (InterruptedException | ExecutionException e) {
       GisLog.debug(e);
       Thread.currentThread().interrupt();
       throw new GisException(e.getMessage());
     }
-    return gitModulesFilePath;
-  }
-
-  public static Queue<String> forEachModuleDo(String... args) throws IOException {
-    return forEachModuleWith(p -> true, args);
-  }
-
-  public static Queue<String> forEachModuleWith(Predicate<Path> pred, String... args) throws IOException {
-    var output = new ConcurrentLinkedQueue<String>();
-    consumeAllModules(pred, exe -> path -> exe.submit(() -> output.add(CommandVerticle.execute(path, args))));
-    return output;
-  }
-
-  public static void forEachModuleDoRebaseCurrent() throws IOException {
-    consumeAllModules(p -> true, exe -> path -> exe.submit(() -> {
-      var args = new String[] {"rebase", "%s/%s".formatted(ORIGIN, getCurrentBranchUnderPath(path))};
-      CommandVerticle.execute(path, args);
-    }));
   }
 
   private static void consumeAllModules(Predicate<Path> pred, Function<ExecutorService, Consumer<Path>> f)
@@ -91,6 +77,34 @@ public final class Wrapper {
           .filter(pred)
           .forEach(f.apply(exe));
     }
+  }
+
+  public static Queue<String> forEachModuleDo(String... args) throws IOException {
+    return forEachModuleWith(p -> true, args);
+  }
+
+  public static Queue<String> forEachModuleWith(Predicate<Path> pred, String... args) throws IOException {
+    var output = new ConcurrentLinkedQueue<String>();
+    consumeAllModules(pred, exe -> path -> exe.submit(() -> output.add(CommandVerticle.execute(path, args))));
+    return output;
+  }
+
+  public static void forEachModuleDoRebaseCurrent() throws IOException {
+    consumeAllModules(p -> true, exe -> path -> exe.submit(() -> {
+      var args = new String[] {"rebase", "%s/%s".formatted(ORIGIN, getCurrentBranchUnderPath(path))};
+      CommandVerticle.execute(path, args);
+    }));
+  }
+
+  public static Queue<String> forEachModuleFetch() throws IOException {
+    var output = new ConcurrentLinkedQueue<String>();
+    consumeAllModules(p -> true, exe -> path -> exe.submit(() -> {
+      CommandVerticle.execute(path, "fetch");
+      output.add(CommandVerticle.execute(
+          path,
+          GitCommand.GIT_STATUS, "-sb", "--ignore-submodules", "--porcelain=v2", "--gis-one-line"));
+    }));
+    return output;
   }
 
   public static void forEachModulePruneExcept(String mergedBranch) throws IOException {
