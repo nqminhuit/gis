@@ -6,6 +6,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
@@ -31,6 +32,19 @@ public class ExecutorsMock {
       @Override
       public Object answer(InvocationOnMock invocation) throws Throwable {
         return CompletableFuture.completedFuture(((Callable<?>) invocation.getArguments()[0]).call());
+      }
+    }).when(exe).submit((Callable<?>) any());
+  }
+
+  /**
+   * This mock enables all virtual threads to run on the main thread
+   */
+  public static void mockVirtualThreadCallable(ExecutorService exe, Future<?> result) {
+    mockVirtualThread(exe);
+    doAnswer(new Answer<Object>() {
+      @Override
+      public Object answer(InvocationOnMock invocation) throws Throwable {
+        return result;
       }
     }).when(exe).submit((Callable<?>) any());
   }

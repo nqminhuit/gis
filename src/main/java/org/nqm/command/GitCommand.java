@@ -5,6 +5,7 @@ import static org.nqm.command.CommandVerticle.GIS_NO_PRINT_MODULES_NAME_OPT;
 import static org.nqm.command.Wrapper.ORIGIN;
 import static org.nqm.command.Wrapper.forEachModuleDo;
 import static org.nqm.command.Wrapper.forEachModuleDoRebaseCurrent;
+import static org.nqm.command.Wrapper.forEachModuleFetch;
 import static org.nqm.command.Wrapper.forEachModulePruneExcept;
 import static org.nqm.command.Wrapper.forEachModuleWith;
 import static org.nqm.command.Wrapper.getCurrentBranchUnderPath;
@@ -52,34 +53,6 @@ public class GitCommand {
     printOutput(forEachModuleDo("pull"));
   }
 
-  @Command(name = GIT_STATUS, aliases = "st", description = "Show the working trees status")
-  void status(
-      @Option(names = "--one-line") boolean oneLineOpt,
-      @Option(names = "--sort",
-          description = "Valid values: ${COMPLETION-CANDIDATES}. "
-              + "Default value is 'module_name'. "
-              + "Note that the root module will always be on top no matter the sort") GisSort sort)
-      throws IOException {
-    Queue<String> output;
-    if (oneLineOpt) {
-      output = forEachModuleDo(GIT_STATUS, "-sb", "--ignore-submodules", "--porcelain=v2", "--gis-one-line");
-    } else {
-      output = forEachModuleDo(GIT_STATUS, "-sb", "--ignore-submodules", "--porcelain=v2");
-    }
-    var currentDirName = StdOutUtils.infof(GisStringUtils.getDirName(currentDir()));
-    var sorted = output.stream()
-        .sorted((a, b) -> sort(oneLineOpt, sort, currentDirName, a, b))
-        .toList();
-    printOutput(sorted);
-    var fetched = Path.of(GisConfig.currentDir(), ".git", "FETCH_HEAD");
-    if (Files.exists(fetched)) {
-      var lastFetched = Files.readAttributes(fetched, BasicFileAttributes.class).lastModifiedTime();
-      StdOutUtils.println(
-          FETCHED_AT.formatted(LocalDateTime.ofInstant(lastFetched.toInstant(), ZoneId.systemDefault())
-              .format(DateTimeFormatter.ofPattern("HH:mm:ss dd/MM/yyyy"))));
-    }
-  }
-
   private static int sort(boolean oneLineOpt, GisSort sort, String currentDirName, String a, String b) {
     if (a.startsWith(currentDirName)) {
       return Integer.MIN_VALUE;
@@ -108,14 +81,49 @@ public class GitCommand {
     return changesB - changesA;
   }
 
+  private static Collection<String> sort(boolean oneLineOpt, GisSort sort, Collection<String> output) {
+    var currentDirName = StdOutUtils.infof(GisStringUtils.getDirName(currentDir()));
+    return output.stream()
+        .sorted((a, b) -> sort(oneLineOpt, sort, currentDirName, a, b))
+        .toList();
+  }
+
+  private void printFetchedTime() throws IOException {
+    var fetched = Path.of(GisConfig.currentDir(), ".git", "FETCH_HEAD");
+    if (Files.exists(fetched)) {
+      var lastFetched = Files.readAttributes(fetched, BasicFileAttributes.class).lastModifiedTime();
+      StdOutUtils.println(
+          FETCHED_AT.formatted(LocalDateTime.ofInstant(lastFetched.toInstant(), ZoneId.systemDefault())
+              .format(DateTimeFormatter.ofPattern("HH:mm:ss dd/MM/yyyy"))));
+    }
+  }
+
+  @Command(name = GIT_STATUS, aliases = "st", description = "Show the working trees status")
+  void status(
+      @Option(names = "--one-line") boolean oneLineOpt,
+      @Option(names = "--sort",
+          description = "Valid values: ${COMPLETION-CANDIDATES}. "
+              + "Default value is 'module_name'. "
+              + "Note that the root module will always be on top no matter the sort") GisSort sort)
+      throws IOException {
+    Queue<String> output;
+    if (oneLineOpt) {
+      output = forEachModuleDo(GIT_STATUS, "-sb", "--ignore-submodules", "--porcelain=v2", "--gis-one-line");
+    } else {
+      output = forEachModuleDo(GIT_STATUS, "-sb", "--ignore-submodules", "--porcelain=v2");
+    }
+    printOutput(sort(oneLineOpt, sort, output));
+    printFetchedTime();
+  }
+
   @Command(name = "fetch", aliases = "fe", description = "Download objects and refs from other repositories")
   void fetchStatus(@Option(names = "--sort",
       description = "Valid values: ${COMPLETION-CANDIDATES}. "
           + "Default value is 'module_name'. "
           + "Note that the root module will always be on top no matter the sort") GisSort sort)
       throws IOException {
-    forEachModuleDo("fetch");
-    status(true, sort);
+    printOutput(sort(true, sort, forEachModuleFetch()));
+    printFetchedTime();
   }
 
   @Command(name = "rebase-current-origin", aliases = "ru",
@@ -127,12 +135,6 @@ public class GitCommand {
   @Command(name = "rebase-origin", aliases = "re", description = "Reapply commits on top of other base tip")
   void rebaseOrigin(@Parameters(index = "0", paramLabel = "<branch name>") String branch) throws IOException {
     printOutput(forEachModuleDo("rebase", "%s/%s".formatted(ORIGIN, branch)));
-  }
-
-  @Command(name = "fetch-origin", aliases = "fo",
-      description = "Download objects and refs specified by branch name from other repositories")
-  void fetchOrigin(@Parameters(index = "0", paramLabel = "<branch name>") String branch) throws IOException {
-    printOutput(forEachModuleDo("fetch", ORIGIN, "%s:%s".formatted(branch, branch)));
   }
 
   @Command(name = CHECKOUT, aliases = "co", description = "Switch branches or restore working tree files")

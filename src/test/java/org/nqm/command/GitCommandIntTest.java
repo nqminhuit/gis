@@ -8,9 +8,15 @@ import static org.nqm.utils.GisStringUtils.NEWLINE;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.nqm.GisException;
+import org.nqm.config.GisConfig;
 import org.nqm.helper.GisConfigMock;
 import org.nqm.helper.GisProcessUtilsMock;
 import org.nqm.helper.GitBaseTest;
@@ -74,6 +80,29 @@ class GitCommandIntTest extends GitBaseTest {
         "sub_4_w master",
         "sub_5_r master",
         "sub_6_p master");
+  }
+
+  @Test
+  void fetch_withRootBeingGitModule_OK() throws IOException {
+    // given:
+    initGitSubmodules("sub_4_w", "sub_5_r", "sub_6_p");
+
+    // when:
+    gis.fetchStatus(null);
+
+    var fetched = Path.of(GisConfig.currentDir(), ".git", "FETCH_HEAD");
+    var lastFetched = Files.readAttributes(fetched, BasicFileAttributes.class).lastModifiedTime();
+    var lastFetchedStr = "(fetched at: %s)"
+        .formatted(LocalDateTime.ofInstant(lastFetched.toInstant(), ZoneId.systemDefault())
+            .format(DateTimeFormatter.ofPattern("HH:mm:ss dd/MM/yyyy")));
+
+    // then:
+    assertThat(stripColors.apply(outCaptor.toString())).containsExactly(
+        tempPath.getFileName() + " master .gitmodules sub_4_w sub_5_r sub_6_p",
+        "sub_4_w master",
+        "sub_5_r master",
+        "sub_6_p master",
+        lastFetchedStr);
   }
 
   @Test
@@ -428,28 +457,6 @@ class GitCommandIntTest extends GitBaseTest {
         "tppo_2_bb batabranch",
         "tppo_3_bbb batabranch",
         "" + tempPath.getFileName());
-  }
-
-  @Test
-  void fetchOrigin_OK() throws IOException {
-    // given:
-    var repos = create_clone_gitRepositories("po_1_z", "po_2_zz", "po_3_zzz");
-    gis.init();
-    gis.spinOff("batabranch");
-    commitFile(repos);
-    System.setIn(new ByteArrayInputStream("yes".getBytes()));
-    gis.push("batabranch", true, true, false);
-    gis.spinOff("master");
-    commitFile(repos);
-
-    // when:
-    resetOutputStreamTest();
-    gis.fetchOrigin("batabranch");
-
-    // then:
-    assertThat(stripColors.apply(outCaptor.toString()))
-        .containsExactlyInAnyOrder("po_1_z", "po_2_zz", "po_3_zzz",
-            "" + tempPath.getFileName());
   }
 
   @Test
