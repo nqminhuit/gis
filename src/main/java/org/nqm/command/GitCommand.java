@@ -44,8 +44,12 @@ public class GitCommand {
 
   public static final String GIT_STATUS = "status";
 
+  private static void printOutput(Stream<String> output) {
+    output.filter(GisStringUtils::isNotBlank).forEach(StdOutUtils::println);
+  }
+
   private static void printOutput(Collection<String> output) {
-    output.stream().filter(GisStringUtils::isNotBlank).forEach(StdOutUtils::println);
+    printOutput(output.stream());
   }
 
   @Command(name = "pull", aliases = "pu", description = "Fetch from and integrate with remote repositories")
@@ -234,7 +238,16 @@ public class GitCommand {
       sArgs = Stream.concat(sArgs, Stream.of(GIS_NO_PRINT_MODULES_NAME_OPT));
     }
     final var args = sArgs.toArray(String[]::new);
-    printOutput(forEachModuleDo(args));
+    var resultWithDuplicatedBranches = forEachModuleDo(args);
+    if (noPrintModuleName) {
+      var result = resultWithDuplicatedBranches.stream()
+          .map(x -> x.split(GisStringUtils.NEWLINE))
+          .flatMap(Stream::of)
+          .distinct();
+      printOutput(result);
+    } else {
+      printOutput(resultWithDuplicatedBranches);
+    }
   }
 
   @Command(name = "init", description = "init .gis-modules for current directory")

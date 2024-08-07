@@ -161,8 +161,7 @@ class GitCommandIntTest extends GitBaseTest {
     gis.listBranches(true, false);
 
     // then:
-    assertThat(outCaptor.toString().trim().split(NEWLINE)).containsExactlyInAnyOrder(
-        "bb1", "master", "bb1", "master", "bb1", "master");
+    assertThat(outCaptor.toString().trim().split(NEWLINE)).containsExactlyInAnyOrder("bb1", "master");
   }
 
   @Test
@@ -188,16 +187,6 @@ class GitCommandIntTest extends GitBaseTest {
     // then:
     assertThat(outCaptor.toString().trim().split(NEWLINE))
         .containsExactlyInAnyOrder(
-            "bb1",
-            "bb2",
-            "master",
-            "origin/bb1",
-            "origin/bb2",
-            "bb1",
-            "bb2",
-            "master",
-            "origin/bb1",
-            "origin/bb2",
             "bb1",
             "bb2",
             "master",
