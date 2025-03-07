@@ -17,11 +17,20 @@
 
 There are 2 GraalVM distributions: [GraalVM CE](https://www.graalvm.org/22.0/docs/getting-started/) and [Mandrel](https://developers.redhat.com/blog/2021/04/14/mandrel-a-specialized-distribution-of-graalvm-for-quarkus). Since this app is written in Java completely, Mandrel is prefered.
 
+### Checking out repository and build
 ```shell script
 cd gis
 podman build -t gis . || return 1; podman create --name dkgis_ gis:latest; podman cp dkgis_:/app/gis/gis .; podman rm -f dkgis_
 ```
 After the steps above, an executable file named `gis` will be created under project directory.
+
+### Build without checking out repository
+```bash
+podman build -t gis https://github.com/nqminhuit/gis.git
+podman create --name gis_ gis:latest
+podman cp gis_:/app/gis/gis .
+podman rm -f gis_
+```
 
 ## JVM
 
