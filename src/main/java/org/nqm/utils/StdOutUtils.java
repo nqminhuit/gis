@@ -5,7 +5,6 @@ import static java.lang.System.out; // NOSONAR
 import static java.util.function.Predicate.not;
 import java.nio.file.Path;
 import java.util.Optional;
-import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.nqm.config.GisConfig;
@@ -26,9 +25,6 @@ public class StdOutUtils {
   public static final String CL_CYAN   = "\u001B[36m";
   public static final String CL_WHITE  = "\u001B[37m";
   public static final String CL_GRAY   = "\u001B[90m";
-
-  private static final String UNTRACKED_SYM = "?";
-  private static final String RENAME_SYM = "2";
 
   public static void setMuteOutput(boolean b) {
     muteOutput = b;
@@ -98,105 +94,170 @@ public class StdOutUtils {
   }
 
   private static String coloringFile(String file, boolean isRootModule) {
-    return coloringFile(file, file, isRootModule);
+    return coloringFile(file, file, isRootModule, "");
   }
 
-  private static String coloringFile(String pathToMatch, String fileToDisplay, boolean isRootModule) {
+  private static String stripRootModulePrefix(String file, String rootModuleName) {
+    if (GisStringUtils.isBlank(rootModuleName)) {
+      return file;
+    }
+    var prefix = rootModuleName + "/";
+    return file.startsWith(prefix) ? file.substring(prefix.length()) : file;
+  }
+
+  private static String coloringFile(String pathToMatch, String fileToDisplay, boolean isRootModule, String rootModuleName) {
     if (!isRootModule) {
       return fileToDisplay;
     }
 
     return Stream.of(pathToMatch.split(" -> "))
+        .map(path -> stripRootModulePrefix(path, rootModuleName))
         .allMatch(StdOutUtils::isRootDontCareFile)
         ? coloringWord(fileToDisplay, CL_GRAY)
         : fileToDisplay;
   }
 
   private static String buildStaging(char[] chars) {
+    if (chars.length == 2 && chars[0] == '?' && chars[1] == '?') {
+      return " ? ";
+    }
     return Optional.of(chars[0])
+      .map(StdOutUtils::normalizeUnchanged)
       .map(s -> s != '.' ? coloringWord(s, CL_GREEN) : s + "")
       .orElse("") +
       Optional.of(chars[1])
+        .map(StdOutUtils::normalizeUnchanged)
         .map(s -> s != '.' ? coloringWord(s, CL_RED) : s + "")
         .orElse("")
       + " ";
   }
 
-  private static String buildAheadBehind(String[] splitS) {
-    var ahead = Optional.of(splitS[2])
-      .map(s -> s.replace("+", ""))
-      .filter(not("0"::equals))
-      .map(s -> "ahead " + coloringWord(s, CL_GREEN))
-      .orElse("");
-    var behind = Optional.of(splitS[3])
-      .map(s -> s.replace("-", ""))
-      .filter(not("0"::equals))
-      .map(s -> "behind " + coloringWord(s, CL_RED))
-      .orElse("");
-    return Stream.of(ahead, behind).filter(not(String::isBlank)).collect(Collectors.joining(", "));
+  private static char normalizeUnchanged(char status) {
+    return status == ' ' ? '.' : status;
   }
 
-  public static String gitStatus(String line, boolean isRootModule) {
-    var lineSplit = line.split("\s");
-    return switch (lineSplit[0] + lineSplit[1]) {
-      case "#branch.oid" -> "";
-      case "#branch.head" -> "\n  ## " + coloringWord(lineSplit[2], CL_GREEN);
-      case "#branch.upstream" -> "..." + coloringWord(lineSplit[2], CL_RED);
-      case "#branch.ab" -> Optional.of(lineSplit)
-        .map(StdOutUtils::buildAheadBehind)
+  private static boolean isBranchLine(String line) {
+    return line.startsWith("## ");
+  }
+
+  private static String[] splitBranchLine(String line) {
+    var branchDetails = line.substring(3);
+    if (branchDetails.startsWith("No commits yet on ")) {
+      return new String[] {branchDetails.substring("No commits yet on ".length()), ""};
+    }
+    if (branchDetails.startsWith("Initial commit on ")) {
+      return new String[] {branchDetails.substring("Initial commit on ".length()), ""};
+    }
+    var split = branchDetails.split(" \\[", 2);
+    return new String[] {split[0], split.length > 1 ? split[1].replaceFirst("]$", "") : ""};
+  }
+
+  private static String buildBranchInfo(String branchLine) {
+    var branchSplit = splitBranchLine(branchLine);
+    var upstreamSplit = branchSplit[0].split("\\.\\.\\.", 2);
+    var branch = "\n  ## " + coloringWord(upstreamSplit[0], CL_GREEN);
+    if (upstreamSplit.length == 1) {
+      return branch;
+    }
+    var upstream = "..." + coloringWord(upstreamSplit[1], CL_RED);
+    if (GisStringUtils.isBlank(branchSplit[1])) {
+      return branch + upstream;
+    }
+    var tracking = Optional.of(branchSplit[1].split(", "))
+        .map(StdOutUtils::buildAheadBehindV1)
         .filter(GisStringUtils::isNotBlank)
         .map(" [%s]"::formatted)
         .orElse("");
-      default -> Optional.of(lineSplit)
-        .map(StdOutUtils::preProcessUntrackFile)
-        .map(splitS -> "\n  "
-          + Optional.of(splitS[1].toCharArray()).map(StdOutUtils::buildStaging).orElse("")
-          + Optional.of(splitS[splitS.length - 1])
-              .map(getFiles(line))
-              .map(file -> coloringFile(file, isRootModule))
-              .orElse(""))
-        .orElse("");
-    };
+    return branch + upstream + tracking;
   }
 
-  public static String gitStatusOneLine(String line, boolean isRootModule) {
-    var lineSplit = line.split("\s");
-    return switch (lineSplit[0] + lineSplit[1]) {
-      case "#branch.oid" -> "";
-      case "#branch.head" -> " " + coloringBranch(lineSplit[2]);
-      case "#branch.upstream" -> "";
-      case "#branch.ab" -> Optional.of(lineSplit)
-        .map(StdOutUtils::buildAheadBehind)
+  private static String buildBranchInfoOneLine(String branchLine) {
+    var branchSplit = splitBranchLine(branchLine);
+    var branch = " " + coloringBranch(branchSplit[0].split("\\.\\.\\.", 2)[0]);
+    if (GisStringUtils.isBlank(branchSplit[1])) {
+      return branch;
+    }
+    return branch + Optional.of(branchSplit[1].split(", "))
+        .map(StdOutUtils::buildAheadBehindV1)
         .filter(GisStringUtils::isNotBlank)
         .map("[%s]"::formatted)
         .orElse("");
-      default -> Optional.of(lineSplit)
-        .map(splitS -> " "
-          + Optional.of(splitS[splitS.length - 1])
-            .map(getFiles(line))
-            .map(file -> coloringFile(file, Path.of(file).getFileName().toString(), isRootModule))
-            .orElse(""))
-        .orElse("");
-    };
   }
 
-  private static String[] preProcessUntrackFile(String[] fileStats) {
-    var length = fileStats.length;
-    if (!UNTRACKED_SYM.equals(fileStats[0])) {
-      return fileStats;
-    }
-    var newStats = new String[length + 1];
-    newStats[0] = fileStats[0];
-    newStats[1] = " " + UNTRACKED_SYM;
-    for (var i = 1; i < length; i++) {
-      newStats[i + 1] = fileStats[i];
-    }
-    return newStats;
+  private static String buildAheadBehindV1(String[] splitS) {
+    return Stream.of(splitS)
+        .map(String::trim)
+        .map(s -> {
+          if (s.startsWith("ahead ")) {
+            return "ahead " + coloringWord(s.substring("ahead ".length()), CL_GREEN);
+          }
+          if (s.startsWith("behind ")) {
+            return "behind " + coloringWord(s.substring("behind ".length()), CL_RED);
+          }
+          return "";
+        })
+        .filter(not(String::isBlank))
+        .collect(Collectors.joining(", "));
   }
 
-  private static UnaryOperator<String> getFiles(String line) {
-    return filesChange -> line.startsWith(RENAME_SYM)
-      ? Optional.of(filesChange.split("\t")).map(s -> s[1] + " -> " + s[0]).orElse("")
-      : filesChange;
+  private static char[] extractStatus(String line) {
+    return line.substring(0, Math.min(2, line.length())).toCharArray();
+  }
+
+  private static String normalizePathToken(String path) {
+    var normalized = path.trim();
+    if (normalized.length() >= 2 && normalized.startsWith("\"") && normalized.endsWith("\"")) {
+      normalized = normalized.substring(1, normalized.length() - 1)
+          .replace("\\\"", "\"")
+          .replace("\\\\", "\\");
+    }
+    return normalized;
+  }
+
+  private static String[] extractPaths(String line) {
+    if (line.length() <= 3) {
+      return new String[] {""};
+    }
+    return Stream.of(line.substring(3).split(" -> "))
+        .map(StdOutUtils::normalizePathToken)
+        .toArray(String[]::new);
+  }
+
+  private static String extractFile(String line) {
+    return String.join(" -> ", extractPaths(line));
+  }
+
+  private static String extractDisplayFile(String line) {
+    var paths = extractPaths(line);
+    var displayPath = paths[paths.length - 1];
+    if (GisStringUtils.isBlank(displayPath)) {
+      return "";
+    }
+    return Path.of(displayPath).getFileName().toString();
+  }
+
+  public static String gitStatus(String line, boolean isRootModule) {
+    return gitStatus(line, isRootModule, "");
+  }
+
+  public static String gitStatus(String line, boolean isRootModule, String rootModuleName) {
+    if (isBranchLine(line)) {
+      return buildBranchInfo(line);
+    }
+    return "\n  "
+        + buildStaging(extractStatus(line))
+        + coloringFile(extractFile(line), extractFile(line), isRootModule, rootModuleName);
+  }
+
+  public static String gitStatusOneLine(String line, boolean isRootModule) {
+    return gitStatusOneLine(line, isRootModule, "");
+  }
+
+  public static String gitStatusOneLine(String line, boolean isRootModule, String rootModuleName) {
+    if (isBranchLine(line)) {
+      return buildBranchInfoOneLine(line);
+    }
+    var file = extractFile(line);
+    return " " + coloringFile(file, extractDisplayFile(line), isRootModule, rootModuleName);
   }
 }

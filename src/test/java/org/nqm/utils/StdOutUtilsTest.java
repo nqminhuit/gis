@@ -65,74 +65,64 @@ class StdOutUtilsTest extends StdBaseTest {
 
   @Test
   void gitStatus_OK() {
-    assertThat(StdOutUtils.gitStatus("# branch.oid f0f19fb4542365e0d7aa7d6be5187e23a258a20c", false))
-        .isEmpty();
-    assertThat(StdOutUtils.gitStatus("# branch.head master", false))
+    assertThat(StdOutUtils.gitStatus("## master", false))
         .isEqualTo("\n  ## %s".formatted(coloringWord("master", CL_GREEN)));
-    assertThat(StdOutUtils.gitStatus("# branch.upstream origin/master", false))
-        .isEqualTo("...%s".formatted(coloringWord("origin/master", CL_RED)));
-    assertThat(StdOutUtils.gitStatus("# branch.ab +0 -0", false))
-        .isEmpty();
-    assertThat(StdOutUtils.gitStatus("# branch.ab +2 -9", false))
-        .isEqualTo(
-            " [ahead %s, behind %s]".formatted(coloringWord("2", CL_GREEN), coloringWord("9", CL_RED)));
-    assertThat(StdOutUtils.gitStatus("# branch.ab +10 -0", false))
-        .isEqualTo(" [ahead %s]".formatted(coloringWord("10", CL_GREEN)));
-    assertThat(StdOutUtils.gitStatus("# branch.ab +0 -20", false))
-        .isEqualTo(" [behind %s]".formatted(coloringWord("20", CL_RED)));
-    assertThat(StdOutUtils.gitStatus(
-      "1 .M N... 100644 100644 100644 2e86d6778dfa1ac74ea4db9035d8559d2c164c90 2e86d6778dfa1ac74ea4db9035d8559d2c164c90 pom.xml", false))
+    assertThat(StdOutUtils.gitStatus("## master...origin/master", false))
+        .isEqualTo("\n  ## %s...%s".formatted(coloringWord("master", CL_GREEN), coloringWord("origin/master", CL_RED)));
+    assertThat(StdOutUtils.gitStatus("## master...origin/master [ahead 2, behind 9]", false))
+        .isEqualTo("\n  ## %s...%s [ahead %s, behind %s]"
+            .formatted(
+                coloringWord("master", CL_GREEN),
+                coloringWord("origin/master", CL_RED),
+                coloringWord("2", CL_GREEN),
+                coloringWord("9", CL_RED)));
+    assertThat(StdOutUtils.gitStatus("## master...origin/master [ahead 10]", false))
+        .isEqualTo("\n  ## %s...%s [ahead %s]"
+            .formatted(coloringWord("master", CL_GREEN), coloringWord("origin/master", CL_RED), coloringWord("10", CL_GREEN)));
+    assertThat(StdOutUtils.gitStatus("## master...origin/master [behind 20]", false))
+        .isEqualTo("\n  ## %s...%s [behind %s]"
+            .formatted(coloringWord("master", CL_GREEN), coloringWord("origin/master", CL_RED), coloringWord("20", CL_RED)));
+    assertThat(StdOutUtils.gitStatus(" M pom.xml", false))
             .isEqualTo("\n  .%s pom.xml".formatted(coloringWord("M", CL_RED)));
-    assertThat(StdOutUtils.gitStatus(
-      "1 M. N... 100644 100644 100644 2e86d6778dfa1ac74ea4db9035d8559d2c164c90 2e86d6778dfa1ac74ea4db9035d8559d2c164c90 pom.xml", false))
+    assertThat(StdOutUtils.gitStatus("M  pom.xml", false))
             .isEqualTo("\n  %s. pom.xml".formatted(coloringWord("M", CL_GREEN)));
-    assertThat(StdOutUtils.gitStatus(
-      "1 MM N... 100644 100644 100644 2e86d6778dfa1ac74ea4db9035d8559d2c164c90 2e86d6778dfa1ac74ea4db9035d8559d2c164c90 pom.xml", false))
+    assertThat(StdOutUtils.gitStatus("MM pom.xml", false))
             .isEqualTo("\n  %s%s pom.xml".formatted(coloringWord("M", CL_GREEN), coloringWord("M", CL_RED)));
-    assertThat(StdOutUtils.gitStatus(
-      "1 AM N... 000000 100644 100644 0000000000000000000000000000000000000000 266d4a9eb53eff40687ab923a152a879cd558ad6 src/test/java/org/nqm/utils/StdOutUtilsTest.java", false))
+    assertThat(StdOutUtils.gitStatus("AM src/test/java/org/nqm/utils/StdOutUtilsTest.java", false))
             .isEqualTo("\n  %s%s src/test/java/org/nqm/utils/StdOutUtilsTest.java"
                 .formatted(coloringWord("A", CL_GREEN), coloringWord("M", CL_RED)));
-    assertThat(StdOutUtils.gitStatus(
-      "2 R. N... 100644 100644 100644 7acecdb0f896b00aa0caa46532e4c59389d8edc6 7acecdb0f896b00aa0caa46532e4c59389d8edc6 R100 text-0001\ttext-1", false))
+    assertThat(StdOutUtils.gitStatus("R  text-1 -> text-0001", false))
             .isEqualTo("\n  %s. text-1 -> text-0001".formatted(coloringWord("R", CL_GREEN)));
   }
 
   @Test
   void gitStatusOneLine_OK() {
-    assertThat(StdOutUtils.gitStatusOneLine("# branch.oid f0f19fb4542365e0d7aa7d6be5187e23a258a20c", false))
-        .isEmpty();
-    assertThat(StdOutUtils.gitStatusOneLine("# branch.head master", false))
+    assertThat(StdOutUtils.gitStatusOneLine("## master", false))
         .isEqualTo(" %s".formatted(coloringWord("master", CL_RED)));
-    assertThat(StdOutUtils.gitStatusOneLine("# branch.head main", false))
+    assertThat(StdOutUtils.gitStatusOneLine("## main", false))
         .isEqualTo(" %s".formatted(coloringWord("main", CL_RED)));
-    assertThat(StdOutUtils.gitStatusOneLine("# branch.head develop", false))
+    assertThat(StdOutUtils.gitStatusOneLine("## develop", false))
         .isEqualTo(" %s".formatted(coloringWord("develop", CL_RED)));
-    assertThat(StdOutUtils.gitStatusOneLine("# branch.head feature/destroy-d-b", false))
+    assertThat(StdOutUtils.gitStatusOneLine("## feature/destroy-d-b", false))
         .isEqualTo(" %s".formatted(coloringWord("feature/destroy-d-b", CL_YELLOW)));
-    assertThat(StdOutUtils.gitStatusOneLine("# branch.head NO-TICKETeee", false))
+    assertThat(StdOutUtils.gitStatusOneLine("## NO-TICKETeee", false))
         .isEqualTo(" %s".formatted(coloringWord("NO-TICKETeee", CL_GREEN)));
-    assertThat(StdOutUtils.gitStatusOneLine("# branch.upstream origin/master", false)).isEmpty();
-    assertThat(StdOutUtils.gitStatusOneLine("# branch.ab +0 -0", false))
-        .isEmpty();
-    assertThat(StdOutUtils.gitStatusOneLine("# branch.ab +2 -9", false))
+    assertThat(StdOutUtils.gitStatusOneLine("## master...origin/master", false))
+        .isEqualTo(" %s".formatted(coloringWord("master", CL_RED)));
+    assertThat(StdOutUtils.gitStatusOneLine("## master...origin/master [ahead 2, behind 9]", false))
         .isEqualTo(
-            "[ahead %s, behind %s]".formatted(coloringWord("2", CL_GREEN), coloringWord("9", CL_RED)));
-    assertThat(StdOutUtils.gitStatusOneLine("# branch.ab +10 -0", false))
-        .isEqualTo("[ahead %s]".formatted(coloringWord("10", CL_GREEN)));
-    assertThat(StdOutUtils.gitStatusOneLine("# branch.ab +0 -20", false))
-        .isEqualTo("[behind %s]".formatted(coloringWord("20", CL_RED)));
-    assertThat(StdOutUtils.gitStatusOneLine(
-      "1 .M N... 100644 100644 100644 2e86d6778dfa1ac74ea4db9035d8559d2c164c90 2e86d6778dfa1ac74ea4db9035d8559d2c164c90 pom.xml", false))
+            " %s[ahead %s, behind %s]".formatted(coloringWord("master", CL_RED), coloringWord("2", CL_GREEN), coloringWord("9", CL_RED)));
+    assertThat(StdOutUtils.gitStatusOneLine("## master...origin/master [ahead 10]", false))
+        .isEqualTo(" %s[ahead %s]".formatted(coloringWord("master", CL_RED), coloringWord("10", CL_GREEN)));
+    assertThat(StdOutUtils.gitStatusOneLine("## master...origin/master [behind 20]", false))
+        .isEqualTo(" %s[behind %s]".formatted(coloringWord("master", CL_RED), coloringWord("20", CL_RED)));
+    assertThat(StdOutUtils.gitStatusOneLine(" M pom.xml", false))
             .isEqualTo(" pom.xml");
-    assertThat(StdOutUtils.gitStatusOneLine(
-      "1 M. N... 100644 100644 100644 2e86d6778dfa1ac74ea4db9035d8559d2c164c90 2e86d6778dfa1ac74ea4db9035d8559d2c164c90 pom.xml", false))
+    assertThat(StdOutUtils.gitStatusOneLine("M  pom.xml", false))
             .isEqualTo(" pom.xml");
-    assertThat(StdOutUtils.gitStatusOneLine(
-      "1 MM N... 100644 100644 100644 2e86d6778dfa1ac74ea4db9035d8559d2c164c90 2e86d6778dfa1ac74ea4db9035d8559d2c164c90 pom.xml", false))
+    assertThat(StdOutUtils.gitStatusOneLine("MM pom.xml", false))
             .isEqualTo(" pom.xml");
-    assertThat(StdOutUtils.gitStatusOneLine(
-      "1 AM N... 000000 100644 100644 0000000000000000000000000000000000000000 266d4a9eb53eff40687ab923a152a879cd558ad6 src/test/java/org/nqm/utils/StdOutUtilsTest.java", false))
+    assertThat(StdOutUtils.gitStatusOneLine("AM src/test/java/org/nqm/utils/StdOutUtilsTest.java", false))
             .isEqualTo(" StdOutUtilsTest.java");
   }
 
@@ -142,21 +132,21 @@ class StdOutUtilsTest extends StdBaseTest {
     GisConfigMock.mockBranchesColorDefault(new String[]{"Master", "MAIN"}, new String[]{"FEA-ture"});
 
     // then:
-    assertThat(StdOutUtils.gitStatusOneLine("# branch.head Master", false))
+    assertThat(StdOutUtils.gitStatusOneLine("## Master", false))
         .isEqualTo(" %s".formatted(coloringWord("Master", CL_RED)));
-    assertThat(StdOutUtils.gitStatusOneLine("# branch.head masTer", false))
+    assertThat(StdOutUtils.gitStatusOneLine("## masTer", false))
         .isEqualTo(" %s".formatted(coloringWord("masTer", CL_GREEN)));
 
-    assertThat(StdOutUtils.gitStatusOneLine("# branch.head MAIN", false))
+    assertThat(StdOutUtils.gitStatusOneLine("## MAIN", false))
         .isEqualTo(" %s".formatted(coloringWord("MAIN", CL_RED)));
-    assertThat(StdOutUtils.gitStatusOneLine("# branch.head main", false))
+    assertThat(StdOutUtils.gitStatusOneLine("## main", false))
         .isEqualTo(" %s".formatted(coloringWord("main", CL_GREEN)));
 
-    assertThat(StdOutUtils.gitStatusOneLine("# branch.head FEA-ture/destroy-d-b", false))
+    assertThat(StdOutUtils.gitStatusOneLine("## FEA-ture/destroy-d-b", false))
         .isEqualTo(" %s".formatted(coloringWord("FEA-ture/destroy-d-b", CL_YELLOW)));
-    assertThat(StdOutUtils.gitStatusOneLine("# branch.head Fea-ture/destroy-d-b", false))
+    assertThat(StdOutUtils.gitStatusOneLine("## Fea-ture/destroy-d-b", false))
         .isEqualTo(" %s".formatted(coloringWord("Fea-ture/destroy-d-b", CL_GREEN)));
-    assertThat(StdOutUtils.gitStatusOneLine("# branch.head fea-ture/destroy-d-b", false))
+    assertThat(StdOutUtils.gitStatusOneLine("## fea-ture/destroy-d-b", false))
         .isEqualTo(" %s".formatted(coloringWord("fea-ture/destroy-d-b", CL_GREEN)));
   }
 
@@ -167,11 +157,11 @@ class StdOutUtilsTest extends StdBaseTest {
 
     // then:
     assertThat(StdOutUtils.gitStatus(
-        "1 .M N... 100644 100644 100644 2e86d6778dfa1ac74ea4db9035d8559d2c164c90 2e86d6778dfa1ac74ea4db9035d8559d2c164c90 pom.xml",
+        " M pom.xml",
         true))
             .isEqualTo("\n  .%s %s".formatted(coloringWord("M", CL_RED), coloringWord("pom.xml", CL_GRAY)));
     assertThat(StdOutUtils.gitStatusOneLine(
-        "1 .M N... 100644 100644 100644 2e86d6778dfa1ac74ea4db9035d8559d2c164c90 2e86d6778dfa1ac74ea4db9035d8559d2c164c90 pom.xml",
+        " M pom.xml",
         true))
             .isEqualTo(" %s".formatted(coloringWord("pom.xml", CL_GRAY)));
   }
@@ -183,7 +173,7 @@ class StdOutUtilsTest extends StdBaseTest {
 
     // then:
     assertThat(StdOutUtils.gitStatusOneLine(
-        "1 .M N... 100644 100644 100644 2e86d6778dfa1ac74ea4db9035d8559d2c164c90 2e86d6778dfa1ac74ea4db9035d8559d2c164c90 pom.xml",
+        " M pom.xml",
         false))
             .isEqualTo(" pom.xml");
   }
@@ -195,11 +185,11 @@ class StdOutUtilsTest extends StdBaseTest {
 
     // then:
     assertThat(StdOutUtils.gitStatus(
-        "1 .M N... 100644 100644 100644 2e86d6778dfa1ac74ea4db9035d8559d2c164c90 2e86d6778dfa1ac74ea4db9035d8559d2c164c90 config/pom.xml",
+        " M config/pom.xml",
         true))
             .isEqualTo("\n  .%s config/pom.xml".formatted(coloringWord("M", CL_RED)));
     assertThat(StdOutUtils.gitStatusOneLine(
-        "1 .M N... 100644 100644 100644 2e86d6778dfa1ac74ea4db9035d8559d2c164c90 2e86d6778dfa1ac74ea4db9035d8559d2c164c90 config/pom.xml",
+        " M config/pom.xml",
         true))
             .isEqualTo(" pom.xml");
   }
@@ -211,13 +201,43 @@ class StdOutUtilsTest extends StdBaseTest {
 
     // then:
     assertThat(StdOutUtils.gitStatus(
-        "2 R. N... 100644 100644 100644 7acecdb0f896b00aa0caa46532e4c59389d8edc6 7acecdb0f896b00aa0caa46532e4c59389d8edc6 R100 service-a/pom.xml	pom.xml",
+        "R  pom.xml -> service-a/pom.xml",
         true))
             .isEqualTo("\n  %s. pom.xml -> service-a/pom.xml".formatted(coloringWord("R", CL_GREEN)));
     assertThat(StdOutUtils.gitStatusOneLine(
-        "2 R. N... 100644 100644 100644 7acecdb0f896b00aa0caa46532e4c59389d8edc6 7acecdb0f896b00aa0caa46532e4c59389d8edc6 R100 service-a/pom.xml	pom.xml",
+        "R  pom.xml -> service-a/pom.xml",
         true))
             .isEqualTo(" pom.xml");
+  }
+
+  @Test
+  void gitStatus_withRootRenameBetweenDontCareFiles_shouldUseGrayColor() {
+    // given:
+    GisConfigMock.mockDontCareFiles("pom.xml", "launch.json");
+
+    // then:
+    assertThat(StdOutUtils.gitStatus(
+        "R  pom.xml -> launch.json",
+        true))
+            .isEqualTo("\n  %s. %s"
+                .formatted(coloringWord("R", CL_GREEN), coloringWord("pom.xml -> launch.json", CL_GRAY)));
+    assertThat(StdOutUtils.gitStatusOneLine(
+        "R  pom.xml -> launch.json",
+        true))
+            .isEqualTo(" %s".formatted(coloringWord("launch.json", CL_GRAY)));
+  }
+
+  @Test
+  void gitStatus_withRootModulePrefixInPath_shouldStillUseGrayColor() {
+    // given:
+    GisConfigMock.mockDontCareFiles("mem-console");
+
+    // then:
+    assertThat(StdOutUtils.gitStatusOneLine(
+        "?? src/mem-console/",
+        true,
+        "src"))
+            .isEqualTo(" %s".formatted(coloringWord("mem-console", CL_GRAY)));
   }
 
   @Test

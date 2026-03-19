@@ -114,9 +114,9 @@ public class GitCommand {
       throws IOException {
     Queue<String> output;
     if (oneLineOpt) {
-      output = forEachModuleDo(GIT_STATUS, "-sb", "--ignore-submodules", "--porcelain=v2", "--gis-one-line");
+      output = forEachModuleDo(GIT_STATUS, "-sb", "--ignore-submodules", "--porcelain=v1", "--gis-one-line");
     } else {
-      output = forEachModuleDo(GIT_STATUS, "-sb", "--ignore-submodules", "--porcelain=v2");
+      output = forEachModuleDo(GIT_STATUS, "-sb", "--ignore-submodules", "--porcelain=v1");
     }
     printOutput(sort(oneLineOpt, sort, output));
     printFetchedTime();

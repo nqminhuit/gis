@@ -4,7 +4,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.nqm.command.CommandVerticle.GIS_CONCAT_MODULES_NAME_OPT;
 import static org.nqm.config.GisConfig.GIT_HOME_DIR;
+import static org.nqm.utils.StdOutUtils.CL_GRAY;
 import static org.nqm.utils.StdOutUtils.CL_GREEN;
+import static org.nqm.utils.StdOutUtils.CL_RED;
 import static org.nqm.utils.StdOutUtils.CL_RESET;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -61,8 +63,7 @@ class CommandVerticleTest extends StdBaseTest {
     // given:
     GisProcessUtilsMock.mockRun(
         new GisProcessDto("""
-            # branch.oid 7ef404ae8ecee6a42a21aaf2ca4131cd02c84aec
-            # branch.head test-prune-local
+            ## test-prune-local
             """, 0),
         tempPath.toFile(),
         GIT_HOME_DIR, "status");
@@ -75,6 +76,57 @@ class CommandVerticleTest extends StdBaseTest {
     assertThat(result).isEqualTo("""
         %s
           ## %s""".formatted(StdOutUtils.infof(rootModule), CL_GREEN + "test-prune-local" + CL_RESET));
+  }
+
+  @Test
+  void executeStatusOneLine_withDontCareRootFile_shouldUseGrayColor() {
+    // given:
+    GisConfigMock.mockCurrentDirectory("" + tempPath);
+    GisConfigMock.mockBranchesColorDefault();
+    GisConfigMock.mockDontCareFiles("pom.xml");
+    GisProcessUtilsMock.mockRun(
+        new GisProcessDto("""
+            ## master
+             M pom.xml
+            """, 0),
+        tempPath.toFile(),
+        GIT_HOME_DIR, "status", "-sb", "--ignore-submodules", "--porcelain=v1");
+
+    // when:
+    var result = CommandVerticle.execute(tempPath, "status", "-sb", "--ignore-submodules", "--porcelain=v1", "--gis-one-line");
+
+    // then:
+    assertThat(result).isEqualTo("%s %s %s"
+        .formatted(
+            StdOutUtils.infof("" + tempPath.getFileName()),
+            CL_RED + "master" + CL_RESET,
+            CL_GRAY + "pom.xml" + CL_RESET));
+  }
+
+  @Test
+  void executeStatusOneLine_withRootModulePrefixInPath_shouldUseGrayColor() throws IOException {
+    // given:
+    var srcPath = Files.createDirectory(tempPath.resolve("src"));
+    GisConfigMock.mockCurrentDirectory("" + srcPath);
+    GisConfigMock.mockBranchesColorDefault();
+    GisConfigMock.mockDontCareFiles("mem-console");
+    GisProcessUtilsMock.mockRun(
+        new GisProcessDto("""
+            ## oc_develop...origin/oc_develop
+            ?? src/mem-console/
+            """, 0),
+        srcPath.toFile(),
+        GIT_HOME_DIR, "status", "-sb", "--ignore-submodules", "--porcelain=v1");
+
+    // when:
+    var result = CommandVerticle.execute(srcPath, "status", "-sb", "--ignore-submodules", "--porcelain=v1", "--gis-one-line");
+
+    // then:
+    assertThat(result).isEqualTo("%s %s %s"
+        .formatted(
+            StdOutUtils.infof("src"),
+            CL_GREEN + "oc_develop" + CL_RESET,
+            CL_GRAY + "mem-console" + CL_RESET));
   }
 
   @Test
