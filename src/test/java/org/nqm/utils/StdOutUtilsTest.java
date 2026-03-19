@@ -205,6 +205,22 @@ class StdOutUtilsTest extends StdBaseTest {
   }
 
   @Test
+  void gitStatus_withRenameTouchingNestedFile_shouldNotMatchRootDontCareFile() {
+    // given:
+    GisConfigMock.mockDontCareFiles("pom.xml");
+
+    // then:
+    assertThat(StdOutUtils.gitStatus(
+        "2 R. N... 100644 100644 100644 7acecdb0f896b00aa0caa46532e4c59389d8edc6 7acecdb0f896b00aa0caa46532e4c59389d8edc6 R100 service-a/pom.xml	pom.xml",
+        true))
+            .isEqualTo("\n  %s. pom.xml -> service-a/pom.xml".formatted(coloringWord("R", CL_GREEN)));
+    assertThat(StdOutUtils.gitStatusOneLine(
+        "2 R. N... 100644 100644 100644 7acecdb0f896b00aa0caa46532e4c59389d8edc6 7acecdb0f896b00aa0caa46532e4c59389d8edc6 R100 service-a/pom.xml	pom.xml",
+        true))
+            .isEqualTo(" pom.xml");
+  }
+
+  @Test
   void print_OK() {
     // when:
     StdOutUtils.print("sysout print");

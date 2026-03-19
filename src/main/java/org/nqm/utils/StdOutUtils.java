@@ -84,11 +84,17 @@ public class StdOutUtils {
     return color + c + CL_RESET;
   }
 
-  private static boolean isDontCareFile(String file) {
+  private static boolean isRootDontCareFile(String file) {
+    var path = Path.of(file);
+    if (path.getNameCount() != 1) {
+      return false;
+    }
+
+    var fileName = path.getFileName().toString();
     return Stream.of(Optional.ofNullable(GisConfig.getDontCareFiles()).orElseGet(() -> new String[] {}))
         .map(String::trim)
         .filter(GisStringUtils::isNotBlank)
-        .anyMatch(file::equals);
+        .anyMatch(fileName::equals);
   }
 
   private static String coloringFile(String file, boolean isRootModule) {
@@ -101,7 +107,7 @@ public class StdOutUtils {
     }
 
     return Stream.of(pathToMatch.split(" -> "))
-        .allMatch(StdOutUtils::isDontCareFile)
+        .allMatch(StdOutUtils::isRootDontCareFile)
         ? coloringWord(fileToDisplay, CL_GRAY)
         : fileToDisplay;
   }
