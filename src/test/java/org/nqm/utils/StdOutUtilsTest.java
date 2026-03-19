@@ -2,6 +2,7 @@ package org.nqm.utils;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.nqm.utils.StdOutUtils.CL_CYAN;
+import static org.nqm.utils.StdOutUtils.CL_GRAY;
 import static org.nqm.utils.StdOutUtils.CL_GREEN;
 import static org.nqm.utils.StdOutUtils.CL_RED;
 import static org.nqm.utils.StdOutUtils.CL_RESET;
@@ -157,6 +158,34 @@ class StdOutUtilsTest extends StdBaseTest {
         .isEqualTo(" %s".formatted(coloringWord("Fea-ture/destroy-d-b", CL_GREEN)));
     assertThat(StdOutUtils.gitStatusOneLine("# branch.head fea-ture/destroy-d-b"))
         .isEqualTo(" %s".formatted(coloringWord("fea-ture/destroy-d-b", CL_GREEN)));
+  }
+
+  @Test
+  void gitStatus_withDontCareFilesUnderRoot_shouldUseGrayColor() {
+    // given:
+    GisConfigMock.mockDontCareFiles("pom.xml", ".editorconfig");
+
+    // then:
+    assertThat(StdOutUtils.gitStatus(
+        "1 .M N... 100644 100644 100644 2e86d6778dfa1ac74ea4db9035d8559d2c164c90 2e86d6778dfa1ac74ea4db9035d8559d2c164c90 pom.xml",
+        true))
+            .isEqualTo("\n  .%s %s".formatted(coloringWord("M", CL_RED), coloringWord("pom.xml", CL_GRAY)));
+    assertThat(StdOutUtils.gitStatusOneLine(
+        "1 .M N... 100644 100644 100644 2e86d6778dfa1ac74ea4db9035d8559d2c164c90 2e86d6778dfa1ac74ea4db9035d8559d2c164c90 pom.xml",
+        true))
+            .isEqualTo(" %s".formatted(coloringWord("pom.xml", CL_GRAY)));
+  }
+
+  @Test
+  void gitStatus_withDontCareFilesOutsideRoot_shouldNotUseGrayColor() {
+    // given:
+    GisConfigMock.mockDontCareFiles("pom.xml");
+
+    // then:
+    assertThat(StdOutUtils.gitStatusOneLine(
+        "1 .M N... 100644 100644 100644 2e86d6778dfa1ac74ea4db9035d8559d2c164c90 2e86d6778dfa1ac74ea4db9035d8559d2c164c90 pom.xml",
+        false))
+            .isEqualTo(" pom.xml");
   }
 
   @Test

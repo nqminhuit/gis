@@ -32,6 +32,9 @@ public class GisConfig {
   private static final String FEATURE_BRANCH_PREFIXES_KEY = "feature_branch_prefixes";
   private static final String[] FEATURE_BRANCH_PREFIX_VALS = new String[] {"feature/"};
 
+  private static final String DONT_CARE_FILES_KEY = "dont_care_files";
+  private static final String[] DONT_CARE_FILES_VALS = new String[] {};
+
   private static final String CURRENT_DIR = "" + Path.of("").toAbsolutePath();
   public static final String GIT_HOME_DIR = "/usr/bin/git";
 
@@ -49,6 +52,13 @@ public class GisConfig {
         .map(props -> props.getProperty(FEATURE_BRANCH_PREFIXES_KEY))
         .map(splitValue)
         .orElse(FEATURE_BRANCH_PREFIX_VALS);
+  }
+
+  public static String[] getDontCareFiles() {
+    return Optional.of(props)
+        .map(props -> props.getProperty(DONT_CARE_FILES_KEY))
+        .map(splitValue)
+        .orElse(DONT_CARE_FILES_VALS);
   }
 
   public static String currentDir() {

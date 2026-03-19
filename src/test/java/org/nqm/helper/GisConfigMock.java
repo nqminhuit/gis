@@ -13,6 +13,7 @@ public class GisConfigMock {
       mock = Mockito.mockStatic(GisConfig.class);
     }
     mock.when(GisConfig::currentDir).thenReturn(path);
+    mock.when(GisConfig::getDontCareFiles).thenReturn(new String[] {});
   }
 
   public static void mockBranchesColorDefault() {
@@ -21,6 +22,7 @@ public class GisConfigMock {
     }
     mock.when(GisConfig::getDefaultBranches).thenReturn(new String[] {"master", "main", "develop"});
     mock.when(GisConfig::getFeatureBranchPrefixes).thenReturn(new String[] {"feature/"});
+    mock.when(GisConfig::getDontCareFiles).thenReturn(new String[] {});
   }
 
   public static void mockBranchesColorDefault(String[] defaultBranches, String[] prefixes) {
@@ -29,6 +31,14 @@ public class GisConfigMock {
     }
     mock.when(GisConfig::getDefaultBranches).thenReturn(defaultBranches);
     mock.when(GisConfig::getFeatureBranchPrefixes).thenReturn(prefixes);
+    mock.when(GisConfig::getDontCareFiles).thenReturn(new String[] {});
+  }
+
+  public static void mockDontCareFiles(String... files) {
+    if (mock == null || mock.isClosed()) {
+      mock = Mockito.mockStatic(GisConfig.class);
+    }
+    mock.when(GisConfig::getDontCareFiles).thenReturn(files);
   }
 
   public static void close() {

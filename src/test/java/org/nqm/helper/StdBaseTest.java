@@ -3,6 +3,7 @@ package org.nqm.helper;
 import static org.nqm.utils.StdOutUtils.CL_BLACK;
 import static org.nqm.utils.StdOutUtils.CL_BLUE;
 import static org.nqm.utils.StdOutUtils.CL_CYAN;
+import static org.nqm.utils.StdOutUtils.CL_GRAY;
 import static org.nqm.utils.StdOutUtils.CL_GREEN;
 import static org.nqm.utils.StdOutUtils.CL_PURPLE;
 import static org.nqm.utils.StdOutUtils.CL_RED;
@@ -66,6 +67,7 @@ public abstract class StdBaseTest {
           .map(s -> s.replace(CL_PURPLE, ""))
           .map(s -> s.replace(CL_CYAN, ""))
           .map(s -> s.replace(CL_WHITE, ""))
+          .map(s -> s.replace(CL_GRAY, ""))
           .toList();
 
   protected static Function<String, String> stripColorsToString =
@@ -77,6 +79,7 @@ public abstract class StdBaseTest {
           .replace(CL_BLUE, "")
           .replace(CL_PURPLE, "")
           .replace(CL_CYAN, "")
-          .replace(CL_WHITE, "");
+          .replace(CL_WHITE, "")
+          .replace(CL_GRAY, "");
 
 }

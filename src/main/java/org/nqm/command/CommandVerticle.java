@@ -74,9 +74,12 @@ public class CommandVerticle {
   private static String safelyPrintStatus(Path path, String[] gisOptions, GisProcessDto result) {
     var sb = new StringBuilder(infof("" + path.getFileName()));
     var isOneLineOpt = Stream.of(gisOptions).anyMatch("--gis-one-line"::equals);
+    var isRootModule = ("" + path).equals(GisConfig.currentDir());
     Stream.of(result.output().split(GisStringUtils.NEWLINE))
         .filter(GisStringUtils::isNotBlank)
-        .forEach(line -> sb.append(isOneLineOpt ? gitStatusOneLine(line) : gitStatus(line)));
+        .forEach(line -> sb.append(isOneLineOpt
+            ? gitStatusOneLine(line, isRootModule)
+            : gitStatus(line, isRootModule)));
     return sb.toString();
   }
 
