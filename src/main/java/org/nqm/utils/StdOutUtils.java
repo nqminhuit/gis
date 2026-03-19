@@ -5,7 +5,6 @@ import static java.lang.System.out; // NOSONAR
 import static java.util.function.Predicate.not;
 import java.nio.file.Path;
 import java.util.Optional;
-import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -89,18 +88,22 @@ public class StdOutUtils {
     return Stream.of(Optional.ofNullable(GisConfig.getDontCareFiles()).orElseGet(() -> new String[] {}))
         .map(String::trim)
         .filter(GisStringUtils::isNotBlank)
-        .anyMatch(Predicate.isEqual(file).or(configured -> file.endsWith("/" + configured)));
+        .anyMatch(file::equals);
   }
 
   private static String coloringFile(String file, boolean isRootModule) {
+    return coloringFile(file, file, isRootModule);
+  }
+
+  private static String coloringFile(String pathToMatch, String fileToDisplay, boolean isRootModule) {
     if (!isRootModule) {
-      return file;
+      return fileToDisplay;
     }
 
-    return Stream.of(file.split(" -> "))
+    return Stream.of(pathToMatch.split(" -> "))
         .allMatch(StdOutUtils::isDontCareFile)
-        ? coloringWord(file, CL_GRAY)
-        : file;
+        ? coloringWord(fileToDisplay, CL_GRAY)
+        : fileToDisplay;
   }
 
   private static String buildStaging(char[] chars) {
@@ -173,8 +176,7 @@ public class StdOutUtils {
         .map(splitS -> " "
           + Optional.of(splitS[splitS.length - 1])
             .map(getFiles(line))
-            .map(l -> Path.of(l).getFileName().toString())
-            .map(file -> coloringFile(file, isRootModule))
+            .map(file -> coloringFile(file, Path.of(file).getFileName().toString(), isRootModule))
             .orElse(""))
         .orElse("");
     };
