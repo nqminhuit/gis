@@ -25,6 +25,7 @@ public class StdOutUtils {
   public static final String CL_PURPLE = "\u001B[35m";
   public static final String CL_CYAN   = "\u001B[36m";
   public static final String CL_WHITE  = "\u001B[37m";
+  public static final String CL_GRAY   = "\u001B[90m";
 
   private static final String UNTRACKED_SYM = "?";
   private static final String RENAME_SYM = "2";
@@ -83,6 +84,34 @@ public class StdOutUtils {
     return color + c + CL_RESET;
   }
 
+  private static boolean isRootDontCareFile(String file) {
+    var path = Path.of(file);
+    if (path.getNameCount() != 1) {
+      return false;
+    }
+
+    var fileName = path.getFileName().toString();
+    return Stream.of(Optional.ofNullable(GisConfig.getDontCareFiles()).orElseGet(() -> new String[] {}))
+        .map(String::trim)
+        .filter(GisStringUtils::isNotBlank)
+        .anyMatch(fileName::equals);
+  }
+
+  private static String coloringFile(String file, boolean isRootModule) {
+    return coloringFile(file, file, isRootModule);
+  }
+
+  private static String coloringFile(String pathToMatch, String fileToDisplay, boolean isRootModule) {
+    if (!isRootModule) {
+      return fileToDisplay;
+    }
+
+    return Stream.of(pathToMatch.split(" -> "))
+        .allMatch(StdOutUtils::isRootDontCareFile)
+        ? coloringWord(fileToDisplay, CL_GRAY)
+        : fileToDisplay;
+  }
+
   private static String buildStaging(char[] chars) {
     return Optional.of(chars[0])
       .map(s -> s != '.' ? coloringWord(s, CL_GREEN) : s + "")
@@ -108,6 +137,10 @@ public class StdOutUtils {
   }
 
   public static String gitStatus(String line) {
+    return gitStatus(line, false);
+  }
+
+  public static String gitStatus(String line, boolean isRootModule) {
     var lineSplit = line.split("\s");
     return switch (lineSplit[0] + lineSplit[1]) {
       case "#branch.oid" -> "";
@@ -122,12 +155,19 @@ public class StdOutUtils {
         .map(StdOutUtils::preProcessUntrackFile)
         .map(splitS -> "\n  "
           + Optional.of(splitS[1].toCharArray()).map(StdOutUtils::buildStaging).orElse("")
-          + Optional.of(splitS[splitS.length - 1]).map(getFiles(line)).orElse(""))
+          + Optional.of(splitS[splitS.length - 1])
+              .map(getFiles(line))
+              .map(file -> coloringFile(file, isRootModule))
+              .orElse(""))
         .orElse("");
     };
   }
 
   public static String gitStatusOneLine(String line) {
+    return gitStatusOneLine(line, false);
+  }
+
+  public static String gitStatusOneLine(String line, boolean isRootModule) {
     var lineSplit = line.split("\s");
     return switch (lineSplit[0] + lineSplit[1]) {
       case "#branch.oid" -> "";
@@ -142,7 +182,7 @@ public class StdOutUtils {
         .map(splitS -> " "
           + Optional.of(splitS[splitS.length - 1])
             .map(getFiles(line))
-            .map(l -> Path.of(l).getFileName().toString())
+            .map(file -> coloringFile(file, Path.of(file).getFileName().toString(), isRootModule))
             .orElse(""))
         .orElse("");
     };

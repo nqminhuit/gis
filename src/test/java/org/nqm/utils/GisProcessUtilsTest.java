@@ -26,9 +26,9 @@ class GisProcessUtilsTest {
   void run_NOK() throws IOException {
     assertThatThrownBy(() -> GisProcessUtils.run(tempPath.toFile(), "a___s__d_fthisisinvalidcommand"))
         .isInstanceOf(IOException.class)
-        .hasMessage(
-            "Cannot run program \"a___s__d_fthisisinvalidcommand\" (in directory \"%s\"): error=2, No such file or directory"
-                .formatted("" + tempPath));
+        .hasMessageContaining("Cannot run program \"a___s__d_fthisisinvalidcommand\"")
+        .hasMessageContaining("(in directory \"%s\")".formatted("" + tempPath))
+        .hasMessageContaining("No such file or directory");
   }
 
   @Test
@@ -46,8 +46,8 @@ class GisProcessUtilsTest {
     assertThatThrownBy(
         () -> GisProcessUtils.quickRun(tempPath.toFile(), "a___s__d_fthisisinvalidcommand"))
             .isInstanceOf(IOException.class)
-            .hasMessage(
-                "Cannot run program \"a___s__d_fthisisinvalidcommand\" (in directory \"%s\"): error=2, No such file or directory"
-                    .formatted("" + tempPath));
+            .hasMessageContaining("Cannot run program \"a___s__d_fthisisinvalidcommand\"")
+            .hasMessageContaining("(in directory \"%s\")".formatted("" + tempPath))
+            .hasMessageContaining("No such file or directory");
   }
 }

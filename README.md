@@ -71,6 +71,7 @@ Supported configs:
 |-------------------------+---------------------------------------------------------+---------------------|
 | default_branches        | comma separated values indicate default branch values   | master,main,develop |
 | feature_branch_prefixes | comma separated values indicate feature branch prefixes | feature/            |
+| dont_care_files         | comma separated root-level files shown in faint gray    |                     |
 ```
 
 Note: do NOT insert space into value part.
@@ -89,6 +90,7 @@ example:
 ```
 default_branches=master,main,develop
 feature_branch_prefixes=feature/
+dont_care_files=.editorconfig,.gitmodules,launch.json,pom.xml
 ```
 
 The reason that value parsing is not that smart is because that we use default Java core package `java.util.Properties` to parse values. We prefer Java's core over extra dependencies.
