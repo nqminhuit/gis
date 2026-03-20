@@ -32,6 +32,26 @@ podman cp gis_:/app/gis/gis .
 podman rm -f gis_
 ```
 
+## Run integration tests inside a container
+
+`Testcontainers` can run from inside a container by following the official "docker wormhole" pattern: mount the project directory at the same path inside the test container and also mount a Docker-compatible socket. This repository wraps that setup in `scripts/test-in-container.sh`.
+
+### Docker
+```bash
+./scripts/test-in-container.sh docker
+```
+
+### Podman (rootless)
+```bash
+systemctl --user enable --now podman.socket
+./scripts/test-in-container.sh podman
+```
+
+Notes:
+- The script mounts the source tree at the current working directory, mounts the container socket at `/var/run/docker.sock`, and runs `mvn clean verify` inside a Maven 21 container.
+- For Docker Desktop, export `TESTCONTAINERS_HOST_OVERRIDE=host.docker.internal` before running the script.
+- For rootless Podman, the script disables `Ryuk`, which matches Testcontainers' Podman guidance.
+
 ## JVM
 
 ```shell script

@@ -25,11 +25,15 @@ import org.testcontainers.containers.GenericContainer;
 public abstract class GitBaseTest extends StdBaseTest {
 
   /**
-   * To be able to run testcontainer with podman, execute 3 commands below:
+   * To run these Testcontainers integration tests from inside a container, use
+   * {@code ./scripts/test-in-container.sh docker} or
+   * {@code ./scripts/test-in-container.sh podman}.
+   *
+   * <p>For rootless Podman on Linux, make sure the user socket is enabled first:
    * <ul>
-   * <li>systemctl --user enable podman.socket --now</li>
-   * <li>export TESTCONTAINERS_RYUK_DISABLED=true</li>
-   * <li>export DOCKER_HOST=unix:///run/user/${UID}/podman/podman.sock</li>
+   * <li>{@code systemctl --user enable --now podman.socket}</li>
+   * <li>{@code export TESTCONTAINERS_RYUK_DISABLED=true}</li>
+   * <li>{@code export DOCKER_HOST=unix:///run/user/${UID}/podman/podman.sock}</li>
    * </ul>
    */
   protected static GenericContainer<?> container;
