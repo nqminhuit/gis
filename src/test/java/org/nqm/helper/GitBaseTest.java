@@ -40,6 +40,8 @@ public abstract class GitBaseTest extends StdBaseTest {
 
   protected static final HttpClient http = HttpClient.newHttpClient();
 
+  protected static String gitbucketHost = "";
+
   protected static int gitbucketPort = 0;
 
   @TempDir
@@ -51,6 +53,7 @@ public abstract class GitBaseTest extends StdBaseTest {
     container.withExposedPorts(8080);
     container.start();
 
+    gitbucketHost = container.getHost();
     gitbucketPort = container.getMappedPort(8080);
   }
 
@@ -91,7 +94,7 @@ public abstract class GitBaseTest extends StdBaseTest {
   }
 
   protected List<Path> initGitSubmodules(String... repos) {
-    final var baseUrl = "http://root:root@localhost:%s/git/root".formatted(gitbucketPort);
+    final var baseUrl = "http://root:root@%s:%s/git/root".formatted(gitbucketHost, gitbucketPort);
     git(tempPath, "init");
     var result = Stream.of(repos)
         .map(repo -> {
@@ -122,7 +125,7 @@ public abstract class GitBaseTest extends StdBaseTest {
   }
 
   protected List<Path> create_clone_gitRepositories(String... repos) {
-    final var baseUrl = "http://root:root@localhost:%s/git/root".formatted(gitbucketPort);
+    final var baseUrl = "http://root:root@%s:%s/git/root".formatted(gitbucketHost, gitbucketPort);
     return Stream.of(repos)
         .map(repo -> {
           try {
@@ -140,7 +143,7 @@ public abstract class GitBaseTest extends StdBaseTest {
       throws IOException, InterruptedException, URISyntaxException {
     var req = HttpRequest.newBuilder()
         .POST(BodyPublishers.ofString("{\"name\":\"%s\",\"private\":false}".formatted(repoName)))
-        .uri(new URI("http://localhost:%s/api/v3/user/repos".formatted(gitbucketPort)))
+        .uri(new URI("http://%s:%s/api/v3/user/repos".formatted(gitbucketHost, gitbucketPort)))
         .header("accept", "application/json")
         .header("authorization", "Basic cm9vdDpyb290")
         .build();
