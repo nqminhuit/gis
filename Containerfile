@@ -8,15 +8,20 @@ RUN mvn -B \
     -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn \
     clean package
 
-FROM quay.io/quarkus/ubi-quarkus-mandrel-builder-image:23.1-jdk-21
+FROM quay.io/quarkus/ubi-quarkus-mandrel-builder-image:23.1-jdk-21 AS native-build
 USER root
 WORKDIR /app/gis
 COPY --from=build /app/gis/target/gis-*.jar target/
 COPY --from=build /app/gis/target/lib target/lib
 RUN native-image -march=compatibility -cp target/gis-*.jar "org.nqm.Gis" --no-fallback \
--H:IncludeResources=".properties" \
--H:IncludeResources="_gis"
+    -H:IncludeResources=".properties" \
+    -H:IncludeResources="_gis"
 
 RUN mv org.nqm.gis gis
 RUN chmod +x gis
 RUN ./gis --version
+
+FROM registry.access.redhat.com/ubi9/ubi-micro:latest
+WORKDIR /app/gis
+COPY --from=native-build /app/gis/gis /app/gis/gis
+ENTRYPOINT ["/app/gis/gis"]
