@@ -26,8 +26,8 @@ public abstract class GitBaseTest extends StdBaseTest {
 
   /**
    * To run these Testcontainers integration tests from inside a container, use
-   * {@code ./scripts/test-in-container.sh docker} or
-   * {@code ./scripts/test-in-container.sh podman}.
+   * {@code make test-in-container-docker} or
+   * {@code make test-in-container-podman}.
    *
    * <p>For rootless Podman on Linux, make sure the user socket is enabled first:
    * <ul>
