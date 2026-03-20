@@ -136,10 +136,6 @@ public class StdOutUtils {
     return Stream.of(ahead, behind).filter(not(String::isBlank)).collect(Collectors.joining(", "));
   }
 
-  public static String gitStatus(String line) {
-    return gitStatus(line, false);
-  }
-
   public static String gitStatus(String line, boolean isRootModule) {
     var lineSplit = line.split("\s");
     return switch (lineSplit[0] + lineSplit[1]) {
@@ -161,10 +157,6 @@ public class StdOutUtils {
               .orElse(""))
         .orElse("");
     };
-  }
-
-  public static String gitStatusOneLine(String line) {
-    return gitStatusOneLine(line, false);
   }
 
   public static String gitStatusOneLine(String line, boolean isRootModule) {
