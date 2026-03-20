@@ -54,13 +54,13 @@ class GisIntTest extends GitBaseTest {
     // then:
     var sPath = "" + tempPath;
     assertThat(stripColors.apply(outCaptor.toString())).contains(
-        "  [DEBUG] executing command '/usr/bin/git status -sb --ignore-submodules --porcelain=v2' under module '%s/rem1_i'"
+        "  [DEBUG] executing command '/usr/bin/git status -sb --ignore-submodules --porcelain=v1' under module '%s/rem1_i'"
             .formatted(sPath),
-        "  [DEBUG] executing command '/usr/bin/git status -sb --ignore-submodules --porcelain=v2' under module '%s/rem2_j'"
+        "  [DEBUG] executing command '/usr/bin/git status -sb --ignore-submodules --porcelain=v1' under module '%s/rem2_j'"
             .formatted(sPath),
-        "  [DEBUG] executing command '/usr/bin/git status -sb --ignore-submodules --porcelain=v2' under module '%s/rem3_k'"
+        "  [DEBUG] executing command '/usr/bin/git status -sb --ignore-submodules --porcelain=v1' under module '%s/rem3_k'"
             .formatted(sPath),
-        "  [DEBUG] executing command '/usr/bin/git status -sb --ignore-submodules --porcelain=v2' under module '%s'"
+        "  [DEBUG] executing command '/usr/bin/git status -sb --ignore-submodules --porcelain=v1' under module '%s'"
             .formatted(sPath),
         "rem1_i master",
         "rem2_j master",
@@ -112,10 +112,10 @@ class GisIntTest extends GitBaseTest {
 
     // then:
     assertThat(stripColors.apply(outCaptor.toString())).contains(
-        "/usr/bin/git status -sb --ignore-submodules --porcelain=v2",
-        "/usr/bin/git status -sb --ignore-submodules --porcelain=v2",
-        "/usr/bin/git status -sb --ignore-submodules --porcelain=v2",
-        "/usr/bin/git status -sb --ignore-submodules --porcelain=v2",
+        "/usr/bin/git status -sb --ignore-submodules --porcelain=v1",
+        "/usr/bin/git status -sb --ignore-submodules --porcelain=v1",
+        "/usr/bin/git status -sb --ignore-submodules --porcelain=v1",
+        "/usr/bin/git status -sb --ignore-submodules --porcelain=v1",
         "rem5_j",
         "rem6_k",
         "rem4_i",

@@ -102,7 +102,7 @@ public final class Wrapper {
       CommandVerticle.execute(path, "fetch");
       output.add(CommandVerticle.execute(
           path,
-          GitCommand.GIT_STATUS, "-sb", "--ignore-submodules", "--porcelain=v2", "--gis-one-line"));
+          GitCommand.GIT_STATUS, "-sb", "--ignore-submodules", "--porcelain=v1", "--gis-one-line"));
     }));
     return output;
   }

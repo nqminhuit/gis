@@ -61,8 +61,7 @@ class CommandVerticleTest extends StdBaseTest {
     // given:
     GisProcessUtilsMock.mockRun(
         new GisProcessDto("""
-            # branch.oid 7ef404ae8ecee6a42a21aaf2ca4131cd02c84aec
-            # branch.head test-prune-local
+            ## test-prune-local
             """, 0),
         tempPath.toFile(),
         GIT_HOME_DIR, "status");
