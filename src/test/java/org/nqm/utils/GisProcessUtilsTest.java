@@ -32,7 +32,7 @@ class GisProcessUtilsTest {
   }
 
   @Test
-  void quickRun_OK() throws IOException {
+  void quickRun_OK() throws IOException, InterruptedException {
     // when:
     var result = GisProcessUtils.quickRun(tempPath.toFile(), "pwd");
 

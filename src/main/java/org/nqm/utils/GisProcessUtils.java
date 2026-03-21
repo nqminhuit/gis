@@ -3,6 +3,8 @@ package org.nqm.utils;
 import static org.nqm.utils.StdOutUtils.warnln;
 import java.io.File;
 import java.io.IOException;
+import java.io.ByteArrayOutputStream;
+import java.nio.charset.StandardCharsets;
 import org.nqm.config.GisLog;
 import org.nqm.model.GisProcessDto;
 
@@ -33,19 +35,78 @@ public class GisProcessUtils {
       StdOutUtils.println(String.join(" ", commands));
       return GisProcessDto.EMPTY;
     }
-    var p = new ProcessBuilder(commands).directory(directory).start();
+    var pb = new ProcessBuilder(commands).directory(directory);
+    var p = pb.start();
+
+    var outBaos = new ByteArrayOutputStream();
+    var errBaos = new ByteArrayOutputStream();
+
+    var tOut = Thread.ofVirtual().start(() -> {
+      try (var is = p.getInputStream()) {
+        is.transferTo(outBaos);
+      } catch (IOException e) {
+        GisLog.debug(e);
+      }
+    });
+
+    var tErr = Thread.ofVirtual().start(() -> {
+      try (var es = p.getErrorStream()) {
+        es.transferTo(errBaos);
+      } catch (IOException e) {
+        GisLog.debug(e);
+      }
+    });
+
     var exitCode = p.waitFor();
+    tOut.join();
+    tErr.join();
+
     debugLogIfExitCodeNotZero(exitCode, directory);
-    return new GisProcessDto(new String(p.getInputStream().readAllBytes()), exitCode);
+    var stdout = outBaos.toString(StandardCharsets.UTF_8);
+    var stderr = errBaos.toString(StandardCharsets.UTF_8);
+    if (GisStringUtils.isNotBlank(stderr)) {
+      GisLog.debug(stderr);
+    }
+    return new GisProcessDto(stdout, exitCode);
   }
 
-  public static GisProcessDto quickRun(File directory, String... commands) throws IOException {
+  public static GisProcessDto quickRun(File directory, String... commands) throws IOException, InterruptedException {
     if (dryRunEnabled) {
       StdOutUtils.println(String.join(" ", commands));
       return GisProcessDto.EMPTY;
     }
-    var inputStream = new ProcessBuilder(commands).directory(directory).start().getInputStream();
-    return new GisProcessDto(new String(inputStream.readAllBytes()), 0);
+    var pb = new ProcessBuilder(commands).directory(directory);
+    var p = pb.start();
+
+    var outBaos = new ByteArrayOutputStream();
+    var errBaos = new ByteArrayOutputStream();
+
+    var tOut = Thread.ofVirtual().start(() -> {
+      try (var is = p.getInputStream()) {
+        is.transferTo(outBaos);
+      } catch (IOException e) {
+        GisLog.debug(e);
+      }
+    });
+
+    var tErr = Thread.ofVirtual().start(() -> {
+      try (var es = p.getErrorStream()) {
+        es.transferTo(errBaos);
+      } catch (IOException e) {
+        GisLog.debug(e);
+      }
+    });
+
+    var exitCode = p.waitFor();
+    tOut.join();
+    tErr.join();
+
+    var stdout = outBaos.toString(StandardCharsets.UTF_8);
+    var stderr = errBaos.toString(StandardCharsets.UTF_8);
+    if (GisStringUtils.isNotBlank(stderr)) {
+      GisLog.debug(stderr);
+    }
+    return new GisProcessDto(stdout, exitCode);
   }
 
   public static void spawn(File directory, String... commands) throws IOException {

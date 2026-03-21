@@ -38,6 +38,21 @@ public class GisConfig {
   private static final String CURRENT_DIR = "" + Path.of("").toAbsolutePath();
   public static final String GIT_HOME_DIR = "/usr/bin/git";
 
+  private static final String MODULE_TIMEOUT_KEY = "module_timeout_seconds";
+  private static final int MODULE_TIMEOUT_DEFAULT = 60;
+
+  public static int getModuleTimeoutSeconds() {
+    try {
+      var val = props.getProperty(MODULE_TIMEOUT_KEY);
+      if (val == null || val.isBlank()) {
+        return MODULE_TIMEOUT_DEFAULT;
+      }
+      return Integer.parseInt(val.trim());
+    } catch (Exception e) {
+      return MODULE_TIMEOUT_DEFAULT;
+    }
+  }
+
   private static Function<String, String[]> splitValue = val -> val.split(",");
 
   public static String[] getDefaultBranches() {
