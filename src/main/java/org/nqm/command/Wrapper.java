@@ -1,21 +1,6 @@
 package org.nqm.command;
 
 import static org.nqm.config.GisConfig.currentDir;
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.Optional;
-import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.function.Predicate;
-import java.util.stream.Stream;
 import org.nqm.GisException;
 import org.nqm.config.GisConfig;
 import org.nqm.config.GisLog;
@@ -23,6 +8,23 @@ import org.nqm.model.GisProcessDto;
 import org.nqm.utils.GisProcessUtils;
 import org.nqm.utils.GisStringUtils;
 import org.nqm.utils.StdOutUtils;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Optional;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.stream.Stream;
 
 public final class Wrapper {
 
@@ -85,7 +87,51 @@ public final class Wrapper {
 
   public static Queue<String> forEachModuleWith(Predicate<Path> pred, String... args) throws IOException {
     var output = new ConcurrentLinkedQueue<String>();
-    consumeAllModules(pred, exe -> path -> exe.submit(() -> output.add(CommandVerticle.execute(path, args))));
+    var futures = new ArrayList<Future<?>>();
+    var gitModulesFilePath = getFileMarker();
+    var currentDir = currentDir();
+    try (var exe = Executors.newVirtualThreadPerTaskExecutor()) {
+      Optional.of(Path.of(currentDir)).filter(pred).ifPresent(path ->
+          futures.add(exe.submit(() -> output.add(CommandVerticle.execute(path, args)))));
+
+      Files.readAllLines(gitModulesFilePath.toPath()).stream()
+          .map(String::trim)
+          .filter(s -> s.startsWith("path"))
+          .map(s -> s.replace("path = ", ""))
+          .map(dir -> Path.of(currentDir, dir))
+          .filter(dir -> {
+            if (dir.toFile().exists()) {
+              return true;
+            }
+            StdOutUtils.errln("directory '%s' does not exist, will be ignored!".formatted("" + dir));
+            return false;
+          })
+          .filter(pred)
+          .forEach(path -> futures.add(exe.submit(() -> output.add(CommandVerticle.execute(path, args)))));
+
+      // Wait for all futures with configured timeout
+      long timeoutSeconds = org.nqm.config.GisConfig.getModuleTimeoutSeconds();
+      long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(timeoutSeconds);
+      for (Future<?> f : futures) {
+        long remaining = deadline - System.nanoTime();
+        if (remaining <= 0) {
+          GisLog.debug("module execution timeout reached");
+          break;
+        }
+        try {
+          f.get(remaining, TimeUnit.NANOSECONDS);
+        } catch (java.util.concurrent.TimeoutException te) {
+          GisLog.debug("a module task timed out");
+        } catch (InterruptedException ie) {
+          GisLog.debug(ie);
+          Thread.currentThread().interrupt();
+          break;
+        } catch (ExecutionException ee) {
+          GisLog.debug(ee);
+          // continue other modules (errors are aggregated via logs and outputs)
+        }
+      }
+    }
     return output;
   }
 
@@ -135,7 +181,13 @@ public final class Wrapper {
     GisProcessDto result;
     try {
       result = GisProcessUtils.quickRun(path.toFile(), GisConfig.GIT_HOME_DIR, "branch", "--show-current");
-    } catch (IOException e) {
+    }
+    catch (InterruptedException e) {
+      GisLog.debug(e);
+      Thread.currentThread().interrupt();
+      throw new GisException(e.getMessage());
+    }
+    catch (IOException e) {
       GisLog.debug(e);
       throw new GisException(e.getMessage());
     }

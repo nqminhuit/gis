@@ -306,9 +306,9 @@ public class GitCommand {
 
   private boolean isConfirmed(String question) throws IOException {
     StdOutUtils.print(question + " ");
-    try (var reader = new BufferedReader(new InputStreamReader(System.in))) {
-      return CONFIRM_YES.matcher(reader.readLine()).matches();
-    }
+    var reader = new BufferedReader(new InputStreamReader(System.in));
+    var line = reader.readLine();
+    return line != null && CONFIRM_YES.matcher(line).matches();
   }
 
   private String[] shouldForcePush(boolean isForce) {
