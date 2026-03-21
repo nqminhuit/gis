@@ -36,6 +36,9 @@ status st)" \
     status | st)
       _gis_status_suggest
       ;;
+    fetch | fe)
+      _gis_fetch_suggest
+      ;;
   esac
 }
 
@@ -61,4 +64,10 @@ function _gis_status_suggest {
 
 function _gis_stash_suggest {
   _arguments "--pop[pop first stashed changes]"
+}
+
+function _gis_fetch_suggest {
+  _arguments \
+    "-q[start fetch in background and exit immediately]" \
+    "--sort=[Valid values: module_name, branch_name, tracking_status]"
 }

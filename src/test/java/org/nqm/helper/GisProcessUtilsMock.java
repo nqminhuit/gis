@@ -47,6 +47,13 @@ public class GisProcessUtilsMock {
     mock.when(() -> GisProcessUtils.quickRun(directory, commands)).thenReturn(mockResult);
   }
 
+  public static void mockSpawn(File directory, String... commands) throws java.io.IOException {
+    if (mock == null || mock.isClosed()) {
+      mock = Mockito.mockStatic(GisProcessUtils.class);
+    }
+    mock.when(() -> GisProcessUtils.spawn(directory, commands)).thenAnswer(invocation -> null);
+  }
+
   public static void close() {
     if (mock != null && !mock.isClosed()) {
       mock.close();

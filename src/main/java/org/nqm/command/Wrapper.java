@@ -107,6 +107,10 @@ public final class Wrapper {
     return output;
   }
 
+  public static void forEachModuleFetchInBackground() throws IOException {
+    consumeAllModules(p -> true, exe -> path -> exe.submit(() -> CommandVerticle.executeInBackground(path, "fetch")));
+  }
+
   public static void forEachModulePruneExcept(String mergedBranch) throws IOException {
     var args = new String[] {
         "for-each-ref",

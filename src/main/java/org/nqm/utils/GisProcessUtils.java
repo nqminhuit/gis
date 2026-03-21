@@ -47,4 +47,16 @@ public class GisProcessUtils {
     var inputStream = new ProcessBuilder(commands).directory(directory).start().getInputStream();
     return new GisProcessDto(new String(inputStream.readAllBytes()), 0);
   }
+
+  public static void spawn(File directory, String... commands) throws IOException {
+    if (dryRunEnabled) {
+      StdOutUtils.println(String.join(" ", commands));
+      return;
+    }
+    new ProcessBuilder(commands)
+        .directory(directory)
+        .redirectOutput(ProcessBuilder.Redirect.DISCARD)
+        .redirectError(ProcessBuilder.Redirect.DISCARD)
+        .start();
+  }
 }
