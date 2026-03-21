@@ -6,6 +6,7 @@ import static org.nqm.command.Wrapper.ORIGIN;
 import static org.nqm.command.Wrapper.forEachModuleDo;
 import static org.nqm.command.Wrapper.forEachModuleDoRebaseCurrent;
 import static org.nqm.command.Wrapper.forEachModuleFetch;
+import static org.nqm.command.Wrapper.forEachModuleFetchInBackground;
 import static org.nqm.command.Wrapper.forEachModulePruneExcept;
 import static org.nqm.command.Wrapper.forEachModuleWith;
 import static org.nqm.command.Wrapper.getCurrentBranchUnderPath;
@@ -38,6 +39,7 @@ public class GitCommand {
 
   private static final String CHECKOUT = "checkout";
   private static final String FETCHED_AT = "(fetched at: %s)";
+  private static final String FETCH_STARTED_IN_BACKGROUND = "git fetch started in background";
 
   static final String GIS_AUTOCOMPLETE_FILE = "_gis";
   static final Pattern CONFIRM_YES = Pattern.compile("[Yy]+([Ee][Ss])*");
@@ -121,11 +123,18 @@ public class GitCommand {
   }
 
   @Command(name = "fetch", aliases = "fe", description = "Download objects and refs from other repositories")
-  void fetchStatus(@Option(names = "--sort",
-      description = "Valid values: ${COMPLETION-CANDIDATES}. "
-          + "Default value is 'module_name'. "
-          + "Note that the root module will always be on top no matter the sort") GisSort sort)
+  void fetchStatus(
+      @Option(names = "-q", description = "start fetch in background and exit immediately") boolean background,
+      @Option(names = "--sort",
+          description = "Valid values: ${COMPLETION-CANDIDATES}. "
+              + "Default value is 'module_name'. "
+              + "Note that the root module will always be on top no matter the sort") GisSort sort)
       throws IOException {
+    if (background) {
+      forEachModuleFetchInBackground();
+      StdOutUtils.println(FETCH_STARTED_IN_BACKGROUND);
+      return;
+    }
     printOutput(sort(true, sort, forEachModuleFetch()));
     printFetchedTime();
   }

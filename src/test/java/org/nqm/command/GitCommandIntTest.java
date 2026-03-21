@@ -72,7 +72,7 @@ class GitCommandIntTest extends GitBaseTest {
     gis.init();
 
     // when:
-    gis.fetchStatus(null);
+    gis.fetchStatus(false, null);
 
     // then:
     assertThat(stripColors.apply(outCaptor.toString())).containsExactly(
@@ -88,7 +88,7 @@ class GitCommandIntTest extends GitBaseTest {
     initGitSubmodules("sub_4_w", "sub_5_r", "sub_6_p");
 
     // when:
-    gis.fetchStatus(null);
+    gis.fetchStatus(false, null);
 
     var fetched = Path.of(GisConfig.currentDir(), ".git", "FETCH_HEAD");
     var lastFetched = Files.readAttributes(fetched, BasicFileAttributes.class).lastModifiedTime();

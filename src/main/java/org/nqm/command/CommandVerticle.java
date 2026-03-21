@@ -50,6 +50,22 @@ public class CommandVerticle {
     }
   }
 
+  public static void executeInBackground(Path path, String... args) {
+    if (path == null) {
+      throw new GisException("path must not be null");
+    }
+    var commandWithArgs = prependCommandToArgs(args);
+
+    GisLog.debug("executing command in background '%s' under module '%s'", commandWithArgs, path);
+
+    try {
+      GisProcessUtils.spawn(path.toFile(), commandWithArgs);
+    } catch (IOException e) {
+      GisLog.debug(e);
+      throw new GisException(e.getMessage());
+    }
+  }
+
   public static String execute(Path path, String... args) {
     if (path == null) {
       throw new GisException("path must not be null");

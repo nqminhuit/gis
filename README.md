@@ -86,6 +86,9 @@ Reload your zsh session, we can now press `<TAB>` for autocomplete.
 
 Currently gis only support zsh for completion.
 
+
+Run `gis fe -q` to start `git fetch` for the root repository and every configured module in the background, then exit immediately without waiting for fetch results.
+
 # Config
 
 Gis will read config from file at `~/.config/gis.config`

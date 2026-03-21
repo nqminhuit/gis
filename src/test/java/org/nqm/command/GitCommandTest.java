@@ -100,6 +100,24 @@ class GitCommandTest extends StdBaseTest {
   }
 
   @Test
+  void fetchBackground_withMock_OK() throws IOException {
+    // given:
+    ExecutorsMock.mockVirtualThreadCallable(exe);
+    GisProcessUtilsMock.mockSpawn(tempPath.toFile(), GIT_HOME_DIR, "fetch");
+    GisProcessUtilsMock.mockSpawn(tempPath.resolve("submodule1").toFile(), GIT_HOME_DIR, "fetch");
+    GisProcessUtilsMock.mockSpawn(tempPath.resolve("submodule2").toFile(), GIT_HOME_DIR, "fetch");
+    GisProcessUtilsMock.mockSpawn(tempPath.resolve("submodule3").toFile(), GIT_HOME_DIR, "fetch");
+
+    // when:
+    gis.fetchStatus(true, null);
+
+    // then:
+    verify(exe, times(1)).submit((Callable<?>) any());
+    verify(exe, times(4)).submit((Runnable) any());
+    assertThat(stripColors.apply(outCaptor.toString())).containsExactly("git fetch started in background");
+  }
+
+  @Test
   void statusShort_withDefaultSort_OK() throws IOException {
     // when:
     gis.status(true, null);
@@ -292,7 +310,7 @@ class GitCommandTest extends StdBaseTest {
     ExecutorsMock.mockVirtualThreadCallable(exe);
 
     // when:
-    gis.fetchStatus(null);
+    gis.fetchStatus(false, null);
 
     // then:
     verify(exe, times(1)).submit((Callable<?>) any());
