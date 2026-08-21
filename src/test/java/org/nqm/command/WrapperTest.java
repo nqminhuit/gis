@@ -168,6 +168,22 @@ class WrapperTest extends StdBaseTest {
 
 
   @Test
+  void forEachModuleWith_whenModuleHangs_abortsAfterTimeout() throws IOException {
+    // given: 'git credential fill' blocks forever reading stdin that nobody writes
+    GisConfigMock.mockModuleTimeoutSeconds(1);
+
+    // when:
+    var startedAt = System.nanoTime();
+    var output = Wrapper.forEachModuleWith(p -> true, "credential", "fill");
+
+    // then: gis returns shortly after the deadline instead of waiting for the hung processes
+    assertThat(TimeUnit.NANOSECONDS.toSeconds(System.nanoTime() - startedAt)).isLessThan(30);
+    assertThat(output).isEmpty();
+    assertThat(stripColorsToString.apply(errCaptor.toString()))
+        .contains("WARNING: module execution timed out after 1s, unfinished modules are aborted!");
+  }
+
+  @Test
   void getCurrentBranchUnderPath_withNullResult_NOK() {
     // given:
     GisProcessUtilsMock.mockQuickRun(

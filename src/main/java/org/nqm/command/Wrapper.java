@@ -114,16 +114,16 @@ public final class Wrapper {
       long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(timeoutSeconds);
       for (Future<?> f : futures) {
         long remaining = deadline - System.nanoTime();
-        if (remaining <= 0) {
-          GisLog.debug("module execution timeout reached");
-          break;
-        }
         try {
-          f.get(remaining, TimeUnit.NANOSECONDS);
+          f.get(Math.max(remaining, 0), TimeUnit.NANOSECONDS);
         } catch (java.util.concurrent.TimeoutException te) {
-          GisLog.debug("a module task timed out");
+          StdOutUtils.warnln(
+              "module execution timed out after %ds, unfinished modules are aborted!".formatted(timeoutSeconds));
+          cancelUnfinished(futures);
+          break;
         } catch (InterruptedException ie) {
           GisLog.debug(ie);
+          cancelUnfinished(futures);
           Thread.currentThread().interrupt();
           break;
         } catch (ExecutionException ee) {
@@ -133,6 +133,14 @@ public final class Wrapper {
       }
     }
     return output;
+  }
+
+  private static void cancelUnfinished(Iterable<Future<?>> futures) {
+    for (Future<?> f : futures) {
+      if (!f.isDone()) {
+        f.cancel(true);
+      }
+    }
   }
 
   public static void forEachModuleDoRebaseCurrent() throws IOException {

@@ -57,9 +57,15 @@ public class GisProcessUtils {
       }
     });
 
-    var exitCode = p.waitFor();
-    tOut.join();
-    tErr.join();
+    int exitCode;
+    try {
+      exitCode = p.waitFor();
+      tOut.join();
+      tErr.join();
+    } catch (InterruptedException e) {
+      p.destroyForcibly();
+      throw e;
+    }
 
     debugLogIfExitCodeNotZero(exitCode, directory);
     var stdout = outBaos.toString(StandardCharsets.UTF_8);
@@ -97,9 +103,15 @@ public class GisProcessUtils {
       }
     });
 
-    var exitCode = p.waitFor();
-    tOut.join();
-    tErr.join();
+    int exitCode;
+    try {
+      exitCode = p.waitFor();
+      tOut.join();
+      tErr.join();
+    } catch (InterruptedException e) {
+      p.destroyForcibly();
+      throw e;
+    }
 
     var stdout = outBaos.toString(StandardCharsets.UTF_8);
     var stderr = errBaos.toString(StandardCharsets.UTF_8);
