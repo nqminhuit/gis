@@ -85,14 +85,16 @@ public final class Wrapper {
     return forEachModuleWith(p -> true, args);
   }
 
+  private record ModuleTask(Path path, Future<?> future) {}
+
   public static Queue<String> forEachModuleWith(Predicate<Path> pred, String... args) throws IOException {
     var output = new ConcurrentLinkedQueue<String>();
-    var futures = new ArrayList<Future<?>>();
+    var tasks = new ArrayList<ModuleTask>();
     var gitModulesFilePath = getFileMarker();
     var currentDir = currentDir();
     try (var exe = Executors.newVirtualThreadPerTaskExecutor()) {
       Optional.of(Path.of(currentDir)).filter(pred).ifPresent(path ->
-          futures.add(exe.submit(() -> output.add(CommandVerticle.execute(path, args)))));
+          tasks.add(new ModuleTask(path, exe.submit(() -> output.add(CommandVerticle.execute(path, args))))));
 
       Files.readAllLines(gitModulesFilePath.toPath()).stream()
           .map(String::trim)
@@ -107,38 +109,40 @@ public final class Wrapper {
             return false;
           })
           .filter(pred)
-          .forEach(path -> futures.add(exe.submit(() -> output.add(CommandVerticle.execute(path, args)))));
+          .forEach(path ->
+              tasks.add(new ModuleTask(path, exe.submit(() -> output.add(CommandVerticle.execute(path, args))))));
 
       // Wait for all futures with configured timeout
       long timeoutSeconds = org.nqm.config.GisConfig.getModuleTimeoutSeconds();
       long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(timeoutSeconds);
-      for (Future<?> f : futures) {
+      for (var task : tasks) {
         long remaining = deadline - System.nanoTime();
         try {
-          f.get(Math.max(remaining, 0), TimeUnit.NANOSECONDS);
+          task.future().get(Math.max(remaining, 0), TimeUnit.NANOSECONDS);
         } catch (java.util.concurrent.TimeoutException te) {
           StdOutUtils.warnln(
               "module execution timed out after %ds, unfinished modules are aborted!".formatted(timeoutSeconds));
-          cancelUnfinished(futures);
+          cancelUnfinished(tasks);
           break;
         } catch (InterruptedException ie) {
           GisLog.debug(ie);
-          cancelUnfinished(futures);
+          cancelUnfinished(tasks);
           Thread.currentThread().interrupt();
           break;
         } catch (ExecutionException ee) {
           GisLog.debug(ee);
-          // continue other modules (errors are aggregated via logs and outputs)
+          var cause = ee.getCause() == null ? ee : ee.getCause();
+          StdOutUtils.errln("module '%s' failed: %s".formatted(task.path().getFileName(), cause.getMessage()));
         }
       }
     }
     return output;
   }
 
-  private static void cancelUnfinished(Iterable<Future<?>> futures) {
-    for (Future<?> f : futures) {
-      if (!f.isDone()) {
-        f.cancel(true);
+  private static void cancelUnfinished(Iterable<ModuleTask> tasks) {
+    for (var task : tasks) {
+      if (!task.future().isDone()) {
+        task.future().cancel(true);
       }
     }
   }

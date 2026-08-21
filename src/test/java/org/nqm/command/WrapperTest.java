@@ -168,6 +168,51 @@ class WrapperTest extends StdBaseTest {
 
 
   @Test
+  void forEachModuleWith_whenModuleFails_reportsErrorForThatModule() throws IOException {
+    // given: module tasks fail, while the untimed get() still serves getFileMarker
+    var marker = markerFile.toFile();
+    ExecutorsMock.mockVirtualThreadCallable(exe, new Future<File>() {
+
+      @Override
+      public boolean cancel(boolean mayInterruptIfRunning) {
+        return false;
+      }
+
+      @Override
+      public boolean isCancelled() {
+        return false;
+      }
+
+      @Override
+      public boolean isDone() {
+        return true;
+      }
+
+      @Override
+      public File get() throws InterruptedException, ExecutionException {
+        return marker;
+      }
+
+      @Override
+      public File get(long timeout, TimeUnit unit)
+          throws InterruptedException, ExecutionException, TimeoutException {
+        throw new ExecutionException(new GisException("boom"));
+      }
+    });
+
+    // when:
+    var output = Wrapper.forEachModuleWith(p -> true, "pull");
+
+    // then: every failed module is reported on stderr instead of being silently omitted
+    assertThat(output).isEmpty();
+    assertThat(stripColorsToString.apply(errCaptor.toString()))
+        .contains("ERROR: module '%s' failed: boom".formatted(tempPath.getFileName()))
+        .contains("ERROR: module 'submodule1' failed: boom")
+        .contains("ERROR: module 'submodule2' failed: boom")
+        .contains("ERROR: module 'submodule3' failed: boom");
+  }
+
+  @Test
   void forEachModuleWith_whenModuleHangs_abortsAfterTimeout() throws IOException {
     // given: 'git credential fill' blocks forever reading stdin that nobody writes
     GisConfigMock.mockModuleTimeoutSeconds(1);
