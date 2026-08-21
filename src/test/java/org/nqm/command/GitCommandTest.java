@@ -112,8 +112,8 @@ class GitCommandTest extends StdBaseTest {
     gis.fetchStatus(true, null);
 
     // then:
-    verify(exe, times(1)).submit((Callable<?>) any());
-    verify(exe, times(4)).submit((Runnable) any());
+    verify(exe, times(5)).submit((Callable<?>) any());
+    verify(exe, times(0)).submit((Runnable) any());
     assertThat(stripColors.apply(outCaptor.toString())).containsExactly("git fetch started in background");
   }
 
@@ -313,8 +313,8 @@ class GitCommandTest extends StdBaseTest {
     gis.fetchStatus(false, null);
 
     // then:
-    verify(exe, times(1)).submit((Callable<?>) any());
-    verify(exe, times(4)).submit((Runnable) any());
+    verify(exe, times(5)).submit((Callable<?>) any());
+    verify(exe, times(0)).submit((Runnable) any());
   }
 
   @Test
