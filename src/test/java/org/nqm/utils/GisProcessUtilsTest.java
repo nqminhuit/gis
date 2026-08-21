@@ -32,6 +32,21 @@ class GisProcessUtilsTest {
   }
 
   @Test
+  void run_withNonZeroExitCode_recordsProcessFailure() throws IOException, InterruptedException {
+    GisProcessUtils.resetProcessFailures();
+    try {
+      // when:
+      var result = GisProcessUtils.run(tempPath.toFile(), "false");
+
+      // then:
+      assertThat(result.exitCode()).isNotZero();
+      assertThat(GisProcessUtils.anyProcessFailed()).isTrue();
+    } finally {
+      GisProcessUtils.resetProcessFailures();
+    }
+  }
+
+  @Test
   void quickRun_OK() throws IOException, InterruptedException {
     // when:
     var result = GisProcessUtils.quickRun(tempPath.toFile(), "pwd");

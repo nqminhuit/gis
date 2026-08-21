@@ -45,8 +45,12 @@ public class Gis extends GitCommand {
     var gis = new CommandLine(new Gis());
     gis.setExecutionExceptionHandler(GLOBAL_EXCEPTION_HANLER);
 
-    return gis.execute(args.length == 0
+    var exitCode = gis.execute(args.length == 0
         ? new String[] {GIT_STATUS, "--one-line"}
         : args);
+    if (exitCode == 0 && GisProcessUtils.anyProcessFailed()) {
+      return 1;
+    }
+    return exitCode;
   }
 }
