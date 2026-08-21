@@ -7,6 +7,7 @@ import java.util.Optional;
 import java.util.Properties;
 import java.util.function.Function;
 import org.nqm.GisException;
+import org.nqm.utils.StdOutUtils;
 
 public class GisConfig {
 
@@ -42,15 +43,27 @@ public class GisConfig {
   private static final int MODULE_TIMEOUT_DEFAULT = 60;
 
   public static int getModuleTimeoutSeconds() {
-    try {
-      var val = props.getProperty(MODULE_TIMEOUT_KEY);
-      if (val == null || val.isBlank()) {
-        return MODULE_TIMEOUT_DEFAULT;
-      }
-      return Integer.parseInt(val.trim());
-    } catch (Exception e) {
+    return parseModuleTimeoutSeconds(props.getProperty(MODULE_TIMEOUT_KEY));
+  }
+
+  static int parseModuleTimeoutSeconds(String val) {
+    if (val == null || val.isBlank()) {
       return MODULE_TIMEOUT_DEFAULT;
     }
+    int parsed;
+    try {
+      parsed = Integer.parseInt(val.trim());
+    } catch (NumberFormatException e) {
+      StdOutUtils.warnln("config '%s=%s' is not a number, falling back to %ds"
+          .formatted(MODULE_TIMEOUT_KEY, val, MODULE_TIMEOUT_DEFAULT));
+      return MODULE_TIMEOUT_DEFAULT;
+    }
+    if (parsed <= 0) {
+      StdOutUtils.warnln("config '%s=%s' must be positive, falling back to %ds"
+          .formatted(MODULE_TIMEOUT_KEY, val, MODULE_TIMEOUT_DEFAULT));
+      return MODULE_TIMEOUT_DEFAULT;
+    }
+    return parsed;
   }
 
   private static Function<String, String[]> splitValue = val -> val.split(",");
