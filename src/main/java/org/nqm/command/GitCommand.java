@@ -70,12 +70,20 @@ public class GitCommand {
     }
     if (GisSort.branch_name.equals(sort)) {
       var branchIdx = oneLineOpt ? 1 : 3;
-      return tokenAt(a, branchIdx).compareTo(tokenAt(b, branchIdx));
+      return stripAnsi(tokenAt(a, branchIdx)).compareTo(stripAnsi(tokenAt(b, branchIdx)));
     }
     // GisSort.tracking_status == sort:
     var changesA = a.split("\s").length;
     var changesB = b.split("\s").length;
     return changesB - changesA;
+  }
+
+  private static final Pattern ANSI_COLORS = Pattern.compile("\\u001B\\[[0-9;]*m");
+
+  // sorted entries are already rendered with ANSI colors which differ per branch kind,
+  // so comparing them raw would group by color instead of by name
+  private static String stripAnsi(String s) {
+    return ANSI_COLORS.matcher(s).replaceAll("");
   }
 
   // a module entry may hold nothing but the module name (e.g. git produced no output), so

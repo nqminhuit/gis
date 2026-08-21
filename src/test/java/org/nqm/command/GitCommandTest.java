@@ -588,6 +588,23 @@ class GitCommandTest extends StdBaseTest {
   }
 
   @Test
+  void sortComparator_oneLineBranchSort_ignoresAnsiColors() {
+    // given: one-line entries whose branch tokens carry different colors per branch kind
+    var root = org.nqm.utils.StdOutUtils.infof("root");
+    var master = org.nqm.utils.StdOutUtils.infof("m1")
+        + " " + org.nqm.utils.StdOutUtils.CL_RED + "master" + org.nqm.utils.StdOutUtils.CL_RESET;
+    var feature = org.nqm.utils.StdOutUtils.infof("m2")
+        + " " + org.nqm.utils.StdOutUtils.CL_YELLOW + "feature/aaa" + org.nqm.utils.StdOutUtils.CL_RESET;
+    var zeta = org.nqm.utils.StdOutUtils.infof("m3")
+        + " " + org.nqm.utils.StdOutUtils.CL_GREEN + "zeta" + org.nqm.utils.StdOutUtils.CL_RESET;
+
+    // then: ordering is alphabetical by branch name, not grouped by color
+    assertThat(GitCommand.sort(true, GisSort.branch_name, root, feature, master)).isNegative();
+    assertThat(GitCommand.sort(true, GisSort.branch_name, root, master, zeta)).isNegative();
+    assertThat(GitCommand.sort(true, GisSort.branch_name, root, zeta, feature)).isPositive();
+  }
+
+  @Test
   void confirmYesPattern_false() throws Exception {
     // given:
     var pattern = GitCommand.CONFIRM_YES;
