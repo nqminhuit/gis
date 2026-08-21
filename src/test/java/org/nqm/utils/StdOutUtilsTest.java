@@ -93,6 +93,8 @@ class StdOutUtilsTest extends StdBaseTest {
                 .formatted(coloringWord("A", CL_GREEN), coloringWord("M", CL_RED)));
     assertThat(StdOutUtils.gitStatus("R  text-1 -> text-0001", false))
             .isEqualTo("\n  %s. text-1 -> text-0001".formatted(coloringWord("R", CL_GREEN)));
+    assertThat(StdOutUtils.gitStatus("## HEAD (no branch)", false))
+            .isEqualTo("\n  ## %s".formatted(coloringWord("HEAD(detached)", CL_GREEN)));
   }
 
   @Test
@@ -124,6 +126,8 @@ class StdOutUtilsTest extends StdBaseTest {
             .isEqualTo(" pom.xml");
     assertThat(StdOutUtils.gitStatusOneLine("AM src/test/java/org/nqm/utils/StdOutUtilsTest.java", false))
             .isEqualTo(" StdOutUtilsTest.java");
+    assertThat(StdOutUtils.gitStatusOneLine("## HEAD (no branch)", false))
+            .isEqualTo(" %s".formatted(coloringWord("HEAD(detached)", CL_GREEN)));
   }
 
   @Test

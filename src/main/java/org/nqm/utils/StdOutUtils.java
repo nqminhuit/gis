@@ -142,6 +142,11 @@ public class StdOutUtils {
 
   private static String[] splitBranchLine(String line) {
     var branchDetails = line.substring(3);
+    // detached HEAD (e.g. a submodule checked out at a SHA); keep the branch a single
+    // token so the positional parsing of --sort still works
+    if (branchDetails.equals("HEAD (no branch)")) {
+      return new String[] {"HEAD(detached)", ""};
+    }
     if (branchDetails.startsWith("No commits yet on ")) {
       return new String[] {branchDetails.substring("No commits yet on ".length()), ""};
     }
