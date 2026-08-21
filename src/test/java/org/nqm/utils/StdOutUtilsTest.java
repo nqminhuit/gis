@@ -245,6 +245,18 @@ class StdOutUtilsTest extends StdBaseTest {
   }
 
   @Test
+  void gitStatus_withArrowInFileName_shouldNotBeParsedAsRename() {
+    // given: dont-care files that would match the bogus split halves
+    GisConfigMock.mockDontCareFiles("draft", "final.txt");
+
+    // then: '?? draft -> final.txt' is one untracked file, not a rename pair
+    assertThat(StdOutUtils.gitStatus("?? draft -> final.txt", true))
+        .isEqualTo("\n   ? draft -> final.txt");
+    assertThat(StdOutUtils.gitStatusOneLine("?? draft -> final.txt", true))
+        .isEqualTo(" draft -> final.txt");
+  }
+
+  @Test
   void print_OK() {
     // when:
     StdOutUtils.print("sysout print");
