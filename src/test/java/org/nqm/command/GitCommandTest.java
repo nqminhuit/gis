@@ -559,6 +559,22 @@ class GitCommandTest extends StdBaseTest {
   }
 
   @Test
+  void status_withSortAndModuleWithoutGitOutput_doesNotCrash() throws IOException {
+    // given: a listed module whose repository is corrupted, so git prints nothing on
+    // stdout and its status entry holds nothing but the module name
+    Files.createDirectories(tempPath.resolve("notagit"));
+    Files.writeString(tempPath.resolve("notagit").resolve(".git"), "garbage");
+    Files.writeString(markerFile, "path = notagit\n", java.nio.file.StandardOpenOption.APPEND);
+
+    // when:
+    gis.status(true, GisSort.branch_name);
+
+    // then:
+    assertThat(stripColors.apply(outCaptor.toString()))
+        .contains("notagit", "submodule1 master", "submodule2 master", "submodule3 master");
+  }
+
+  @Test
   void sortComparator_withSubmoduleNamedLikeRoot_keepsComparatorContract() {
     // given: a submodule whose rendered basename equals the root's, so both lines share the prefix
     var root = org.nqm.utils.StdOutUtils.infof("app");

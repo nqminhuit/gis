@@ -69,21 +69,20 @@ public class GitCommand {
       return a.compareTo(b);
     }
     if (GisSort.branch_name.equals(sort)) {
-      var branchA = "";
-      var branchB = "";
-      if (oneLineOpt) {
-        branchA = a.split("\s")[1];
-        branchB = b.split("\s")[1];
-      } else {
-        branchA = a.split("\s")[3];
-        branchB = b.split("\s")[3];
-      }
-      return branchA.compareTo(branchB);
+      var branchIdx = oneLineOpt ? 1 : 3;
+      return tokenAt(a, branchIdx).compareTo(tokenAt(b, branchIdx));
     }
     // GisSort.tracking_status == sort:
     var changesA = a.split("\s").length;
     var changesB = b.split("\s").length;
     return changesB - changesA;
+  }
+
+  // a module entry may hold nothing but the module name (e.g. git produced no output), so
+  // positional tokens used by the sort modes are not guaranteed to exist
+  private static String tokenAt(String line, int idx) {
+    var tokens = line.split("\s");
+    return tokens.length > idx ? tokens[idx] : "";
   }
 
   private static Collection<String> sort(boolean oneLineOpt, GisSort sort, Collection<String> output) {
