@@ -17,11 +17,9 @@ import java.util.Optional;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
@@ -58,41 +56,25 @@ public final class Wrapper {
     }
   }
 
-  private static void consumeAllModules(Predicate<Path> pred, Function<ExecutorService, Consumer<Path>> f)
-      throws IOException {
-    var gitModulesFilePath = getFileMarker();
-    var currentDir = currentDir();
-    try (var exe = Executors.newVirtualThreadPerTaskExecutor()) {
-      Optional.of(Path.of(currentDir)).filter(pred).ifPresent(f.apply(exe));
-      Files.readAllLines(gitModulesFilePath.toPath()).stream()
-          .map(String::trim)
-          .filter(s -> s.startsWith("path"))
-          .map(s -> s.replace("path = ", ""))
-          .map(dir -> Path.of(currentDir, dir))
-          .filter(dir -> {
-            if (dir.toFile().exists()) {
-              return true;
-            }
-            StdOutUtils.errln("directory '%s' does not exist, will be ignored!".formatted("" + dir));
-            return false;
-          })
-          .filter(pred)
-          .forEach(f.apply(exe));
-    }
-  }
-
   public static Queue<String> forEachModuleDo(String... args) throws IOException {
     return forEachModuleWith(p -> true, args);
   }
 
   public static Queue<String> forEachModuleWith(Predicate<Path> pred, String... args) throws IOException {
+    return runOnModules(pred, path -> CommandVerticle.execute(path, args));
+  }
+
+  private record ModuleTask(Path path, Future<?> future) {}
+
+  private static Queue<String> runOnModules(Predicate<Path> pred, Function<Path, String> action)
+      throws IOException {
     var output = new ConcurrentLinkedQueue<String>();
-    var futures = new ArrayList<Future<?>>();
+    var tasks = new ArrayList<ModuleTask>();
     var gitModulesFilePath = getFileMarker();
     var currentDir = currentDir();
     try (var exe = Executors.newVirtualThreadPerTaskExecutor()) {
       Optional.of(Path.of(currentDir)).filter(pred).ifPresent(path ->
-          futures.add(exe.submit(() -> output.add(CommandVerticle.execute(path, args)))));
+          tasks.add(new ModuleTask(path, exe.submit(() -> output.add(action.apply(path))))));
 
       Files.readAllLines(gitModulesFilePath.toPath()).stream()
           .map(String::trim)
@@ -107,54 +89,62 @@ public final class Wrapper {
             return false;
           })
           .filter(pred)
-          .forEach(path -> futures.add(exe.submit(() -> output.add(CommandVerticle.execute(path, args)))));
+          .forEach(path -> tasks.add(new ModuleTask(path, exe.submit(() -> output.add(action.apply(path))))));
 
       // Wait for all futures with configured timeout
       long timeoutSeconds = org.nqm.config.GisConfig.getModuleTimeoutSeconds();
       long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(timeoutSeconds);
-      for (Future<?> f : futures) {
+      for (var task : tasks) {
         long remaining = deadline - System.nanoTime();
-        if (remaining <= 0) {
-          GisLog.debug("module execution timeout reached");
-          break;
-        }
         try {
-          f.get(remaining, TimeUnit.NANOSECONDS);
+          task.future().get(Math.max(remaining, 0), TimeUnit.NANOSECONDS);
         } catch (java.util.concurrent.TimeoutException te) {
-          GisLog.debug("a module task timed out");
+          StdOutUtils.warnln(
+              "module execution timed out after %ds, unfinished modules are aborted!".formatted(timeoutSeconds));
+          cancelUnfinished(tasks);
+          break;
         } catch (InterruptedException ie) {
           GisLog.debug(ie);
+          cancelUnfinished(tasks);
           Thread.currentThread().interrupt();
           break;
         } catch (ExecutionException ee) {
           GisLog.debug(ee);
-          // continue other modules (errors are aggregated via logs and outputs)
+          var cause = ee.getCause() == null ? ee : ee.getCause();
+          StdOutUtils.errln("module '%s' failed: %s".formatted(task.path().getFileName(), cause.getMessage()));
         }
       }
     }
     return output;
   }
 
+  private static void cancelUnfinished(Iterable<ModuleTask> tasks) {
+    for (var task : tasks) {
+      if (!task.future().isDone()) {
+        task.future().cancel(true);
+      }
+    }
+  }
+
   public static void forEachModuleDoRebaseCurrent() throws IOException {
-    consumeAllModules(p -> true, exe -> path -> exe.submit(() -> {
-      var args = new String[] {"rebase", "%s/%s".formatted(ORIGIN, getCurrentBranchUnderPath(path))};
-      CommandVerticle.execute(path, args);
-    }));
+    runOnModules(p -> true, path ->
+        CommandVerticle.execute(path, "rebase", "%s/%s".formatted(ORIGIN, getCurrentBranchUnderPath(path))));
   }
 
   public static Queue<String> forEachModuleFetch() throws IOException {
-    var output = new ConcurrentLinkedQueue<String>();
-    consumeAllModules(p -> true, exe -> path -> exe.submit(() -> {
+    return runOnModules(p -> true, path -> {
       CommandVerticle.execute(path, "fetch");
-      output.add(CommandVerticle.execute(
+      return CommandVerticle.execute(
           path,
-          GitCommand.GIT_STATUS, "-sb", "--ignore-submodules", "--porcelain=v1", "--gis-one-line"));
-    }));
-    return output;
+          GitCommand.GIT_STATUS, "-sb", "--ignore-submodules", "--porcelain=v1", "--gis-one-line");
+    });
   }
 
   public static void forEachModuleFetchInBackground() throws IOException {
-    consumeAllModules(p -> true, exe -> path -> exe.submit(() -> CommandVerticle.executeInBackground(path, "fetch")));
+    runOnModules(p -> true, path -> {
+      CommandVerticle.executeInBackground(path, "fetch");
+      return "";
+    });
   }
 
   public static void forEachModulePruneExcept(String mergedBranch) throws IOException {
@@ -166,15 +156,16 @@ public final class Wrapper {
         "--no-contains",
         mergedBranch
     };
-    consumeAllModules(p -> true, exe -> path -> exe.submit(() -> {
+    runOnModules(p -> true, path -> {
       var result = CommandVerticle.executeForDto(path, args).output();
       if (GisStringUtils.isBlank(result)) {
-        return;
+        return "";
       }
       Stream.of(result.split(GisStringUtils.NEWLINE))
           .filter(GisStringUtils::isNotBlank)
           .forEach(branch -> CommandVerticle.execute(path, "branch", "-d", branch));
-    }));
+      return "";
+    });
   }
 
   public static String getCurrentBranchUnderPath(Path path) {

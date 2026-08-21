@@ -59,32 +59,38 @@ public class GitCommand {
     printOutput(forEachModuleDo("pull"));
   }
 
-  private static int sort(boolean oneLineOpt, GisSort sort, String currentDirName, String a, String b) {
-    if (a.startsWith(currentDirName)) {
-      return Integer.MIN_VALUE;
-    }
-    if (b.startsWith(currentDirName)) {
-      return Integer.MAX_VALUE;
+  static int sort(boolean oneLineOpt, GisSort sort, String currentDirName, String a, String b) {
+    var aIsRoot = a.startsWith(currentDirName);
+    var bIsRoot = b.startsWith(currentDirName);
+    if (aIsRoot != bIsRoot) {
+      return aIsRoot ? -1 : 1;
     }
     if (sort == null || GisSort.module_name.equals(sort)) {
       return a.compareTo(b);
     }
     if (GisSort.branch_name.equals(sort)) {
-      var branchA = "";
-      var branchB = "";
-      if (oneLineOpt) {
-        branchA = a.split("\s")[1];
-        branchB = b.split("\s")[1];
-      } else {
-        branchA = a.split("\s")[3];
-        branchB = b.split("\s")[3];
-      }
-      return branchA.compareTo(branchB);
+      var branchIdx = oneLineOpt ? 1 : 3;
+      return stripAnsi(tokenAt(a, branchIdx)).compareTo(stripAnsi(tokenAt(b, branchIdx)));
     }
     // GisSort.tracking_status == sort:
     var changesA = a.split("\s").length;
     var changesB = b.split("\s").length;
     return changesB - changesA;
+  }
+
+  private static final Pattern ANSI_COLORS = Pattern.compile("\\u001B\\[[0-9;]*m");
+
+  // sorted entries are already rendered with ANSI colors which differ per branch kind,
+  // so comparing them raw would group by color instead of by name
+  private static String stripAnsi(String s) {
+    return ANSI_COLORS.matcher(s).replaceAll("");
+  }
+
+  // a module entry may hold nothing but the module name (e.g. git produced no output), so
+  // positional tokens used by the sort modes are not guaranteed to exist
+  private static String tokenAt(String line, int idx) {
+    var tokens = line.split("\s");
+    return tokens.length > idx ? tokens[idx] : "";
   }
 
   private static Collection<String> sort(boolean oneLineOpt, GisSort sort, Collection<String> output) {

@@ -17,14 +17,25 @@ public class GisProcessUtils {
 
   private static boolean dryRunEnabled;
 
+  private static volatile boolean anyProcessFailed;
+
   public static void isDryRunEnabled(boolean b) {
     dryRunEnabled = b;
+  }
+
+  public static boolean anyProcessFailed() {
+    return anyProcessFailed;
+  }
+
+  public static void resetProcessFailures() {
+    anyProcessFailed = false;
   }
 
   private static void debugLogIfExitCodeNotZero(int exitCode, File directory) {
     if (exitCode == 0) {
       return;
     }
+    anyProcessFailed = true;
     GisLog.debug(EXIT_WITH_CODE_MSG_FMT.formatted(exitCode));
     warnln(WARN_MSG_FMT.formatted(directory.getName()));
   }
@@ -57,9 +68,15 @@ public class GisProcessUtils {
       }
     });
 
-    var exitCode = p.waitFor();
-    tOut.join();
-    tErr.join();
+    int exitCode;
+    try {
+      exitCode = p.waitFor();
+      tOut.join();
+      tErr.join();
+    } catch (InterruptedException e) {
+      p.destroyForcibly();
+      throw e;
+    }
 
     debugLogIfExitCodeNotZero(exitCode, directory);
     var stdout = outBaos.toString(StandardCharsets.UTF_8);
@@ -97,9 +114,15 @@ public class GisProcessUtils {
       }
     });
 
-    var exitCode = p.waitFor();
-    tOut.join();
-    tErr.join();
+    int exitCode;
+    try {
+      exitCode = p.waitFor();
+      tOut.join();
+      tErr.join();
+    } catch (InterruptedException e) {
+      p.destroyForcibly();
+      throw e;
+    }
 
     var stdout = outBaos.toString(StandardCharsets.UTF_8);
     var stderr = errBaos.toString(StandardCharsets.UTF_8);

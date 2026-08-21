@@ -93,10 +93,6 @@ public class StdOutUtils {
         .anyMatch(fileName::equals);
   }
 
-  private static String coloringFile(String file, boolean isRootModule) {
-    return coloringFile(file, file, isRootModule, "");
-  }
-
   private static String stripRootModulePrefix(String file, String rootModuleName) {
     if (GisStringUtils.isBlank(rootModuleName)) {
       return file;
@@ -105,12 +101,12 @@ public class StdOutUtils {
     return file.startsWith(prefix) ? file.substring(prefix.length()) : file;
   }
 
-  private static String coloringFile(String pathToMatch, String fileToDisplay, boolean isRootModule, String rootModuleName) {
+  private static String coloringFile(String[] pathsToMatch, String fileToDisplay, boolean isRootModule, String rootModuleName) {
     if (!isRootModule) {
       return fileToDisplay;
     }
 
-    return Stream.of(pathToMatch.split(" -> "))
+    return Stream.of(pathsToMatch)
         .map(path -> stripRootModulePrefix(path, rootModuleName))
         .allMatch(StdOutUtils::isRootDontCareFile)
         ? coloringWord(fileToDisplay, CL_GRAY)
@@ -142,6 +138,11 @@ public class StdOutUtils {
 
   private static String[] splitBranchLine(String line) {
     var branchDetails = line.substring(3);
+    // detached HEAD (e.g. a submodule checked out at a SHA); keep the branch a single
+    // token so the positional parsing of --sort still works
+    if (branchDetails.equals("HEAD (no branch)")) {
+      return new String[] {"HEAD(detached)", ""};
+    }
     if (branchDetails.startsWith("No commits yet on ")) {
       return new String[] {branchDetails.substring("No commits yet on ".length()), ""};
     }
@@ -214,11 +215,26 @@ public class StdOutUtils {
     return normalized;
   }
 
+  // ' -> ' separates the two paths only on rename/copy lines; anywhere else it is
+  // just part of a file name
+  private static boolean isRenameOrCopyStatus(String line) {
+    if (line.length() < 2) {
+      return false;
+    }
+    var x = line.charAt(0);
+    var y = line.charAt(1);
+    return x == 'R' || x == 'C' || y == 'R' || y == 'C';
+  }
+
   private static String[] extractPaths(String line) {
     if (line.length() <= 3) {
       return new String[] {""};
     }
-    return Stream.of(line.substring(3).split(" -> "))
+    var paths = line.substring(3);
+    if (!isRenameOrCopyStatus(line)) {
+      return new String[] {normalizePathToken(paths)};
+    }
+    return Stream.of(paths.split(" -> "))
         .map(StdOutUtils::normalizePathToken)
         .toArray(String[]::new);
   }
@@ -246,7 +262,7 @@ public class StdOutUtils {
     }
     return "\n  "
         + buildStaging(extractStatus(line))
-        + coloringFile(extractFile(line), extractFile(line), isRootModule, rootModuleName);
+        + coloringFile(extractPaths(line), extractFile(line), isRootModule, rootModuleName);
   }
 
   public static String gitStatusOneLine(String line, boolean isRootModule) {
@@ -257,7 +273,6 @@ public class StdOutUtils {
     if (isBranchLine(line)) {
       return buildBranchInfoOneLine(line);
     }
-    var file = extractFile(line);
-    return " " + coloringFile(file, extractDisplayFile(line), isRootModule, rootModuleName);
+    return " " + coloringFile(extractPaths(line), extractDisplayFile(line), isRootModule, rootModuleName);
   }
 }

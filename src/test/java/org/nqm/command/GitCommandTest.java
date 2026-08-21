@@ -112,8 +112,8 @@ class GitCommandTest extends StdBaseTest {
     gis.fetchStatus(true, null);
 
     // then:
-    verify(exe, times(1)).submit((Callable<?>) any());
-    verify(exe, times(4)).submit((Runnable) any());
+    verify(exe, times(5)).submit((Callable<?>) any());
+    verify(exe, times(0)).submit((Runnable) any());
     assertThat(stripColors.apply(outCaptor.toString())).containsExactly("git fetch started in background");
   }
 
@@ -313,8 +313,8 @@ class GitCommandTest extends StdBaseTest {
     gis.fetchStatus(false, null);
 
     // then:
-    verify(exe, times(1)).submit((Callable<?>) any());
-    verify(exe, times(4)).submit((Runnable) any());
+    verify(exe, times(5)).submit((Callable<?>) any());
+    verify(exe, times(0)).submit((Runnable) any());
   }
 
   @Test
@@ -556,6 +556,52 @@ class GitCommandTest extends StdBaseTest {
         script for test gis
         in zsh.
         """);
+  }
+
+  @Test
+  void status_withSortAndModuleWithoutGitOutput_doesNotCrash() throws IOException {
+    // given: a listed module whose repository is corrupted, so git prints nothing on
+    // stdout and its status entry holds nothing but the module name
+    Files.createDirectories(tempPath.resolve("notagit"));
+    Files.writeString(tempPath.resolve("notagit").resolve(".git"), "garbage");
+    Files.writeString(markerFile, "path = notagit\n", java.nio.file.StandardOpenOption.APPEND);
+
+    // when:
+    gis.status(true, GisSort.branch_name);
+
+    // then:
+    assertThat(stripColors.apply(outCaptor.toString()))
+        .contains("notagit", "submodule1 master", "submodule2 master", "submodule3 master");
+  }
+
+  @Test
+  void sortComparator_withSubmoduleNamedLikeRoot_keepsComparatorContract() {
+    // given: a submodule whose rendered basename equals the root's, so both lines share the prefix
+    var root = org.nqm.utils.StdOutUtils.infof("app");
+    var a = root + " master";
+    var b = root + " zebra";
+
+    // then: compare(a,b) must be consistent with -compare(b,a) instead of MIN_VALUE for both
+    assertThat(GitCommand.sort(true, GisSort.branch_name, root, a, b))
+        .isEqualTo(-GitCommand.sort(true, GisSort.branch_name, root, b, a));
+    assertThat(GitCommand.sort(true, GisSort.branch_name, root, a, a)).isZero();
+  }
+
+  @Test
+  void sortComparator_oneLineBranchSort_ignoresAnsiColors() {
+    // given: one-line entries whose branch tokens carry different colors per branch kind
+    var root = org.nqm.utils.StdOutUtils.infof("root");
+    var master = org.nqm.utils.StdOutUtils.infof("m1")
+        + " " + org.nqm.utils.StdOutUtils.CL_RED + "master" + org.nqm.utils.StdOutUtils.CL_RESET;
+    var feature = org.nqm.utils.StdOutUtils.infof("m2")
+        + " " + org.nqm.utils.StdOutUtils.CL_YELLOW + "feature/aaa" + org.nqm.utils.StdOutUtils.CL_RESET;
+    var zeta = org.nqm.utils.StdOutUtils.infof("m3")
+        + " " + org.nqm.utils.StdOutUtils.CL_GREEN + "zeta" + org.nqm.utils.StdOutUtils.CL_RESET;
+
+    // then: ordering is alphabetical by branch name, not grouped by color
+    assertThat(GitCommand.sort(true, GisSort.branch_name, root, feature, master)).isNegative();
+    assertThat(GitCommand.sort(true, GisSort.branch_name, root, master, zeta)).isNegative();
+    assertThat(GitCommand.sort(true, GisSort.branch_name, root, zeta, feature)).isPositive();
   }
 
   @Test
