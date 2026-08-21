@@ -28,7 +28,7 @@ class GisIntTest extends GitBaseTest {
     create_clone_gitRepositories("rem7_y", "rem8_c", "rem9_m");
 
     // when:
-    Gis.main("init");
+    Gis.launch("init");
 
     // then:
     var markerFile = tempPath.resolve(".gis-modules");
@@ -43,13 +43,13 @@ class GisIntTest extends GitBaseTest {
   void gis_setVerbose_OK() throws IOException {
     // given:
     create_clone_gitRepositories("rem1_i", "rem2_j", "rem3_k");
-    Gis.main("init");
+    Gis.launch("init");
     ignoreMarkerFile();
     git(tempPath, "init");
 
     // when:
     Gis.setVerbose(true);
-    Gis.main();
+    Gis.launch();
 
     // then:
     var sPath = "" + tempPath;
@@ -77,7 +77,7 @@ class GisIntTest extends GitBaseTest {
     Gis.setVerbose(true);
 
     // when:
-    Gis.main("status");
+    Gis.launch("status");
 
     // then:
     assertThat(stripColorsToString.apply(errCaptor.toString())).contains(
@@ -88,12 +88,12 @@ class GisIntTest extends GitBaseTest {
   void gis_handleFolderNotInSubmodules_OK() throws IOException {
     // given:
     create_clone_gitRepositories("rem1_i", "rem2_j", "rem3_k");
-    Gis.main("init");
+    Gis.launch("init");
     git(tempPath, "init");
     Files.write(tempPath.resolve(".gis-modules"), "path = asdf".getBytes());
 
     // when:
-    Gis.main();
+    Gis.launch();
 
     // then:
     assertThat(stripColors.apply(errCaptor.toString())).contains(
@@ -104,11 +104,11 @@ class GisIntTest extends GitBaseTest {
   void gis_dryRun_OK() throws IOException {
     // given:
     create_clone_gitRepositories("rem4_i", "rem5_j", "rem6_k");
-    Gis.main("init");
+    Gis.launch("init");
 
     // when:
     Gis.setDryRun(true);
-    Gis.main("status", "--one-line");
+    Gis.launch("status", "--one-line");
 
     // then:
     assertThat(stripColors.apply(outCaptor.toString())).contains(

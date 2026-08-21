@@ -38,10 +38,14 @@ public class Gis extends GitCommand {
   }
 
   public static void main(String... args) {
+    System.exit(launch(args));
+  }
+
+  public static int launch(String... args) {
     var gis = new CommandLine(new Gis());
     gis.setExecutionExceptionHandler(GLOBAL_EXCEPTION_HANLER);
 
-    gis.execute(args.length == 0
+    return gis.execute(args.length == 0
         ? new String[] {GIT_STATUS, "--one-line"}
         : args);
   }
