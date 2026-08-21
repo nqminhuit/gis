@@ -59,12 +59,11 @@ public class GitCommand {
     printOutput(forEachModuleDo("pull"));
   }
 
-  private static int sort(boolean oneLineOpt, GisSort sort, String currentDirName, String a, String b) {
-    if (a.startsWith(currentDirName)) {
-      return Integer.MIN_VALUE;
-    }
-    if (b.startsWith(currentDirName)) {
-      return Integer.MAX_VALUE;
+  static int sort(boolean oneLineOpt, GisSort sort, String currentDirName, String a, String b) {
+    var aIsRoot = a.startsWith(currentDirName);
+    var bIsRoot = b.startsWith(currentDirName);
+    if (aIsRoot != bIsRoot) {
+      return aIsRoot ? -1 : 1;
     }
     if (sort == null || GisSort.module_name.equals(sort)) {
       return a.compareTo(b);

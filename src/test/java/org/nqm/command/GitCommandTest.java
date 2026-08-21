@@ -559,6 +559,19 @@ class GitCommandTest extends StdBaseTest {
   }
 
   @Test
+  void sortComparator_withSubmoduleNamedLikeRoot_keepsComparatorContract() {
+    // given: a submodule whose rendered basename equals the root's, so both lines share the prefix
+    var root = org.nqm.utils.StdOutUtils.infof("app");
+    var a = root + " master";
+    var b = root + " zebra";
+
+    // then: compare(a,b) must be consistent with -compare(b,a) instead of MIN_VALUE for both
+    assertThat(GitCommand.sort(true, GisSort.branch_name, root, a, b))
+        .isEqualTo(-GitCommand.sort(true, GisSort.branch_name, root, b, a));
+    assertThat(GitCommand.sort(true, GisSort.branch_name, root, a, a)).isZero();
+  }
+
+  @Test
   void confirmYesPattern_false() throws Exception {
     // given:
     var pattern = GitCommand.CONFIRM_YES;
