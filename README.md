@@ -182,10 +182,19 @@ to accumulate state. A module is:
 - `failed` when git exited with a non zero code, when the module could not be run at all, or
   when it was aborted because the run timed out (see `module_timeout_seconds`).
 
-`--progress` works for every command, and combines with `--format=json`:
+Once a run gives up on the modules which did not finish, their state is final: a module aborted
+mid flight stays `failed` even if its command was about to succeed.
+
+Note that `gis fetch -q` only starts the fetches and exits, so there `done` means that the fetch
+was started, not that it completed.
+
+stderr also carries the human readable warnings and errors, and those are not JSON. A client
+should therefore only read the lines starting with `{`:
 ```shell script
-gis status --format=json --progress 2> progress.jsonl > status.json
+gis status --format=json --progress 2> >(grep --line-buffered '^{' > progress.jsonl) > status.json
 ```
+
+`--progress` works for every command, and combines with `--format=json`.
 
 # Config
 

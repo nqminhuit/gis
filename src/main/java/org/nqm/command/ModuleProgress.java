@@ -5,9 +5,12 @@ import java.nio.file.Path;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.nqm.model.GisModuleState;
 import org.nqm.utils.GisJsonUtils;
+import org.nqm.utils.GisStringUtils;
 import org.nqm.utils.StdOutUtils;
 
 /**
@@ -22,6 +25,9 @@ final class ModuleProgress {
   private final Map<Path, String> names;
 
   private final Map<Path, GisModuleState> states;
+
+  /** set once the run gave up on the unfinished modules, no state may change afterwards */
+  private boolean aborted;
 
   private ModuleProgress(Map<Path, String> names) {
     this.names = names;
@@ -42,20 +48,28 @@ final class ModuleProgress {
     return progress;
   }
 
-  /**
-   * Modules are named after their directory, like everywhere else in the app. Since the report is
-   * keyed by that name, the few modules which would collide (a nested submodule sharing its
-   * directory name with another one) are named after their path instead.
-   */
   private static Map<Path, String> namesOf(Collection<Path> modules) {
     var rootDir = Path.of(currentDir());
     var taken = new HashSet<String>();
     var names = new LinkedHashMap<Path, String>();
-    modules.forEach(module -> {
-      var name = "" + module.getFileName();
-      names.put(module, taken.add(name) ? name : "" + rootDir.relativize(module));
-    });
+    modules.forEach(module -> names.put(module, uniqueName(module, rootDir, taken)));
     return names;
+  }
+
+  /**
+   * Modules are named after their directory, like everywhere else in the app. Since the report is
+   * keyed by that name, a module which would collide with an already named one (e.g. a nested
+   * submodule sharing its directory name) falls back to its path, which no other module can hold.
+   */
+  private static String uniqueName(Path module, Path rootDir, Set<String> taken) {
+    var candidates = List.of("" + module.getFileName(), "" + rootDir.relativize(module), "" + module);
+    for (var candidate : candidates) {
+      if (GisStringUtils.isNotBlank(candidate) && taken.add(candidate)) {
+        return candidate;
+      }
+    }
+    // the marker file lists the very same directory twice, so one entry does describe both
+    return "" + module;
   }
 
   void inProgress(Path module) {
@@ -71,12 +85,14 @@ final class ModuleProgress {
   }
 
   /**
-   * Fails every module which did not finish, e.g. because the run timed out.
+   * Fails every module which did not finish, e.g. because the run timed out. The states are
+   * final afterwards: a module aborted mid flight may still be about to report itself done.
    */
   synchronized void failUnfinished() {
-    if (states == null) {
+    if (states == null || aborted) {
       return;
     }
+    aborted = true;
     var unfinished = states.entrySet().stream()
         .filter(e -> e.getValue() != GisModuleState.DONE && e.getValue() != GisModuleState.FAILED)
         .toList();
@@ -88,7 +104,7 @@ final class ModuleProgress {
   }
 
   private synchronized void set(Path module, GisModuleState state) {
-    if (states == null || !states.containsKey(module)) {
+    if (states == null || aborted || !states.containsKey(module)) {
       return;
     }
     states.put(module, state);

@@ -900,6 +900,32 @@ class GitCommandTest extends StdBaseTest {
   }
 
   @Test
+  void status_withProgressAndTheNestedModuleNamedFirst_shouldStillReportEveryModule()
+      throws IOException {
+    // given: the nested module takes the 'dup' name, so the top level one cannot fall back to
+    // its path either, since that is the very same name
+    GitCommand.setProgressEnabled(true);
+    Files.createDirectories(tempPath.resolve("dup"));
+    Files.createDirectories(tempPath.resolve("nested").resolve("dup"));
+    Files.createDirectories(tempPath.resolve("" + tempPath.getFileName()));
+    Files.writeString(markerFile, """
+        path = nested/dup
+        path = dup
+        path = %s
+        """.formatted(tempPath.getFileName()));
+
+    // when:
+    gis.status(true, null, null);
+
+    // then: no module is lost, every one of them holds its own entry
+    assertThat(progressReports().get(0)).isEqualTo(progressOf(
+        tempPath.getFileName() + ":pending",
+        "dup:pending",
+        tempPath.resolve("dup") + ":pending",
+        tempPath.resolve("" + tempPath.getFileName()) + ":pending"));
+  }
+
+  @Test
   void gisAutocompleteFileName() throws Exception {
     assertThat(GIS_AUTOCOMPLETE_FILE).isEqualTo("_gis");
   }

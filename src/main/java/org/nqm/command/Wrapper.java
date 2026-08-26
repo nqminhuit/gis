@@ -110,6 +110,9 @@ public final class Wrapper {
           StdOutUtils.errln("module '%s' failed: %s".formatted(task.path().getFileName(), cause.getMessage()));
         }
       }
+      // every task is settled here, so a module still holding a running state never resolved
+      // itself, e.g. because its action failed with something else than a RuntimeException
+      progress.failUnfinished();
     }
     return output;
   }
