@@ -8,6 +8,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.locks.ReentrantLock;
 import org.nqm.model.GisModuleState;
 import org.nqm.utils.GisJsonUtils;
 import org.nqm.utils.GisStringUtils;
@@ -25,6 +26,13 @@ final class ModuleProgress {
   private final Map<Path, String> names;
 
   private final Map<Path, GisModuleState> states;
+
+  /**
+   * Reporting writes to stderr while holding the lock, to keep the reports in the order the
+   * states changed. A `synchronized` block would pin the virtual thread of the module to its
+   * carrier thread for that whole write, while a lock of java.util.concurrent lets it unmount.
+   */
+  private final ReentrantLock lock = new ReentrantLock();
 
   /** set once the run gave up on the unfinished modules, no state may change afterwards */
   private boolean aborted;
@@ -88,27 +96,44 @@ final class ModuleProgress {
    * Fails every module which did not finish, e.g. because the run timed out. The states are
    * final afterwards: a module aborted mid flight may still be about to report itself done.
    */
-  synchronized void failUnfinished() {
-    if (states == null || aborted) {
+  void failUnfinished() {
+    if (states == null) {
       return;
     }
-    aborted = true;
-    var unfinished = states.entrySet().stream()
-        .filter(e -> e.getValue() != GisModuleState.DONE && e.getValue() != GisModuleState.FAILED)
-        .toList();
-    if (unfinished.isEmpty()) {
-      return;
+    lock.lock();
+    try {
+      if (aborted) {
+        return;
+      }
+      aborted = true;
+      var unfinished = states.entrySet().stream()
+          .filter(e -> e.getValue() != GisModuleState.DONE && e.getValue() != GisModuleState.FAILED)
+          .toList();
+      if (unfinished.isEmpty()) {
+        return;
+      }
+      unfinished.forEach(e -> e.setValue(GisModuleState.FAILED));
+      report();
+    } finally {
+      lock.unlock();
     }
-    unfinished.forEach(e -> e.setValue(GisModuleState.FAILED));
-    report();
   }
 
-  private synchronized void set(Path module, GisModuleState state) {
-    if (states == null || aborted || !states.containsKey(module)) {
+  private void set(Path module, GisModuleState state) {
+    // reporting is off, which is the default: the modules never contend on anything
+    if (states == null) {
       return;
     }
-    states.put(module, state);
-    report();
+    lock.lock();
+    try {
+      if (aborted || !states.containsKey(module)) {
+        return;
+      }
+      states.put(module, state);
+      report();
+    } finally {
+      lock.unlock();
+    }
   }
 
   private void report() {
