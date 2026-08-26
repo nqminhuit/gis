@@ -54,6 +54,10 @@ public class GitCommand {
 
   public static final String GIT_STATUS = "status";
 
+  public static void setProgressEnabled(boolean enabled) {
+    ModuleProgress.setEnabled(enabled);
+  }
+
   private static void printOutput(Stream<String> output) {
     output.filter(GisStringUtils::isNotBlank).forEach(StdOutUtils::println);
   }

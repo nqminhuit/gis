@@ -22,6 +22,7 @@ stash \
 status st)" \
              "--help[print help]" \
              "--version[print gis version]" \
+             "--progress[report the progress of each module as JSON on stderr]" \
              "*::arg:->args"
   case $line[1] in
     checkout | co | fetch-origin | fo | local-prune | prune | push | pus | rebase-origin | re | remove-branch | rm)

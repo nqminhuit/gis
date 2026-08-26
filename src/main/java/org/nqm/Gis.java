@@ -37,6 +37,13 @@ public class Gis extends GitCommand {
     GisProcessUtils.isDryRunEnabled(dryRun);
   }
 
+  @Option(names = "--progress",
+      description = "Report the progress of each module as JSON on stderr, one document per line.",
+      scope = ScopeType.INHERIT)
+  public static void setProgress(boolean progress) {
+    GitCommand.setProgressEnabled(progress);
+  }
+
   public static void main(String... args) {
     System.exit(launch(args));
   }

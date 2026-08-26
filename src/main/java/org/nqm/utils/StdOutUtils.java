@@ -52,6 +52,13 @@ public class StdOutUtils {
     err.println("  " + CL_YELLOW + "WARNING: " + msg + CL_RESET);
   }
 
+  /**
+   * Writes a line of machine readable progress on stderr, leaving stdout to the command result.
+   */
+  public static void progressln(String msg) {
+    err.println(msg);
+  }
+
   public static void debugln(String msg) {
     out.println("  " + CL_YELLOW + "[DEBUG] " + msg + CL_RESET);
   }

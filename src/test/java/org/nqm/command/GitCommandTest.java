@@ -11,8 +11,10 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
@@ -818,6 +820,83 @@ class GitCommandTest extends StdBaseTest {
     assertThat(GitCommand.sortModules(GisSort.branch_name, b, a)).isPositive();
     assertThat(GitCommand.sortModules(GisSort.tracking_status, a, b)).isNegative();
     assertThat(GitCommand.sortModules(GisSort.tracking_status, b, a)).isPositive();
+  }
+
+  private List<String> progressReports() {
+    return stripColors.apply(errCaptor.toString()).stream().filter(line -> line.startsWith("{")).toList();
+  }
+
+  private static String progressOf(String... modulesWithStatus) {
+    return Stream.of(modulesWithStatus)
+        .map(module -> "\"%s\":{\"status\":\"%s\"}".formatted(module.split(":")[0], module.split(":")[1]))
+        .collect(java.util.stream.Collectors.joining(",", "{", "}"));
+  }
+
+  @Test
+  void status_withoutProgress_shouldNotReportProgress() throws IOException {
+    // when:
+    gis.status(true, null, null);
+
+    // then:
+    assertThat(progressReports()).isEmpty();
+  }
+
+  @Test
+  void status_withProgress_shouldReportEveryModuleOnStderr() throws IOException {
+    // given:
+    GitCommand.setProgressEnabled(true);
+    var root = "" + tempPath.getFileName();
+
+    // when:
+    gis.status(true, null, null);
+
+    // then: every module starts pending and ends done, with one report per state change
+    var reports = progressReports();
+    assertThat(reports.get(0)).isEqualTo(progressOf(
+        root + ":pending", "submodule1:pending", "submodule2:pending", "submodule3:pending"));
+    assertThat(reports.get(reports.size() - 1)).isEqualTo(progressOf(
+        root + ":done", "submodule1:done", "submodule2:done", "submodule3:done"));
+    assertThat(reports).hasSize(1 + 2 * 4)
+        .allSatisfy(report -> assertThat(report)
+            .contains(root, "submodule1", "submodule2", "submodule3"));
+    assertThat(reports).anyMatch(report -> report.contains("in-progress"));
+  }
+
+  @Test
+  void checkout_withProgress_shouldReportFailedModules() throws IOException {
+    // given: none of the modules has that branch, so every git command exits non zero
+    GitCommand.setProgressEnabled(true);
+
+    // when:
+    gis.checkout("no-such-branch");
+
+    // then:
+    var reports = progressReports();
+    assertThat(reports.get(reports.size() - 1)).isEqualTo(progressOf(
+        tempPath.getFileName() + ":failed",
+        "submodule1:failed",
+        "submodule2:failed",
+        "submodule3:failed"));
+  }
+
+  @Test
+  void status_withProgressAndModulesSharingTheirName_shouldReportThePathOfTheSecond()
+      throws IOException {
+    // given:
+    GitCommand.setProgressEnabled(true);
+    Files.createDirectories(tempPath.resolve("dup"));
+    Files.createDirectories(tempPath.resolve("nested").resolve("dup"));
+    Files.writeString(markerFile, """
+        path = dup
+        path = nested/dup
+        """);
+
+    // when:
+    gis.status(true, null, null);
+
+    // then:
+    assertThat(progressReports().get(0)).isEqualTo(progressOf(
+        tempPath.getFileName() + ":pending", "dup:pending", "nested/dup:pending"));
   }
 
   @Test

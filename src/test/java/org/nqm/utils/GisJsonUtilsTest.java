@@ -1,10 +1,12 @@
 package org.nqm.utils;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import java.util.LinkedHashMap;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.nqm.model.GisBranchStatus;
 import org.nqm.model.GisFileChange;
+import org.nqm.model.GisModuleState;
 import org.nqm.model.GisModuleStatus;
 
 class GisJsonUtilsTest {
@@ -86,6 +88,28 @@ class GisJsonUtilsTest {
 
     // then:
     assertThat(GisJsonUtils.toJson(modules, null)).contains("\"branch\": null");
+  }
+
+  @Test
+  void toProgressJson_shouldRenderOneLine() {
+    // given:
+    var states = new LinkedHashMap<String, GisModuleState>();
+    states.put("module1", GisModuleState.DONE);
+    states.put("module2", GisModuleState.PENDING);
+    states.put("module3", GisModuleState.IN_PROGRESS);
+    states.put("module4", GisModuleState.FAILED);
+
+    // then:
+    assertThat(GisJsonUtils.toProgressJson(states)).isEqualTo(
+        "{\"module1\":{\"status\":\"done\"},"
+            + "\"module2\":{\"status\":\"pending\"},"
+            + "\"module3\":{\"status\":\"in-progress\"},"
+            + "\"module4\":{\"status\":\"failed\"}}");
+  }
+
+  @Test
+  void toProgressJson_withoutModule_OK() {
+    assertThat(GisJsonUtils.toProgressJson(new LinkedHashMap<>())).isEqualTo("{}");
   }
 
   @Test
