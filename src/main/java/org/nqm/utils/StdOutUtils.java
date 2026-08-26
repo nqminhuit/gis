@@ -132,29 +132,8 @@ public class StdOutUtils {
     return status == ' ' ? '.' : status;
   }
 
-  private static boolean isBranchLine(String line) {
-    return line.startsWith("## ");
-  }
-
-  private static String[] splitBranchLine(String line) {
-    var branchDetails = line.substring(3);
-    // detached HEAD (e.g. a submodule checked out at a SHA); keep the branch a single
-    // token so the positional parsing of --sort still works
-    if (branchDetails.equals("HEAD (no branch)")) {
-      return new String[] {"HEAD(detached)", ""};
-    }
-    if (branchDetails.startsWith("No commits yet on ")) {
-      return new String[] {branchDetails.substring("No commits yet on ".length()), ""};
-    }
-    if (branchDetails.startsWith("Initial commit on ")) {
-      return new String[] {branchDetails.substring("Initial commit on ".length()), ""};
-    }
-    var split = branchDetails.split(" \\[", 2);
-    return new String[] {split[0], split.length > 1 ? split[1].replaceFirst("]$", "") : ""};
-  }
-
   private static String buildBranchInfo(String branchLine) {
-    var branchSplit = splitBranchLine(branchLine);
+    var branchSplit = GitStatusParser.splitBranchLine(branchLine);
     var upstreamSplit = branchSplit[0].split("\\.\\.\\.", 2);
     var branch = "\n  ## " + coloringWord(upstreamSplit[0], CL_GREEN);
     if (upstreamSplit.length == 1) {
@@ -173,7 +152,7 @@ public class StdOutUtils {
   }
 
   private static String buildBranchInfoOneLine(String branchLine) {
-    var branchSplit = splitBranchLine(branchLine);
+    var branchSplit = GitStatusParser.splitBranchLine(branchLine);
     var branch = " " + coloringBranch(branchSplit[0].split("\\.\\.\\.", 2)[0]);
     if (GisStringUtils.isBlank(branchSplit[1])) {
       return branch;
@@ -201,50 +180,12 @@ public class StdOutUtils {
         .collect(Collectors.joining(", "));
   }
 
-  private static char[] extractStatus(String line) {
-    return line.substring(0, Math.min(2, line.length())).toCharArray();
-  }
-
-  private static String normalizePathToken(String path) {
-    var normalized = path.trim();
-    if (normalized.length() >= 2 && normalized.startsWith("\"") && normalized.endsWith("\"")) {
-      normalized = normalized.substring(1, normalized.length() - 1)
-          .replace("\\\"", "\"")
-          .replace("\\\\", "\\");
-    }
-    return normalized;
-  }
-
-  // ' -> ' separates the two paths only on rename/copy lines; anywhere else it is
-  // just part of a file name
-  private static boolean isRenameOrCopyStatus(String line) {
-    if (line.length() < 2) {
-      return false;
-    }
-    var x = line.charAt(0);
-    var y = line.charAt(1);
-    return x == 'R' || x == 'C' || y == 'R' || y == 'C';
-  }
-
-  private static String[] extractPaths(String line) {
-    if (line.length() <= 3) {
-      return new String[] {""};
-    }
-    var paths = line.substring(3);
-    if (!isRenameOrCopyStatus(line)) {
-      return new String[] {normalizePathToken(paths)};
-    }
-    return Stream.of(paths.split(" -> "))
-        .map(StdOutUtils::normalizePathToken)
-        .toArray(String[]::new);
-  }
-
   private static String extractFile(String line) {
-    return String.join(" -> ", extractPaths(line));
+    return String.join(" -> ", GitStatusParser.extractPaths(line));
   }
 
   private static String extractDisplayFile(String line) {
-    var paths = extractPaths(line);
+    var paths = GitStatusParser.extractPaths(line);
     var displayPath = paths[paths.length - 1];
     if (GisStringUtils.isBlank(displayPath)) {
       return "";
@@ -257,12 +198,12 @@ public class StdOutUtils {
   }
 
   public static String gitStatus(String line, boolean isRootModule, String rootModuleName) {
-    if (isBranchLine(line)) {
+    if (GitStatusParser.isBranchLine(line)) {
       return buildBranchInfo(line);
     }
     return "\n  "
-        + buildStaging(extractStatus(line))
-        + coloringFile(extractPaths(line), extractFile(line), isRootModule, rootModuleName);
+        + buildStaging(GitStatusParser.extractStatus(line))
+        + coloringFile(GitStatusParser.extractPaths(line), extractFile(line), isRootModule, rootModuleName);
   }
 
   public static String gitStatusOneLine(String line, boolean isRootModule) {
@@ -270,9 +211,10 @@ public class StdOutUtils {
   }
 
   public static String gitStatusOneLine(String line, boolean isRootModule, String rootModuleName) {
-    if (isBranchLine(line)) {
+    if (GitStatusParser.isBranchLine(line)) {
       return buildBranchInfoOneLine(line);
     }
-    return " " + coloringFile(extractPaths(line), extractDisplayFile(line), isRootModule, rootModuleName);
+    return " "
+        + coloringFile(GitStatusParser.extractPaths(line), extractDisplayFile(line), isRootModule, rootModuleName);
   }
 }

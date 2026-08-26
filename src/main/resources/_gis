@@ -59,7 +59,8 @@ function _gis_branches_suggest {
 function _gis_status_suggest {
   _arguments \
     "--one-line[print result in one line]" \
-    "--sort=[Valid values: module_name, branch_name, tracking_status]"
+    "--sort=[Valid values: module_name, branch_name, tracking_status]" \
+    "--format=[Valid values: text, json]"
 }
 
 function _gis_stash_suggest {

@@ -104,6 +104,37 @@ class CommandVerticleTest extends StdBaseTest {
   }
 
   @Test
+  void executeStatus_shouldReturnParsedModel() {
+    // given:
+    GisProcessUtilsMock.mockRun(
+        new GisProcessDto("""
+            ## master...origin/master [ahead 1]
+             M pom.xml
+            """, 0),
+        tempPath.toFile(),
+        GIT_HOME_DIR, "status", "-sb", "--ignore-submodules", "--porcelain=v1");
+
+    // when:
+    var result = CommandVerticle.executeStatus(
+        tempPath, true, "status", "-sb", "--ignore-submodules", "--porcelain=v1");
+
+    // then:
+    assertThat(result.module()).isEqualTo("" + tempPath.getFileName());
+    assertThat(result.root()).isTrue();
+    assertThat(result.branch().name()).isEqualTo("master");
+    assertThat(result.branch().upstream()).isEqualTo("origin/master");
+    assertThat(result.branch().ahead()).isEqualTo(1);
+    assertThat(result.files()).extracting("path").containsExactly("pom.xml");
+  }
+
+  @Test
+  void executeStatus_withNullPath_shouldThrow() {
+    assertThatThrownBy(() -> CommandVerticle.executeStatus(null, false, "status"))
+        .isInstanceOf(GisException.class)
+        .hasMessage("path must not be null");
+  }
+
+  @Test
   void executeStatusOneLine_withRootModulePrefixInPath_shouldUseGrayColor() throws IOException {
     // given:
     var srcPath = Files.createDirectory(tempPath.resolve("src"));

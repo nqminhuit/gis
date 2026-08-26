@@ -22,6 +22,8 @@ import org.nqm.helper.ExecutorsMock;
 import org.nqm.helper.GisConfigMock;
 import org.nqm.helper.GisProcessUtilsMock;
 import org.nqm.helper.StdBaseTest;
+import org.nqm.model.GisFormat;
+import org.nqm.model.GisModuleStatus;
 import org.nqm.model.GisSort;
 import org.nqm.utils.GisProcessUtils;
 
@@ -120,7 +122,7 @@ class GitCommandTest extends StdBaseTest {
   @Test
   void statusShort_withDefaultSort_OK() throws IOException {
     // when:
-    gis.status(true, null);
+    gis.status(true, null, null);
 
     // then:
     assertThat(stripColors.apply(outCaptor.toString())).containsExactly(
@@ -133,7 +135,7 @@ class GitCommandTest extends StdBaseTest {
   @Test
   void statusShort_withModuleNameSort_OK() throws IOException {
     // when:
-    gis.status(true, null);
+    gis.status(true, null, null);
 
     // then:
     assertThat(stripColors.apply(outCaptor.toString())).containsExactly(
@@ -146,7 +148,7 @@ class GitCommandTest extends StdBaseTest {
   @Test
   void statusFull_withDefaultSort_OK() throws IOException {
     // when:
-    gis.status(false, null);
+    gis.status(false, null, null);
 
     // then:
     assertThat(stripColors.apply(outCaptor.toString())).containsExactly(
@@ -167,7 +169,7 @@ class GitCommandTest extends StdBaseTest {
   @Test
   void statusFull_withSortedByModuleName_OK() throws IOException {
     // when:
-    gis.status(false, GisSort.module_name);
+    gis.status(false, GisSort.module_name, null);
 
     // then:
     assertThat(stripColors.apply(outCaptor.toString())).containsExactly(
@@ -194,7 +196,7 @@ class GitCommandTest extends StdBaseTest {
     resetOutputStreamTest();
 
     // when:
-    gis.status(false, GisSort.branch_name);
+    gis.status(false, GisSort.branch_name, null);
 
     // then:
     assertThat(stripColors.apply(outCaptor.toString())).containsExactly(
@@ -221,7 +223,7 @@ class GitCommandTest extends StdBaseTest {
     resetOutputStreamTest();
 
     // when:
-    gis.status(true, GisSort.branch_name);
+    gis.status(true, GisSort.branch_name, null);
 
     // then:
     assertThat(stripColors.apply(outCaptor.toString())).containsExactly(
@@ -243,7 +245,7 @@ class GitCommandTest extends StdBaseTest {
 
     // when:
     resetOutputStreamTest();
-    gis.status(false, GisSort.tracking_status);
+    gis.status(false, GisSort.tracking_status, null);
 
     // then:
     assertThat(stripColors.apply(outCaptor.toString())).containsExactly(
@@ -279,7 +281,7 @@ class GitCommandTest extends StdBaseTest {
 
     // when:
     resetOutputStreamTest();
-    gis.status(true, GisSort.tracking_status);
+    gis.status(true, GisSort.tracking_status, null);
 
     // then:
     assertThat(stripColors.apply(outCaptor.toString())).containsExactly(
@@ -292,7 +294,7 @@ class GitCommandTest extends StdBaseTest {
   @Test
   void status_withOneLiner_OK() throws IOException {
     // when:
-    gis.status(true, GisSort.module_name);
+    gis.status(true, GisSort.module_name, null);
 
     // then:
     assertThat(stripColors.apply(outCaptor.toString()))
@@ -567,7 +569,7 @@ class GitCommandTest extends StdBaseTest {
     Files.writeString(markerFile, "path = notagit\n", java.nio.file.StandardOpenOption.APPEND);
 
     // when:
-    gis.status(true, GisSort.branch_name);
+    gis.status(true, GisSort.branch_name, null);
 
     // then:
     assertThat(stripColors.apply(outCaptor.toString()))
@@ -636,6 +638,169 @@ class GitCommandTest extends StdBaseTest {
     assertThat(pattern.matcher("yes").matches()).isTrue();
     assertThat(pattern.matcher("Y").matches()).isTrue();
     assertThat(pattern.matcher("y").matches()).isTrue();
+  }
+
+  @Test
+  void status_withJsonFormat_OK() throws IOException {
+    // given:
+    Files.createFile(tempPath.resolve("submodule1").resolve("aa1.log"));
+
+    // when:
+    gis.status(false, null, GisFormat.json);
+
+    // then: no ANSI color, the root module on top, then the submodules by name
+    var json = outCaptor.toString();
+    assertThat(json).isEqualTo(stripColorsToString.apply(json));
+    assertThat(json.strip()).isEqualTo("""
+        {
+          "fetchedAt": null,
+          "modules": [
+            {
+              "module": "%s",
+              "root": true,
+              "branch": {
+                "name": "master",
+                "upstream": null,
+                "ahead": 0,
+                "behind": 0,
+                "gone": false,
+                "detached": false
+              },
+              "files": [
+                {
+                  "indexStatus": "?",
+                  "worktreeStatus": "?",
+                  "path": ".gitignore",
+                  "originalPath": null
+                },
+                {
+                  "indexStatus": "?",
+                  "worktreeStatus": "?",
+                  "path": "submodule1/",
+                  "originalPath": null
+                },
+                {
+                  "indexStatus": "?",
+                  "worktreeStatus": "?",
+                  "path": "submodule2/",
+                  "originalPath": null
+                },
+                {
+                  "indexStatus": "?",
+                  "worktreeStatus": "?",
+                  "path": "submodule3/",
+                  "originalPath": null
+                }
+              ]
+            },
+            {
+              "module": "submodule1",
+              "root": false,
+              "branch": {
+                "name": "master",
+                "upstream": null,
+                "ahead": 0,
+                "behind": 0,
+                "gone": false,
+                "detached": false
+              },
+              "files": [
+                {
+                  "indexStatus": "?",
+                  "worktreeStatus": "?",
+                  "path": "aa1.log",
+                  "originalPath": null
+                }
+              ]
+            },
+            {
+              "module": "submodule2",
+              "root": false,
+              "branch": {
+                "name": "master",
+                "upstream": null,
+                "ahead": 0,
+                "behind": 0,
+                "gone": false,
+                "detached": false
+              },
+              "files": []
+            },
+            {
+              "module": "submodule3",
+              "root": false,
+              "branch": {
+                "name": "master",
+                "upstream": null,
+                "ahead": 0,
+                "behind": 0,
+                "gone": false,
+                "detached": false
+              },
+              "files": []
+            }
+          ]
+        }""".formatted(tempPath.getFileName()));
+  }
+
+  @Test
+  void status_withJsonFormatAndOneLine_shouldIgnoreOneLine() throws IOException {
+    // when:
+    gis.status(true, null, GisFormat.json);
+    var oneLine = outCaptor.toString();
+    resetOutputStreamTest();
+    gis.status(false, null, GisFormat.json);
+
+    // then:
+    assertThat(oneLine).isEqualTo(outCaptor.toString());
+  }
+
+  @Test
+  void status_withJsonFormatAndSortByTrackingStatus_shouldPutMostChangedFirst() throws IOException {
+    // given:
+    Files.createFile(tempPath.resolve("submodule3").resolve("aa1.log"));
+    Files.createFile(tempPath.resolve("submodule3").resolve("aa2.log"));
+    Files.createFile(tempPath.resolve("submodule1").resolve("aa3.log"));
+
+    // when:
+    gis.status(false, GisSort.tracking_status, GisFormat.json);
+
+    // then:
+    var json = outCaptor.toString();
+    assertThat(json.indexOf("\"submodule3\""))
+        .isLessThan(json.indexOf("\"submodule1\""))
+        .isLessThan(json.indexOf("\"submodule2\""));
+  }
+
+  @Test
+  void status_withJsonFormatAndSortByBranchName_OK() throws IOException {
+    // given:
+    gis.spinOff("aaa", "submodule3");
+    gis.spinOff("bbb", "submodule2");
+    resetOutputStreamTest();
+
+    // when:
+    gis.status(false, GisSort.branch_name, GisFormat.json);
+
+    // then:
+    var json = outCaptor.toString();
+    assertThat(json.indexOf("\"submodule3\""))
+        .isLessThan(json.indexOf("\"submodule2\""))
+        .isLessThan(json.indexOf("\"submodule1\""));
+  }
+
+  @Test
+  void sortModules_shouldKeepRootOnTop() {
+    // given:
+    var root = new GisModuleStatus("zzz", true, null, java.util.List.of());
+    var module = new GisModuleStatus("aaa", false, null, java.util.List.of());
+
+    // then:
+    for (var sort : new GisSort[] {null, GisSort.module_name, GisSort.branch_name, GisSort.tracking_status}) {
+      assertThat(GitCommand.sortModules(sort, root, module)).isNegative();
+      assertThat(GitCommand.sortModules(sort, module, root)).isPositive();
+      assertThat(GitCommand.sortModules(sort, root, root)).isZero();
+    }
   }
 
   @Test

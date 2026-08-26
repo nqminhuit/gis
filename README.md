@@ -89,6 +89,68 @@ Currently gis only support zsh for completion.
 
 Run `gis fe -q` to start `git fetch` for the root repository and every configured module in the background, then exit immediately without waiting for fetch results.
 
+## Structured output
+
+`gis status` prints a colored report meant for human eyes. To consume it from another client, ask
+for JSON instead:
+
+```shell script
+gis status --format=json
+```
+
+The document holds every module (the root repository first, then the submodules, honoring
+`--sort`), the branch header of `git status -sb` and the changed files of
+`git status --porcelain=v1`:
+
+```json
+{
+  "fetchedAt": "2024-05-06T07:08:09",
+  "modules": [
+    {
+      "module": "gis",
+      "root": true,
+      "branch": {
+        "name": "master",
+        "upstream": "origin/master",
+        "ahead": 2,
+        "behind": 9,
+        "gone": false,
+        "detached": false
+      },
+      "files": [
+        {
+          "indexStatus": " ",
+          "worktreeStatus": "M",
+          "path": "pom.xml",
+          "originalPath": null
+        },
+        {
+          "indexStatus": "R",
+          "worktreeStatus": " ",
+          "path": "text-0001",
+          "originalPath": "text-1"
+        }
+      ]
+    }
+  ]
+}
+```
+
+Notes:
+- `fetchedAt` is the last modification time of `.git/FETCH_HEAD` of the root repository in
+  ISO-8601, or `null` when the repository was never fetched.
+- `branch` is `null` when git reported no branch line for that module, `name` is `"HEAD"` when
+  `detached` is true, and `upstream` is `null` when the branch tracks nothing.
+- `indexStatus` and `worktreeStatus` are the two status columns of `git status --porcelain=v1`
+  ("?" for untracked, " " for unmodified).
+- `originalPath` is only filled for renames and copies, where `path` holds the destination.
+- `--format=text` is the default; `--one-line` has no effect on the JSON output.
+
+For example, to list the modules which are behind their upstream:
+```shell script
+gis status --format=json | jq -r '.modules[] | select(.branch.behind > 0) | .module'
+```
+
 # Config
 
 Gis will read config from file at `~/.config/gis.config`

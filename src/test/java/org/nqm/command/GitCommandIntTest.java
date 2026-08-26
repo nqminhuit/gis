@@ -249,7 +249,7 @@ class GitCommandIntTest extends GitBaseTest {
 
     // then:
     resetOutputStreamTest();
-    gis.status(true, GisSort.module_name);
+    gis.status(true, GisSort.module_name, null);
     assertThat(stripColors.apply(outCaptor.toString())).contains(
         "" + tempPath.getFileName(),
         "two_1_i nwebra",
@@ -268,7 +268,7 @@ class GitCommandIntTest extends GitBaseTest {
 
     // then:
     resetOutputStreamTest();
-    gis.status(true, GisSort.module_name);
+    gis.status(true, GisSort.module_name, null);
     assertThat(stripColors.apply(outCaptor.toString())).contains(
         "" + tempPath.getFileName(),
         "two_4_i nwebra",
@@ -287,7 +287,7 @@ class GitCommandIntTest extends GitBaseTest {
 
     // then:
     resetOutputStreamTest();
-    gis.status(true, GisSort.module_name);
+    gis.status(true, GisSort.module_name, null);
     assertThat(stripColors.apply(outCaptor.toString())).containsExactly(
         "" + tempPath.getFileName(),
         "two_1_y master",
@@ -309,7 +309,7 @@ class GitCommandIntTest extends GitBaseTest {
 
     // then:
     resetOutputStreamTest();
-    gis.status(true, GisSort.module_name);
+    gis.status(true, GisSort.module_name, null);
     assertThat(stripColors.apply(outCaptor.toString())).contains(
         rootModule + " batabranch .gitmodules two_1_h two_2_hh two_3_hhh",
         "two_1_h master",
@@ -440,7 +440,7 @@ class GitCommandIntTest extends GitBaseTest {
     resetOutputStreamTest();
 
     // then:
-    gis.status(true, GisSort.module_name);
+    gis.status(true, GisSort.module_name, null);
     assertThat(stripColors.apply(outCaptor.toString())).contains(
         "tppo_1_b batabranch",
         "tppo_2_bb batabranch",
@@ -457,7 +457,7 @@ class GitCommandIntTest extends GitBaseTest {
     commitFile(repos);
     scrambleFiles(repos);
     resetOutputStreamTest();
-    gis.status(true, GisSort.module_name);
+    gis.status(true, GisSort.module_name, null);
     assertThat(stripColors.apply(outCaptor.toString()))
         .contains(
             "" + tempPath.getFileName(),
@@ -530,7 +530,7 @@ class GitCommandIntTest extends GitBaseTest {
     cleanUntrackedFiles(repos);
     resetOutputStreamTest();
 
-    gis.status(true, null);
+    gis.status(true, null, null);
     assertThat(stripColors.apply(outCaptor.toString())).containsOnly(
         "" + tempPath.getFileName(),
         "ali_4_x master[behind 1]",
@@ -542,7 +542,7 @@ class GitCommandIntTest extends GitBaseTest {
     gis.rebaseCurrentOrigin();
 
     // then:
-    gis.status(true, null);
+    gis.status(true, null, null);
     assertThat(stripColors.apply(outCaptor.toString())).containsOnly(
         "" + tempPath.getFileName(),
         "ali_4_x master",
@@ -568,7 +568,7 @@ class GitCommandIntTest extends GitBaseTest {
     cleanUntrackedFiles(repos);
     resetOutputStreamTest();
 
-    gis.status(true, null);
+    gis.status(true, null, null);
     assertThat(stripColors.apply(outCaptor.toString())).containsOnly(
         "" + tempPath.getFileName(),
         "ali_4_x bbb4[behind 1]",
@@ -580,7 +580,7 @@ class GitCommandIntTest extends GitBaseTest {
     gis.rebaseCurrentOrigin();
 
     // then:
-    gis.status(true, null);
+    gis.status(true, null, null);
     assertThat(stripColors.apply(outCaptor.toString())).containsOnly(
         "" + tempPath.getFileName(),
         "ali_4_x bbb4",
