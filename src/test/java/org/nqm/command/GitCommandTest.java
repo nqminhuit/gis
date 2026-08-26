@@ -22,6 +22,7 @@ import org.nqm.helper.ExecutorsMock;
 import org.nqm.helper.GisConfigMock;
 import org.nqm.helper.GisProcessUtilsMock;
 import org.nqm.helper.StdBaseTest;
+import org.nqm.model.GisBranchStatus;
 import org.nqm.model.GisFormat;
 import org.nqm.model.GisModuleStatus;
 import org.nqm.model.GisSort;
@@ -801,6 +802,22 @@ class GitCommandTest extends StdBaseTest {
       assertThat(GitCommand.sortModules(sort, module, root)).isPositive();
       assertThat(GitCommand.sortModules(sort, root, root)).isZero();
     }
+  }
+
+  @Test
+  void sortModules_withTiedEntries_shouldFallBackToModuleName() {
+    // given: the modules come back in the order their virtual thread finished, so tied entries
+    // must not keep that order
+    var a = new GisModuleStatus("aaa", false, new GisBranchStatus("master", null, 0, 0, false, false),
+        java.util.List.of());
+    var b = new GisModuleStatus("bbb", false, new GisBranchStatus("master", null, 0, 0, false, false),
+        java.util.List.of());
+
+    // then:
+    assertThat(GitCommand.sortModules(GisSort.branch_name, a, b)).isNegative();
+    assertThat(GitCommand.sortModules(GisSort.branch_name, b, a)).isPositive();
+    assertThat(GitCommand.sortModules(GisSort.tracking_status, a, b)).isNegative();
+    assertThat(GitCommand.sortModules(GisSort.tracking_status, b, a)).isPositive();
   }
 
   @Test

@@ -144,7 +144,13 @@ Notes:
 - `indexStatus` and `worktreeStatus` are the two status columns of `git status --porcelain=v1`
   ("?" for untracked, " " for unmodified).
 - `originalPath` is only filled for renames and copies, where `path` holds the destination.
+- paths are decoded, so the escaping git applies through `core.quotePath` is undone and `path`
+  can be used as is.
 - `--format=text` is the default; `--one-line` has no effect on the JSON output.
+- do not combine `--format=json` with `-v` or `--dry-run`: both write to stdout as well, which
+  would break the document for the client parsing it.
+- a module whose git command failed or timed out is left out of `modules`, and `gis` exits with
+  a non zero code while the reason is reported on stderr.
 
 For example, to list the modules which are behind their upstream:
 ```shell script

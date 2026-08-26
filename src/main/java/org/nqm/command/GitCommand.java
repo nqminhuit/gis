@@ -23,6 +23,7 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -113,7 +114,8 @@ public class GitCommand {
       return Optional.empty();
     }
     var lastFetched = Files.readAttributes(fetched, BasicFileAttributes.class).lastModifiedTime();
-    return Optional.of(LocalDateTime.ofInstant(lastFetched.toInstant(), ZoneId.systemDefault()));
+    return Optional.of(LocalDateTime.ofInstant(lastFetched.toInstant(), ZoneId.systemDefault())
+        .truncatedTo(ChronoUnit.SECONDS));
   }
 
   private void printFetchedTime() throws IOException {
@@ -133,12 +135,18 @@ public class GitCommand {
       return a.root() ? -1 : 1;
     }
     if (GisSort.branch_name.equals(sort)) {
-      return branchNameOf(a).compareTo(branchNameOf(b));
+      return tieBreak(branchNameOf(a).compareTo(branchNameOf(b)), a, b);
     }
     if (GisSort.tracking_status.equals(sort)) {
-      return b.files().size() - a.files().size();
+      return tieBreak(b.files().size() - a.files().size(), a, b);
     }
     return a.module().compareTo(b.module());
+  }
+
+  // the modules come back in the order their virtual thread finished, so ties have to be
+  // broken explicitly to keep the machine readable document stable across runs
+  private static int tieBreak(int comparison, GisModuleStatus a, GisModuleStatus b) {
+    return comparison != 0 ? comparison : a.module().compareTo(b.module());
   }
 
   private static String branchNameOf(GisModuleStatus module) {

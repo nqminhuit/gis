@@ -110,6 +110,57 @@ class GitStatusParserTest {
   }
 
   @Test
+  void parse_withQuotedPath_shouldDecodeCQuoting() {
+    // given: git C quotes any path holding a space, and escapes non ASCII bytes in octal
+    // unless core.quotePath is off
+    var files = GitStatusParser.parse("m", false, output(
+        "?? \"plain space.txt\"",
+        "?? \"t\\341\\273\\207p-\\303\\274nicode.txt\"",
+        "?? \"tab\\there.txt\"",
+        "?? \"quote\\\"and\\\\slash.txt\"")).files();
+
+    // then:
+    assertThat(files).extracting("path").containsExactly(
+        "plain space.txt",
+        "t\u1ec7p-\u00fcnicode.txt",
+        "tab\there.txt",
+        "quote\"and\\slash.txt");
+  }
+
+  @Test
+  void parse_withoutQuotePathConfig_shouldKeepPathAsIs() {
+    // given: with core.quotePath=false git prints the UTF-8 path, quoted because of the space
+    var files = GitStatusParser.parse("m", false, "?? \"t\u1ec7p \u00fcnicode.txt\"").files();
+
+    // then:
+    assertThat(files).extracting("path").containsExactly("t\u1ec7p \u00fcnicode.txt");
+  }
+
+  @Test
+  void parse_withArrowInQuotedRenamePath_shouldSplitOutsideQuotes() {
+    // when:
+    var files = GitStatusParser.parse("m", false, output(
+        "R  f.txt -> \"a -> b.txt\"",
+        "R  \"a -> b.txt\" -> c.txt",
+        "C  \"a -> b.txt\" -> \"c -> d.txt\"")).files();
+
+    // then:
+    assertThat(files).extracting("originalPath", "path").containsExactly(
+        tuple("f.txt", "a -> b.txt"),
+        tuple("a -> b.txt", "c.txt"),
+        tuple("a -> b.txt", "c -> d.txt"));
+  }
+
+  @Test
+  void parse_withRenameStatusButWithoutSeparator_shouldKeepSinglePath() {
+    // given: 'R' in the work tree column of an unmerged entry, without a rename separator
+    var files = GitStatusParser.parse("m", false, " R deleted.txt").files();
+
+    // then:
+    assertThat(files).extracting("originalPath", "path").containsExactly(tuple(null, "deleted.txt"));
+  }
+
+  @Test
   void parse_withoutAnyOutput_OK() {
     // when:
     var module = GitStatusParser.parse("m", false, "");

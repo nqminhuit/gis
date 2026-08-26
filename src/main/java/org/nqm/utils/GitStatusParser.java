@@ -1,5 +1,7 @@
 package org.nqm.utils;
 
+import java.io.ByteArrayOutputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
@@ -25,6 +27,8 @@ public class GitStatusParser {
   private static final String AHEAD = "ahead ";
   private static final String BEHIND = "behind ";
   private static final String GONE = "gone";
+  private static final String ESCAPES = "abfnrtv\"\\";
+  private static final String UNESCAPED = "\u0007\b\f\n\r\t\u000b\"\\";
 
   public static boolean isBranchLine(String line) {
     return line.startsWith(BRANCH_PREFIX);
@@ -55,14 +59,64 @@ public class GitStatusParser {
     return line.substring(0, Math.min(2, line.length())).toCharArray();
   }
 
+  /**
+   * Decodes the C style quoting git applies to paths holding a space, a quote, a control
+   * character or, unless `core.quotePath` is off, any non ASCII byte.
+   */
   private static String normalizePathToken(String path) {
-    var normalized = path.trim();
-    if (normalized.length() >= 2 && normalized.startsWith("\"") && normalized.endsWith("\"")) {
-      normalized = normalized.substring(1, normalized.length() - 1)
-          .replace("\\\"", "\"")
-          .replace("\\\\", "\\");
+    var token = path.trim();
+    if (token.length() < 2 || !token.startsWith("\"") || !token.endsWith("\"")) {
+      return token;
     }
-    return normalized;
+    var body = token.substring(1, token.length() - 1);
+    // git escapes non ASCII characters byte per byte, so the escapes have to be collected as
+    // bytes and decoded as UTF-8 at the end
+    var decoded = new ByteArrayOutputStream();
+    var i = 0;
+    while (i < body.length()) {
+      var backslash = body.indexOf('\\', i);
+      if (backslash < 0) {
+        decoded.writeBytes(body.substring(i).getBytes(StandardCharsets.UTF_8));
+        break;
+      }
+      decoded.writeBytes(body.substring(i, backslash).getBytes(StandardCharsets.UTF_8));
+      i = writeEscaped(decoded, body, backslash + 1);
+    }
+    return decoded.toString(StandardCharsets.UTF_8);
+  }
+
+  /**
+   * Writes the escape sequence which starts at {@code idx} (right after the backslash) and
+   * returns the index of the next character to read.
+   */
+  private static int writeEscaped(ByteArrayOutputStream decoded, String body, int idx) {
+    if (idx >= body.length()) {
+      decoded.write('\\');
+      return idx;
+    }
+    var c = body.charAt(idx);
+    var escaped = ESCAPES.indexOf(c);
+    if (escaped >= 0) {
+      decoded.write(UNESCAPED.charAt(escaped));
+      return idx + 1;
+    }
+    if (!isOctalDigit(c)) {
+      decoded.write('\\');
+      decoded.writeBytes(("" + c).getBytes(StandardCharsets.UTF_8));
+      return idx + 1;
+    }
+    var end = idx;
+    var value = 0;
+    while (end < body.length() && end - idx < 3 && isOctalDigit(body.charAt(end))) {
+      value = value * 8 + (body.charAt(end) - '0');
+      end++;
+    }
+    decoded.write(value);
+    return end;
+  }
+
+  private static boolean isOctalDigit(char c) {
+    return c >= '0' && c <= '7';
   }
 
   // ' -> ' separates the two paths only on rename/copy lines; anywhere else it is
@@ -88,9 +142,30 @@ public class GitStatusParser {
     if (!isRenameOrCopyStatus(line)) {
       return new String[] {normalizePathToken(paths)};
     }
-    return Stream.of(paths.split(RENAME_SEPARATOR))
-        .map(GitStatusParser::normalizePathToken)
-        .toArray(String[]::new);
+    var separator = indexOfSeparatorOutsideQuotes(paths);
+    if (separator < 0) {
+      return new String[] {normalizePathToken(paths)};
+    }
+    return new String[] {
+        normalizePathToken(paths.substring(0, separator)),
+        normalizePathToken(paths.substring(separator + RENAME_SEPARATOR.length()))};
+  }
+
+  // a quoted path may hold the ' -> ' sequence itself, so only a separator outside the quotes
+  // splits the source from the destination
+  private static int indexOfSeparatorOutsideQuotes(String paths) {
+    var quoted = false;
+    for (var i = 0; i < paths.length(); i++) {
+      var c = paths.charAt(i);
+      if (quoted && c == '\\') {
+        i++;
+      } else if (c == '"') {
+        quoted = !quoted;
+      } else if (!quoted && paths.startsWith(RENAME_SEPARATOR, i)) {
+        return i;
+      }
+    }
+    return -1;
   }
 
   public static GisBranchStatus parseBranchLine(String line) {
