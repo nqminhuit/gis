@@ -19,6 +19,7 @@ import java.util.function.Function;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.nqm.command.GitCommand;
 import org.nqm.config.GisLog;
 import org.nqm.utils.GisProcessUtils;
 import org.nqm.utils.StdOutUtils;
@@ -50,6 +51,7 @@ public abstract class StdBaseTest {
     GisLog.setIsDebugEnabled(false);
     StdOutUtils.setMuteOutput(false);
     GisProcessUtils.resetProcessFailures();
+    GitCommand.setProgressEnabled(false);
     additionalTeardown();
   }
 

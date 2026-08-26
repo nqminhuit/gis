@@ -2,10 +2,13 @@ package org.nqm.utils;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.nqm.model.GisBranchStatus;
 import org.nqm.model.GisFileChange;
 import org.nqm.model.GisModuleStatus;
+import org.nqm.model.GisModuleState;
 
 /**
  * Renders the status model as JSON. Hand written on purpose: the app prefers the Java core over
@@ -23,6 +26,17 @@ public class GisJsonUtils {
     return object(0,
         field("fetchedAt", quote(fetchedAt)),
         field("modules", array(1, modules.stream().map(m -> module(2, m)).toList())));
+  }
+
+  /**
+   * Renders a progress report on a single line: it is printed again on every change, so that a
+   * client can read one document per line as they come.
+   */
+  public static String toProgressJson(Map<String, GisModuleState> states) {
+    return states.entrySet().stream()
+        .map(state -> "%s:{%s:%s}".formatted(
+            quote(state.getKey()), quote("status"), quote(state.getValue().value())))
+        .collect(Collectors.joining(",", "{", "}"));
   }
 
   private static String module(int level, GisModuleStatus module) {

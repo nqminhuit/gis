@@ -41,9 +41,12 @@ class GisProcessUtilsTest {
       // then:
       assertThat(result.exitCode()).isNotZero();
       assertThat(GisProcessUtils.anyProcessFailed()).isTrue();
+      assertThat(GisProcessUtils.hasProcessFailed(tempPath)).isTrue();
+      assertThat(GisProcessUtils.hasProcessFailed(tempPath.resolve("other"))).isFalse();
     } finally {
       GisProcessUtils.resetProcessFailures();
     }
+    assertThat(GisProcessUtils.hasProcessFailed(tempPath)).isFalse();
   }
 
   @Test

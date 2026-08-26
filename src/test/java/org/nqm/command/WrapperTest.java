@@ -229,6 +229,25 @@ class WrapperTest extends StdBaseTest {
   }
 
   @Test
+  void forEachModuleWith_whenModuleHangs_progressReportsEveryModuleFailed() throws IOException {
+    // given: 'git credential fill' blocks forever reading stdin that nobody writes
+    GitCommand.setProgressEnabled(true);
+    GisConfigMock.mockModuleTimeoutSeconds(1);
+
+    // when:
+    Wrapper.forEachModuleWith(p -> true, "credential", "fill");
+
+    // then: the aborted modules end up failed, and the states stay final afterwards even though
+    // the interrupted tasks do report back
+    var reports = stripColors.apply(errCaptor.toString()).stream()
+        .filter(line -> line.startsWith("{"))
+        .toList();
+    assertThat(reports.get(reports.size() - 1))
+        .contains("failed")
+        .doesNotContain("\"pending\"", "\"in-progress\"", "\"done\"");
+  }
+
+  @Test
   void getCurrentBranchUnderPath_withNullResult_NOK() {
     // given:
     GisProcessUtilsMock.mockQuickRun(

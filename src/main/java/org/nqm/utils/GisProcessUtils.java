@@ -5,6 +5,9 @@ import java.io.File;
 import java.io.IOException;
 import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import org.nqm.config.GisLog;
 import org.nqm.model.GisProcessDto;
 
@@ -17,25 +20,30 @@ public class GisProcessUtils {
 
   private static boolean dryRunEnabled;
 
-  private static volatile boolean anyProcessFailed;
+  /** the directories whose command exited with a non zero code, kept to report them per module */
+  private static final Set<String> failedDirectories = ConcurrentHashMap.newKeySet();
 
   public static void isDryRunEnabled(boolean b) {
     dryRunEnabled = b;
   }
 
   public static boolean anyProcessFailed() {
-    return anyProcessFailed;
+    return !failedDirectories.isEmpty();
+  }
+
+  public static boolean hasProcessFailed(Path directory) {
+    return failedDirectories.contains("" + directory);
   }
 
   public static void resetProcessFailures() {
-    anyProcessFailed = false;
+    failedDirectories.clear();
   }
 
   private static void debugLogIfExitCodeNotZero(int exitCode, File directory) {
     if (exitCode == 0) {
       return;
     }
-    anyProcessFailed = true;
+    failedDirectories.add(directory.getPath());
     GisLog.debug(EXIT_WITH_CODE_MSG_FMT.formatted(exitCode));
     warnln(WARN_MSG_FMT.formatted(directory.getName()));
   }

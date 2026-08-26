@@ -157,6 +157,45 @@ For example, to list the modules which are behind their upstream:
 gis status --format=json | jq -r '.modules[] | select(.branch.behind > 0) | .module'
 ```
 
+## Progress of each module
+
+Every command runs its modules concurrently, so with `--progress` `gis` reports how far each of
+them got. The report goes to **stderr**, one JSON document per line, which leaves stdout to the
+result of the command:
+
+```shell script
+gis fetch --progress
+```
+
+```json
+{"gis":{"status":"pending"},"module1":{"status":"pending"},"module2":{"status":"pending"}}
+{"gis":{"status":"in-progress"},"module1":{"status":"pending"},"module2":{"status":"in-progress"}}
+{"gis":{"status":"in-progress"},"module1":{"status":"in-progress"},"module2":{"status":"done"}}
+{"gis":{"status":"done"},"module1":{"status":"failed"},"module2":{"status":"done"}}
+```
+
+Every line holds every module, so a client can render the latest line it read and does not have
+to accumulate state. A module is:
+- `pending` until its command starts,
+- `in-progress` while the command runs,
+- `done` when the command succeeded,
+- `failed` when git exited with a non zero code, when the module could not be run at all, or
+  when it was aborted because the run timed out (see `module_timeout_seconds`).
+
+Once a run gives up on the modules which did not finish, their state is final: a module aborted
+mid flight stays `failed` even if its command was about to succeed.
+
+Note that `gis fetch -q` only starts the fetches and exits, so there `done` means that the fetch
+was started, not that it completed.
+
+stderr also carries the human readable warnings and errors, and those are not JSON. A client
+should therefore only read the lines starting with `{`:
+```shell script
+gis status --format=json --progress 2> >(grep --line-buffered '^{' > progress.jsonl) > status.json
+```
+
+`--progress` works for every command, and combines with `--format=json`.
+
 # Config
 
 Gis will read config from file at `~/.config/gis.config`
@@ -168,6 +207,7 @@ Supported configs:
 | default_branches        | comma separated values indicate default branch values   | master,main,develop |
 | feature_branch_prefixes | comma separated values indicate feature branch prefixes | feature/            |
 | dont_care_files         | comma separated root-level files shown in faint gray    |                     |
+| module_timeout_seconds  | seconds to wait for a module before aborting it         | 60                  |
 ```
 
 Note: do NOT insert space into value part.
