@@ -2,12 +2,14 @@ package org.nqm.command;
 
 import static org.nqm.command.CommandVerticle.GIS_CONCAT_MODULES_NAME_OPT;
 import static org.nqm.command.CommandVerticle.GIS_NO_PRINT_MODULES_NAME_OPT;
+import static org.nqm.command.CommandVerticle.GIS_ONE_LINE_OPT;
 import static org.nqm.command.Wrapper.ORIGIN;
 import static org.nqm.command.Wrapper.forEachModuleDo;
 import static org.nqm.command.Wrapper.forEachModuleDoRebaseCurrent;
 import static org.nqm.command.Wrapper.forEachModuleFetch;
 import static org.nqm.command.Wrapper.forEachModuleFetchInBackground;
 import static org.nqm.command.Wrapper.forEachModulePruneExcept;
+import static org.nqm.command.Wrapper.forEachModuleStatus;
 import static org.nqm.command.Wrapper.forEachModuleWith;
 import static org.nqm.command.Wrapper.getCurrentBranchUnderPath;
 import static org.nqm.config.GisConfig.currentDir;
@@ -21,14 +23,19 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 import org.nqm.config.GisConfig;
+import org.nqm.model.GisFormat;
+import org.nqm.model.GisModuleStatus;
 import org.nqm.model.GisSort;
+import org.nqm.utils.GisJsonUtils;
 import org.nqm.utils.GisStringUtils;
 import org.nqm.utils.StdOutUtils;
 import picocli.CommandLine.Command;
@@ -39,6 +46,7 @@ public class GitCommand {
 
   private static final String CHECKOUT = "checkout";
   private static final String FETCHED_AT = "(fetched at: %s)";
+  private static final DateTimeFormatter FETCHED_AT_FORMAT = DateTimeFormatter.ofPattern("HH:mm:ss dd/MM/yyyy");
   private static final String FETCH_STARTED_IN_BACKGROUND = "git fetch started in background";
 
   static final String GIS_AUTOCOMPLETE_FILE = "_gis";
@@ -100,14 +108,62 @@ public class GitCommand {
         .toList();
   }
 
-  private void printFetchedTime() throws IOException {
+  private static Optional<LocalDateTime> lastFetchedAt() throws IOException {
     var fetched = Path.of(GisConfig.currentDir(), ".git", "FETCH_HEAD");
-    if (Files.exists(fetched)) {
-      var lastFetched = Files.readAttributes(fetched, BasicFileAttributes.class).lastModifiedTime();
-      StdOutUtils.println(
-          FETCHED_AT.formatted(LocalDateTime.ofInstant(lastFetched.toInstant(), ZoneId.systemDefault())
-              .format(DateTimeFormatter.ofPattern("HH:mm:ss dd/MM/yyyy"))));
+    if (!Files.exists(fetched)) {
+      return Optional.empty();
     }
+    var lastFetched = Files.readAttributes(fetched, BasicFileAttributes.class).lastModifiedTime();
+    return Optional.of(LocalDateTime.ofInstant(lastFetched.toInstant(), ZoneId.systemDefault())
+        .truncatedTo(ChronoUnit.SECONDS));
+  }
+
+  private void printFetchedTime() throws IOException {
+    lastFetchedAt().ifPresent(t -> StdOutUtils.println(FETCHED_AT.formatted(t.format(FETCHED_AT_FORMAT))));
+  }
+
+  private static String[] statusArgs(boolean oneLineOpt) {
+    var args = Stream.of(GIT_STATUS, "-sb", "--ignore-submodules", "--porcelain=v1");
+    if (oneLineOpt) {
+      args = Stream.concat(args, Stream.of(GIS_ONE_LINE_OPT));
+    }
+    return args.toArray(String[]::new);
+  }
+
+  static int sortModules(GisSort sort, GisModuleStatus a, GisModuleStatus b) {
+    if (a.root() != b.root()) {
+      return a.root() ? -1 : 1;
+    }
+    if (GisSort.branch_name.equals(sort)) {
+      return tieBreak(branchNameOf(a).compareTo(branchNameOf(b)), a, b);
+    }
+    if (GisSort.tracking_status.equals(sort)) {
+      return tieBreak(b.files().size() - a.files().size(), a, b);
+    }
+    return a.module().compareTo(b.module());
+  }
+
+  // the modules come back in the order their virtual thread finished, so ties have to be
+  // broken explicitly to keep the machine readable document stable across runs
+  private static int tieBreak(int comparison, GisModuleStatus a, GisModuleStatus b) {
+    return comparison != 0 ? comparison : a.module().compareTo(b.module());
+  }
+
+  private static String branchNameOf(GisModuleStatus module) {
+    return module.branch() == null ? "" : module.branch().name();
+  }
+
+  private static List<GisModuleStatus> sortModules(GisSort sort, Collection<GisModuleStatus> modules) {
+    return modules.stream()
+        .sorted((a, b) -> sortModules(sort, a, b))
+        .toList();
+  }
+
+  private void printStatusAsJson(GisSort sort) throws IOException {
+    // the one line marker only shapes the human readable rendering, so it is left out here
+    StdOutUtils.println(GisJsonUtils.toJson(
+        sortModules(sort, forEachModuleStatus(statusArgs(false))),
+        lastFetchedAt().map(DateTimeFormatter.ISO_LOCAL_DATE_TIME::format).orElse(null)));
   }
 
   @Command(name = GIT_STATUS, aliases = "st", description = "Show the working trees status")
@@ -116,14 +172,18 @@ public class GitCommand {
       @Option(names = "--sort",
           description = "Valid values: ${COMPLETION-CANDIDATES}. "
               + "Default value is 'module_name'. "
-              + "Note that the root module will always be on top no matter the sort") GisSort sort)
+              + "Note that the root module will always be on top no matter the sort") GisSort sort,
+      @Option(names = "--format",
+          description = "Valid values: ${COMPLETION-CANDIDATES}. "
+              + "Default value is 'text'. "
+              + "'json' prints a machine readable report, in which case '--one-line' has no "
+              + "effect") GisFormat format)
       throws IOException {
-    Queue<String> output;
-    if (oneLineOpt) {
-      output = forEachModuleDo(GIT_STATUS, "-sb", "--ignore-submodules", "--porcelain=v1", "--gis-one-line");
-    } else {
-      output = forEachModuleDo(GIT_STATUS, "-sb", "--ignore-submodules", "--porcelain=v1");
+    if (GisFormat.json.equals(format)) {
+      printStatusAsJson(sort);
+      return;
     }
+    Queue<String> output = forEachModuleDo(statusArgs(oneLineOpt));
     printOutput(sort(oneLineOpt, sort, output));
     printFetchedTime();
   }

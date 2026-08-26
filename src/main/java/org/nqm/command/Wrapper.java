@@ -4,6 +4,7 @@ import static org.nqm.config.GisConfig.currentDir;
 import org.nqm.GisException;
 import org.nqm.config.GisConfig;
 import org.nqm.config.GisLog;
+import org.nqm.model.GisModuleStatus;
 import org.nqm.model.GisProcessDto;
 import org.nqm.utils.GisProcessUtils;
 import org.nqm.utils.GisStringUtils;
@@ -64,11 +65,18 @@ public final class Wrapper {
     return runOnModules(pred, path -> CommandVerticle.execute(path, args));
   }
 
+  public static Queue<GisModuleStatus> forEachModuleStatus(String... args) throws IOException {
+    // the root module is resolved here, on the calling thread, so that every module task only
+    // has to compare paths
+    var rootDir = Path.of(currentDir());
+    return runOnModules(p -> true, path -> CommandVerticle.executeStatus(path, rootDir.equals(path), args));
+  }
+
   private record ModuleTask(Path path, Future<?> future) {}
 
-  private static Queue<String> runOnModules(Predicate<Path> pred, Function<Path, String> action)
+  private static <T> Queue<T> runOnModules(Predicate<Path> pred, Function<Path, T> action)
       throws IOException {
-    var output = new ConcurrentLinkedQueue<String>();
+    var output = new ConcurrentLinkedQueue<T>();
     var tasks = new ArrayList<ModuleTask>();
     var gitModulesFilePath = getFileMarker();
     var currentDir = currentDir();
@@ -136,7 +144,8 @@ public final class Wrapper {
       CommandVerticle.execute(path, "fetch");
       return CommandVerticle.execute(
           path,
-          GitCommand.GIT_STATUS, "-sb", "--ignore-submodules", "--porcelain=v1", "--gis-one-line");
+          GitCommand.GIT_STATUS, "-sb", "--ignore-submodules", "--porcelain=v1",
+          CommandVerticle.GIS_ONE_LINE_OPT);
     });
   }
 

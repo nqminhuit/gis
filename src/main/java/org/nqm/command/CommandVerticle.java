@@ -10,9 +10,11 @@ import java.util.stream.Stream;
 import org.nqm.GisException;
 import org.nqm.config.GisConfig;
 import org.nqm.config.GisLog;
+import org.nqm.model.GisModuleStatus;
 import org.nqm.model.GisProcessDto;
 import org.nqm.utils.GisProcessUtils;
 import org.nqm.utils.GisStringUtils;
+import org.nqm.utils.GitStatusParser;
 
 public class CommandVerticle {
 
@@ -22,6 +24,7 @@ public class CommandVerticle {
 
   public static final String GIS_NO_PRINT_MODULES_NAME_OPT = "--gis-no-print-modules-name";
   public static final String GIS_CONCAT_MODULES_NAME_OPT = "--gis-concat-modules-name";
+  public static final String GIS_ONE_LINE_OPT = "--gis-one-line";
 
   private static String[] prependCommandToArgs(String... args) {
     return Stream.concat(
@@ -87,10 +90,21 @@ public class CommandVerticle {
     return safelyPrint(path, result);
   }
 
+  public static GisModuleStatus executeStatus(Path path, boolean isRootModule, String... args) {
+    if (path == null) {
+      throw new GisException("path must not be null");
+    }
+    return GitStatusParser.parse("" + path.getFileName(), isRootModule, executeForDto(path, args).output());
+  }
+
+  private static boolean isRootModule(Path path) {
+    return ("" + path).equals(GisConfig.currentDir());
+  }
+
   private static String safelyPrintStatus(Path path, String[] gisOptions, GisProcessDto result) {
     var sb = new StringBuilder(infof("" + path.getFileName()));
-    var isOneLineOpt = Stream.of(gisOptions).anyMatch("--gis-one-line"::equals);
-    var isRootModule = ("" + path).equals(GisConfig.currentDir());
+    var isOneLineOpt = Stream.of(gisOptions).anyMatch(GIS_ONE_LINE_OPT::equals);
+    var isRootModule = isRootModule(path);
     var rootModuleName = isRootModule ? "" + path.getFileName() : "";
     Stream.of(result.output().split(GisStringUtils.NEWLINE))
         .filter(GisStringUtils::isNotBlank)
@@ -113,7 +127,7 @@ public class CommandVerticle {
       return "";
     }
     var sb = new StringBuilder();
-    var isRootModule = ("" + path).equals(GisConfig.currentDir());
+    var isRootModule = isRootModule(path);
     var shortPath = path.getFileName();
     Stream.of(result.output().split(GisStringUtils.NEWLINE))
         .filter(GisStringUtils::isNotBlank)
