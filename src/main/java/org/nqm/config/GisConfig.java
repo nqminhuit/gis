@@ -66,6 +66,33 @@ public class GisConfig {
     return parsed;
   }
 
+  private static final String MAX_CONCURRENCY_KEY = "max_concurrency";
+  private static final int MAX_CONCURRENCY_DEFAULT = 5;
+
+  public static int getMaxConcurrency() {
+    return parseMaxConcurrency(props.getProperty(MAX_CONCURRENCY_KEY));
+  }
+
+  static int parseMaxConcurrency(String val) {
+    if (val == null || val.isBlank()) {
+      return MAX_CONCURRENCY_DEFAULT;
+    }
+    int parsed;
+    try {
+      parsed = Integer.parseInt(val.trim());
+    } catch (NumberFormatException e) {
+      StdOutUtils.warnln("config '%s=%s' is not a number, falling back to %d"
+          .formatted(MAX_CONCURRENCY_KEY, val, MAX_CONCURRENCY_DEFAULT));
+      return MAX_CONCURRENCY_DEFAULT;
+    }
+    if (parsed <= 0) {
+      StdOutUtils.warnln("config '%s=%s' must be positive, falling back to %d"
+          .formatted(MAX_CONCURRENCY_KEY, val, MAX_CONCURRENCY_DEFAULT));
+      return MAX_CONCURRENCY_DEFAULT;
+    }
+    return parsed;
+  }
+
   private static Function<String, String[]> splitValue = val -> val.split(",");
 
   public static String[] getDefaultBranches() {

@@ -21,6 +21,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -81,9 +82,19 @@ public final class Wrapper {
     var progress = ModuleProgress.of(modules);
     var output = new ConcurrentLinkedQueue<T>();
     var tasks = new ArrayList<ModuleTask>();
+    // caps concurrent git processes, e.g. many parallel SSH connections can get reset by the
+    // remote (see 'max_concurrency' config)
+    var concurrencyLimit = new Semaphore(GisConfig.getMaxConcurrency());
     try (var exe = Executors.newVirtualThreadPerTaskExecutor()) {
       modules.forEach(path ->
-          tasks.add(new ModuleTask(path, exe.submit(() -> runModule(path, action, output, progress)))));
+          tasks.add(new ModuleTask(path, exe.submit(() -> {
+            concurrencyLimit.acquireUninterruptibly();
+            try {
+              return runModule(path, action, output, progress);
+            } finally {
+              concurrencyLimit.release();
+            }
+          }))));
 
       // Wait for all futures with configured timeout
       long timeoutSeconds = org.nqm.config.GisConfig.getModuleTimeoutSeconds();

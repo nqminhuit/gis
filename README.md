@@ -208,6 +208,7 @@ Supported configs:
 | feature_branch_prefixes | comma separated values indicate feature branch prefixes | feature/            |
 | dont_care_files         | comma separated root-level files shown in faint gray    |                     |
 | module_timeout_seconds  | seconds to wait for a module before aborting it         | 60                  |
+| max_concurrency         | max modules processed in parallel at a time             | 5                   |
 ```
 
 Note: do NOT insert space into value part.
@@ -227,7 +228,10 @@ example:
 default_branches=master,main,develop
 feature_branch_prefixes=feature/
 dont_care_files=.editorconfig,.gitmodules,launch.json,pom.xml
+max_concurrency=5
 ```
+
+Note: `max_concurrency` limits how many modules run git commands at the same time. A high value can cause the remote to reset SSH connections when fetching/pulling many modules at once (e.g. `kex_exchange_identification: read: Connection reset by peer`), since too many concurrent SSH handshakes from the same source can hit the remote's connection limits.
 
 The reason that value parsing is not that smart is because that we use default Java core package `java.util.Properties` to parse values. We prefer Java's core over extra dependencies.
 

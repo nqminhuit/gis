@@ -12,6 +12,7 @@ public class GisConfigMock {
     if (mock == null || mock.isClosed()) {
       mock = Mockito.mockStatic(GisConfig.class);
       mock.when(GisConfig::getModuleTimeoutSeconds).thenReturn(60);
+      mock.when(GisConfig::getMaxConcurrency).thenReturn(5);
     }
   }
 
@@ -43,6 +44,11 @@ public class GisConfigMock {
   public static void mockModuleTimeoutSeconds(int seconds) {
     ensureMock();
     mock.when(GisConfig::getModuleTimeoutSeconds).thenReturn(seconds);
+  }
+
+  public static void mockMaxConcurrency(int maxConcurrency) {
+    ensureMock();
+    mock.when(GisConfig::getMaxConcurrency).thenReturn(maxConcurrency);
   }
 
   public static void close() {
