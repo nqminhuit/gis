@@ -168,6 +168,28 @@ class WrapperTest extends StdBaseTest {
 
 
   @Test
+  void forEachModuleWith_whenRootIsNotAGitRepo_skipsRoot() throws IOException {
+    // given: root directory only groups unrelated repos, it is not itself a git repository
+    try (var stream = Files.walk(tempPath.resolve(".git"))) {
+      stream.sorted(java.util.Comparator.reverseOrder()).forEach(p -> {
+        try {
+          Files.delete(p);
+        } catch (IOException e) {
+          throw new java.io.UncheckedIOException(e);
+        }
+      });
+    }
+    ExecutorsMock.mockVirtualThreadCallable(exe);
+
+    // when:
+    Wrapper.forEachModuleWith(p -> true, "pull");
+
+    // then: only the 3 submodules are submitted, root is skipped
+    verify(exe, times(4)).submit((Callable<?>) any());
+    verify(exe, times(0)).submit((Runnable) any());
+  }
+
+  @Test
   void forEachModuleWith_whenModuleFails_reportsErrorForThatModule() throws IOException {
     // given: module tasks fail, while the untimed get() still serves getFileMarker
     var marker = markerFile.toFile();

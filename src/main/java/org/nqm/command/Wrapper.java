@@ -139,12 +139,19 @@ public final class Wrapper {
 
   /**
    * The root module followed by the modules of the marker file, in the order they are listed.
+   * The root is skipped when it is not itself a git repository, e.g. a plain directory used
+   * only to group unrelated repos via '.gis-modules'.
    */
   private static List<Path> modulePaths(Predicate<Path> pred) throws IOException {
     var gitModulesFilePath = getFileMarker();
     var currentDir = currentDir();
     var modules = new ArrayList<Path>();
-    Optional.of(Path.of(currentDir)).filter(pred).ifPresent(modules::add);
+    var rootPath = Path.of(currentDir);
+    if (isGitRepo(rootPath)) {
+      Optional.of(rootPath).filter(pred).ifPresent(modules::add);
+    } else {
+      GisLog.debug("root '%s' is not a git repository, skipped".formatted(rootPath));
+    }
     Files.readAllLines(gitModulesFilePath.toPath()).stream()
         .map(String::trim)
         .filter(s -> s.startsWith("path"))
@@ -160,6 +167,10 @@ public final class Wrapper {
         .filter(pred)
         .forEach(modules::add);
     return modules;
+  }
+
+  private static boolean isGitRepo(Path path) {
+    return Files.exists(path.resolve(".git"));
   }
 
   private static void cancelUnfinished(Iterable<ModuleTask> tasks) {
