@@ -76,7 +76,6 @@ class GitCommandIntTest extends GitBaseTest {
 
     // then:
     assertThat(stripColors.apply(outCaptor.toString())).containsExactly(
-        "" + tempPath.getFileName(),
         "sub_4_w master",
         "sub_5_r master",
         "sub_6_p master");
@@ -135,7 +134,6 @@ class GitCommandIntTest extends GitBaseTest {
     // then:
     assertThat(stripColors.apply(outCaptor.toString()))
         .containsExactlyInAnyOrder(
-            "" + tempPath.getFileName(),
             "ype_9_iii",
             "  bb1",
             "  master",
@@ -251,7 +249,6 @@ class GitCommandIntTest extends GitBaseTest {
     resetOutputStreamTest();
     gis.status(true, GisSort.module_name, null);
     assertThat(stripColors.apply(outCaptor.toString())).contains(
-        "" + tempPath.getFileName(),
         "two_1_i nwebra",
         "two_2_ii nwebra",
         "two_3_iii nwebra");
@@ -270,7 +267,6 @@ class GitCommandIntTest extends GitBaseTest {
     resetOutputStreamTest();
     gis.status(true, GisSort.module_name, null);
     assertThat(stripColors.apply(outCaptor.toString())).contains(
-        "" + tempPath.getFileName(),
         "two_4_i nwebra",
         "two_5_ii nwebra",
         "two_6_iii nwebra");
@@ -289,7 +285,6 @@ class GitCommandIntTest extends GitBaseTest {
     resetOutputStreamTest();
     gis.status(true, GisSort.module_name, null);
     assertThat(stripColors.apply(outCaptor.toString())).containsExactly(
-        "" + tempPath.getFileName(),
         "two_1_y master",
         "two_2_yy batabranch",
         "two_3_yyy batabranch");
@@ -415,7 +410,7 @@ class GitCommandIntTest extends GitBaseTest {
     gis.spinOff("batabranch", "batpo_1_h", "batpo_3_hhh");
     commitFile(repos);
     resetOutputStreamTest();
-    GisProcessUtilsMock.mockQuickRunThrowException(new IOException("nope!!,"), tempPath.toFile(),
+    GisProcessUtilsMock.mockQuickRunThrowException(new IOException("nope!!,"), repos.get(0).toFile(),
         GIT_HOME_DIR, "branch", "--show-current");
 
     // when + then:
@@ -444,8 +439,7 @@ class GitCommandIntTest extends GitBaseTest {
     assertThat(stripColors.apply(outCaptor.toString())).contains(
         "tppo_1_b batabranch",
         "tppo_2_bb batabranch",
-        "tppo_3_bbb batabranch",
-        "" + tempPath.getFileName());
+        "tppo_3_bbb batabranch");
   }
 
   @Test
@@ -460,7 +454,6 @@ class GitCommandIntTest extends GitBaseTest {
     gis.status(true, GisSort.module_name, null);
     assertThat(stripColors.apply(outCaptor.toString()))
         .contains(
-            "" + tempPath.getFileName(),
             "pom_2_xx batabranch filescramble1",
             "pom_1_x batabranch filescramble1",
             "pom_3_xxx batabranch filescramble1");
@@ -473,7 +466,6 @@ class GitCommandIntTest extends GitBaseTest {
     assertThat(stripColors.apply(outCaptor.toString()))
         .map(s -> s.replaceFirst(":.*", ""))
         .containsExactlyInAnyOrder(
-            "" + tempPath.getFileName(),
             "pom_3_xxx",
             "  Saved working directory and index state WIP on batabranch",
             "pom_2_xx",
@@ -500,7 +492,6 @@ class GitCommandIntTest extends GitBaseTest {
     assertThat(stripColors.apply(outCaptor.toString()))
         .map(String::trim)
         .contains(
-            "" + tempPath.getFileName(),
             "pja_6_xxx",
             "On branch batabranch",
             "Changes to be committed:",
@@ -532,7 +523,6 @@ class GitCommandIntTest extends GitBaseTest {
 
     gis.status(true, null, null);
     assertThat(stripColors.apply(outCaptor.toString())).containsOnly(
-        "" + tempPath.getFileName(),
         "ali_4_x master[behind 1]",
         "ali_5_xx master[behind 1]",
         "ali_6_xxx master[behind 1]");
@@ -544,7 +534,6 @@ class GitCommandIntTest extends GitBaseTest {
     // then:
     gis.status(true, null, null);
     assertThat(stripColors.apply(outCaptor.toString())).containsOnly(
-        "" + tempPath.getFileName(),
         "ali_4_x master",
         "ali_5_xx master",
         "ali_6_xxx master");
@@ -570,7 +559,6 @@ class GitCommandIntTest extends GitBaseTest {
 
     gis.status(true, null, null);
     assertThat(stripColors.apply(outCaptor.toString())).containsOnly(
-        "" + tempPath.getFileName(),
         "ali_4_x bbb4[behind 1]",
         "ali_5_xx bbb5[behind 1]",
         "ali_6_xxx bbb6[behind 1]");
@@ -582,7 +570,6 @@ class GitCommandIntTest extends GitBaseTest {
     // then:
     gis.status(true, null, null);
     assertThat(stripColors.apply(outCaptor.toString())).containsOnly(
-        "" + tempPath.getFileName(),
         "ali_4_x bbb4",
         "ali_5_xx bbb5",
         "ali_6_xxx bbb6");
@@ -602,7 +589,6 @@ class GitCommandIntTest extends GitBaseTest {
     resetOutputStreamTest();
     gis.listBranches(false, true);
     assertThat(stripColors.apply(outCaptor.toString())).containsExactlyInAnyOrder(
-        "" + tempPath.getFileName(),
         "pru_3_ne",
         "  master",
         "  prune-branch",
@@ -623,7 +609,6 @@ class GitCommandIntTest extends GitBaseTest {
     resetOutputStreamTest();
     gis.listBranches(false, true);
     assertThat(stripColors.apply(outCaptor.toString())).containsExactlyInAnyOrder(
-        "" + tempPath.getFileName(),
         "pru_3_ne",
         "  master",
         "  origin/master",
@@ -650,7 +635,6 @@ class GitCommandIntTest extends GitBaseTest {
     resetOutputStreamTest();
     gis.listBranches(false, true);
     assertThat(stripColors.apply(outCaptor.toString())).containsExactlyInAnyOrder(
-        "" + tempPath.getFileName(),
         "pru_4_ne",
         "  master",
         "  prune-branch",
@@ -674,7 +658,6 @@ class GitCommandIntTest extends GitBaseTest {
     resetOutputStreamTest();
     gis.listBranches(false, true);
     assertThat(stripColors.apply(outCaptor.toString())).containsExactlyInAnyOrder(
-        "" + tempPath.getFileName(),
         "pru_4_ne",
         "  master",
         "  origin/master",
