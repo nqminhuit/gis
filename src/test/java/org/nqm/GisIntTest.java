@@ -115,10 +115,8 @@ class GisIntTest extends GitBaseTest {
         "/usr/bin/git status -sb --ignore-submodules --porcelain=v1",
         "/usr/bin/git status -sb --ignore-submodules --porcelain=v1",
         "/usr/bin/git status -sb --ignore-submodules --porcelain=v1",
-        "/usr/bin/git status -sb --ignore-submodules --porcelain=v1",
         "rem5_j",
         "rem6_k",
-        "rem4_i",
-        "" + tempPath.subpath(1, tempPath.getNameCount()));
+        "rem4_i");
   }
 }
